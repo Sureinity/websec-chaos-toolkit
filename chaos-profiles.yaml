@@ -1,0 +1,12 @@
+profiles:
+  - name: dependency-latency-baseline
+    fault_type: latency
+    target_service: sample-api
+    baseline_duration_seconds: 60
+    experiment_duration_seconds: 120
+    abort_thresholds:
+      consecutive_health_failures: 2
+      max_error_rate: 0.1
+    rollback:
+      method: toxiproxy_reset
+      description: Remove injected proxy toxicity and verify health recovery.
