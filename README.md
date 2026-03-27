@@ -5,8 +5,8 @@ security testing toolkit.
 
 The current state is intentionally narrow:
 
-- the package layout, command tree, docs skeleton, tests skeleton, and config
-  placeholders exist
+- the package layout, command tree, docs skeleton, tests skeleton, and valid
+  sample config files exist
 - `toolkit validate` is implemented against the current config bundle and exit
   code contract
 - operational scanners, chaos adapters, report generation, and full config
@@ -34,6 +34,7 @@ execution.
 uv sync --extra dev
 uv run pre-commit install
 uv run pytest
+uv run toolkit validate --app sample-internal-app --env local
 ```
 
 ## Command Tree
@@ -47,9 +48,22 @@ toolkit chaos run --app <id> --env <env> --profile <name>
 toolkit report build --run-id <id>
 ```
 
-Each command currently reports that the scaffold is present but the execution
-logic is not implemented yet, except for `toolkit validate`, which now performs
-real configuration loading and validation.
+`toolkit validate` now performs real configuration loading and validation.
+`toolkit pentest run`, `toolkit chaos run`, and `toolkit report build` remain
+scaffold-only.
+
+## Sample Configs
+
+The repository root contains valid sample configuration files:
+
+- `apps.yaml`
+- `pentest-profiles.yaml`
+- `chaos-profiles.yaml`
+
+The current root sample apps are:
+
+- `sample-internal-app` in `local` with `auth.method: none`
+- `sample-staging-auth-app` in `staging` with `auth.method: form`
 
 ## Implementation Roadmap
 

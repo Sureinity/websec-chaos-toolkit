@@ -15,3 +15,19 @@ apps:
     enabled_modules:
       - pentest
       - chaos
+
+  - id: sample-staging-auth-app
+    environment: staging
+    base_url: https://staging.internal.example
+    host_targets:
+      - staging.internal.example
+    target_allowlist:
+      - staging.internal.example
+    auth:
+      method: form
+      login_url: https://staging.internal.example/login
+      username_env_var: SECURITY_TEST_USERNAME
+      password_env_var: SECURITY_TEST_PASSWORD
+    health_endpoint: /health
+    enabled_modules:
+      - pentest

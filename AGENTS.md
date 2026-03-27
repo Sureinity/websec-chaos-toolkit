@@ -8,7 +8,7 @@ These instructions apply to this repository directory. If a deeper
 - Treat this file as the authoritative project contract.
 - The repository is no longer documentation-only.
 - The repository now contains a bootstrap Python package, packaging metadata,
-  placeholder configuration files, basic tests, Diataxis documentation
+  valid sample configuration files, basic tests, Diataxis documentation
   structure, and a scaffolded CLI surface.
 - `toolkit validate` is now implemented for config loading and validation.
 - The repository does not yet contain working scanner orchestration, live chaos
@@ -74,8 +74,8 @@ These instructions apply to this repository directory. If a deeper
 - Test layout is split into `tests/unit/` and `tests/integration/`.
 - Documentation is organized using Diataxis under `docs/tutorials/`,
   `docs/how-to/`, `docs/reference/`, and `docs/explanation/`.
-- The repository-level YAML files are placeholders that anchor the intended
-  config surface. Do not describe them as fully implemented schemas.
+- The repository-level YAML files are valid sample configs for the current
+  validation command. Keep them aligned with the implemented schema.
 
 ## Package Boundaries
 

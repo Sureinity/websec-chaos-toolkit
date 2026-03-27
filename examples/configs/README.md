@@ -15,5 +15,6 @@ environment variable references such as `token_env_var`,
 `cookie_value_env_var`, `session_value_env_var`, `username_env_var`, and
 `password_env_var`.
 
-The exhaustive contract matrix currently lives in `tests/fixtures/configs/`
-until the validation command is fully implemented.
+The exhaustive contract matrix currently lives in `tests/fixtures/configs/`.
+The repository root YAML files provide the current human-facing sample bundle
+for `toolkit validate`.

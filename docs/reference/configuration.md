@@ -6,9 +6,12 @@ The repository-level configuration surface is fixed to these YAML files:
 - `pentest-profiles.yaml`
 - `chaos-profiles.yaml`
 
-Strict validators are not fully implemented yet, but the intended validation
-contract is now locked so future implementation and tests target the same
-schema.
+`toolkit validate` now enforces the current field-level and cross-file config
+rules against these files when run from the repository root or another config
+bundle directory.
+
+The root repository copies of these files are valid sample configs and are safe
+to use for local validation exercises.
 
 ## `apps.yaml`
 
@@ -65,6 +68,16 @@ Locked auth rules:
 Config stores references only. Real tokens, cookie values, usernames,
 passwords, and session material must come from the runtime environment.
 
+Repository-root sample coverage:
+
+- `sample-internal-app`
+  - `environment: local`
+  - `auth.method: none`
+- `sample-staging-auth-app`
+  - `environment: staging`
+  - `auth.method: form`
+  - uses `username_env_var` and `password_env_var`
+
 ## `pentest-profiles.yaml`
 
 Each profile is expected to define a profile name and tool settings.
@@ -106,5 +119,5 @@ The frozen config contract is represented in:
 - `tests/fixtures/configs/valid/auth-method-matrix/`
 - `tests/fixtures/configs/invalid/`
 
-Those fixtures are the source of truth for the upcoming validation
-implementation work.
+Those fixtures remain the source of truth for validation coverage beyond the
+repository-root sample configs.
