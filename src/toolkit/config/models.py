@@ -7,7 +7,9 @@ target the same schema and safety rules.
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
+
+from toolkit.config.errors import ConfigValidationCode, config_error
 
 EnvironmentName = Literal["local", "staging"]
 ModuleName = Literal["pentest", "chaos"]
@@ -27,6 +29,19 @@ class MetricsConfig(BaseModel):
 
     endpoint: HttpUrl | None = None
     query: str | None = None
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        stripped = value.strip()
+        if not stripped:
+            raise config_error(
+                ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                "Metrics query must not be blank.",
+            )
+        return stripped
 
 
 class AuthConfig(BaseModel):
@@ -54,6 +69,96 @@ class AuthConfig(BaseModel):
     username_env_var: str | None = None
     password_env_var: str | None = None
 
+    @field_validator(
+        "token_env_var",
+        "cookie_name",
+        "cookie_value_env_var",
+        "session_header",
+        "session_value_env_var",
+        "username_env_var",
+        "password_env_var",
+    )
+    @classmethod
+    def validate_optional_string_fields(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        stripped = value.strip()
+        if not stripped:
+            raise config_error(
+                ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                "Config string values must not be blank.",
+            )
+        return stripped
+
+    @model_validator(mode="after")
+    def validate_auth_contract(self) -> "AuthConfig":
+        secret_ref_fields = {
+            "token_env_var": self.token_env_var,
+            "cookie_name": self.cookie_name,
+            "cookie_value_env_var": self.cookie_value_env_var,
+            "session_header": self.session_header,
+            "session_value_env_var": self.session_value_env_var,
+            "login_url": self.login_url,
+            "username_env_var": self.username_env_var,
+            "password_env_var": self.password_env_var,
+        }
+
+        if self.method == "none":
+            populated_fields = [name for name, value in secret_ref_fields.items() if value is not None]
+            if populated_fields:
+                raise config_error(
+                    ConfigValidationCode.AUTH_NONE_FORBIDS_SECRET_REFS,
+                    "Auth method 'none' does not allow secret reference fields: {fields}.",
+                    fields=", ".join(populated_fields),
+                )
+            return self
+
+        if self.method == "bearer_token" and self.token_env_var is None:
+            raise config_error(
+                ConfigValidationCode.AUTH_BEARER_TOKEN_REQUIRES_TOKEN_ENV_VAR,
+                "Auth method 'bearer_token' requires token_env_var.",
+            )
+        if self.method == "cookie":
+            if self.cookie_name is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_COOKIE_REQUIRES_COOKIE_NAME,
+                    "Auth method 'cookie' requires cookie_name.",
+                )
+            if self.cookie_value_env_var is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_COOKIE_REQUIRES_COOKIE_VALUE_ENV_VAR,
+                    "Auth method 'cookie' requires cookie_value_env_var.",
+                )
+        if self.method == "session":
+            if self.session_header is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_SESSION_REQUIRES_SESSION_HEADER,
+                    "Auth method 'session' requires session_header.",
+                )
+            if self.session_value_env_var is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_SESSION_REQUIRES_SESSION_VALUE_ENV_VAR,
+                    "Auth method 'session' requires session_value_env_var.",
+                )
+        if self.method == "form":
+            if self.login_url is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_FORM_REQUIRES_LOGIN_URL,
+                    "Auth method 'form' requires login_url.",
+                )
+            if self.username_env_var is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_FORM_REQUIRES_USERNAME_ENV_VAR,
+                    "Auth method 'form' requires username_env_var.",
+                )
+            if self.password_env_var is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_FORM_REQUIRES_PASSWORD_ENV_VAR,
+                    "Auth method 'form' requires password_env_var.",
+                )
+
+        return self
+
 
 class AppConfig(BaseModel):
     """Application/environment target configuration.
@@ -77,6 +182,62 @@ class AppConfig(BaseModel):
     metrics: MetricsConfig | None = None
     enabled_modules: list[ModuleName] = Field(min_length=1)
 
+    @field_validator("id", "health_endpoint")
+    @classmethod
+    def validate_required_strings(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise config_error(
+                ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                "Config string values must not be blank.",
+            )
+        return stripped
+
+    @field_validator("health_endpoint")
+    @classmethod
+    def validate_health_endpoint(cls, value: str) -> str:
+        if not value.startswith("/"):
+            raise config_error(
+                ConfigValidationCode.HEALTH_ENDPOINT_MUST_BE_ABSOLUTE_PATH,
+                "Health endpoint must start with '/'.",
+            )
+        return value
+
+    @field_validator("host_targets", "target_allowlist", mode="after")
+    @classmethod
+    def validate_target_lists(cls, values: list[str]) -> list[str]:
+        normalized_values = []
+        for value in values:
+            stripped = value.strip()
+            if not stripped:
+                raise config_error(
+                    ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                    "Target lists must not include blank values.",
+                )
+            normalized_values.append(stripped)
+        return normalized_values
+
+    @field_validator("enabled_modules", mode="after")
+    @classmethod
+    def validate_enabled_modules(cls, values: list[ModuleName]) -> list[ModuleName]:
+        if len(set(values)) != len(values):
+            raise config_error(
+                ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                "Enabled modules must not contain duplicates.",
+            )
+        return values
+
+    @model_validator(mode="after")
+    def validate_base_url_host_coverage(self) -> "AppConfig":
+        base_host = self.base_url.host
+        if base_host not in self.target_allowlist:
+            raise config_error(
+                ConfigValidationCode.BASE_URL_HOST_NOT_ALLOWLISTED,
+                "Base URL host '{host}' must be present in target_allowlist.",
+                host=base_host,
+            )
+        return self
+
 
 class AppRegistry(BaseModel):
     """Top-level apps.yaml document."""
@@ -98,6 +259,40 @@ class PentestToolSettings(BaseModel):
     profile: str = "baseline"
     allowlisted_rules: list[str] = Field(default_factory=list)
 
+    @field_validator("profile")
+    @classmethod
+    def validate_profile(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise config_error(
+                ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                "Tool profile names must not be blank.",
+            )
+        return stripped
+
+    @field_validator("allowlisted_rules", mode="after")
+    @classmethod
+    def validate_allowlisted_rules(cls, values: list[str]) -> list[str]:
+        normalized_values = []
+        for value in values:
+            stripped = value.strip()
+            if not stripped:
+                raise config_error(
+                    ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                    "Allowlisted rules must not include blank values.",
+                )
+            normalized_values.append(stripped)
+        return normalized_values
+
+    @model_validator(mode="after")
+    def validate_enabled_tool_contract(self) -> "PentestToolSettings":
+        if self.enabled and not self.allowlisted_rules:
+            raise config_error(
+                ConfigValidationCode.ENABLED_TOOL_REQUIRES_ALLOWLIST,
+                "Enabled pentest tools must declare at least one allowlisted rule or template.",
+            )
+        return self
+
 
 class PentestToolsConfig(BaseModel):
     """Pentest tool enablement map."""
@@ -115,6 +310,31 @@ class PentestProfile(BaseModel):
     name: str
     schedule_labels: list[str] = Field(default_factory=list)
     tools: PentestToolsConfig
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise config_error(
+                ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                "Profile names must not be blank.",
+            )
+        return stripped
+
+    @field_validator("schedule_labels", mode="after")
+    @classmethod
+    def validate_schedule_labels(cls, values: list[str]) -> list[str]:
+        normalized_values = []
+        for value in values:
+            stripped = value.strip()
+            if not stripped:
+                raise config_error(
+                    ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                    "Schedule labels must not include blank values.",
+                )
+            normalized_values.append(stripped)
+        return normalized_values
 
 
 class PentestProfileRegistry(BaseModel):
@@ -136,6 +356,19 @@ class RollbackConfig(BaseModel):
     method: str
     description: str | None = None
 
+    @field_validator("method", "description")
+    @classmethod
+    def validate_optional_strings(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        stripped = value.strip()
+        if not stripped:
+            raise config_error(
+                ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                "Rollback values must not be blank.",
+            )
+        return stripped
+
 
 class ChaosProfile(BaseModel):
     """Chaos profile description.
@@ -154,6 +387,26 @@ class ChaosProfile(BaseModel):
     experiment_duration_seconds: int = Field(ge=1)
     abort_thresholds: AbortThresholds
     rollback: RollbackConfig
+
+    @field_validator("name", "target_service")
+    @classmethod
+    def validate_required_strings(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise config_error(
+                ConfigValidationCode.EMPTY_STRING_NOT_ALLOWED,
+                "Config string values must not be blank.",
+            )
+        return stripped
+
+    @model_validator(mode="after")
+    def validate_supported_fault_type(self) -> "ChaosProfile":
+        if self.fault_type == "controlled_restart":
+            raise config_error(
+                ConfigValidationCode.CONTROLLED_RESTART_NOT_IMPLEMENTED,
+                "Fault type 'controlled_restart' is reserved but not implemented in v1.",
+            )
+        return self
 
 
 class ChaosProfileRegistry(BaseModel):
