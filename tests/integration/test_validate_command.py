@@ -41,6 +41,31 @@ class ValidateCommandTests(unittest.TestCase):
         self.assertIn("Configuration is valid.", result.stdout)
         self.assertIn("App: local-no-auth-app", result.stdout)
         self.assertIn("Environment: local", result.stdout)
+        self.assertIn("Enabled modules: pentest, chaos", result.stdout)
+        self.assertIn("Pentest profiles: 1", result.stdout)
+        self.assertIn("Chaos profiles: 1", result.stdout)
+
+    def test_validate_command_succeeds_for_authenticated_app(self) -> None:
+        fixture_dir = FIXTURE_ROOT / "valid" / "auth-method-matrix"
+
+        with TemporaryDirectory() as temp_dir_name:
+            temp_dir = Path(temp_dir_name)
+            copy_fixture_tree(fixture_dir, temp_dir)
+
+            with chdir(temp_dir):
+                result = RUNNER.invoke(
+                    app,
+                    ["validate", "--app", "staging-form-auth-app", "--env", "staging"],
+                    catch_exceptions=False,
+                )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        self.assertIn("Configuration is valid.", result.stdout)
+        self.assertIn("App: staging-form-auth-app", result.stdout)
+        self.assertIn("Environment: staging", result.stdout)
+        self.assertIn("Enabled modules: pentest", result.stdout)
+        self.assertIn("Pentest profiles: 1", result.stdout)
+        self.assertIn("Chaos profiles: 1", result.stdout)
 
     def test_validate_command_reports_selection_errors(self) -> None:
         fixture_dir = FIXTURE_ROOT / "valid" / "auth-method-matrix"
@@ -77,3 +102,22 @@ class ValidateCommandTests(unittest.TestCase):
         self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
         self.assertIn("Configuration validation failed.", result.stderr)
         self.assertIn("auth_none_forbids_secret_refs", result.stderr)
+
+    def test_validate_command_reports_invalid_environment_config(self) -> None:
+        fixture_dir = FIXTURE_ROOT / "invalid" / "production-like-environment"
+
+        with TemporaryDirectory() as temp_dir_name:
+            temp_dir = Path(temp_dir_name)
+            copy_fixture_tree(fixture_dir, temp_dir)
+
+            with chdir(temp_dir):
+                result = RUNNER.invoke(
+                    app,
+                    ["validate", "--app", "production-like-environment", "--env", "production"],
+                    catch_exceptions=False,
+                )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertIn("Configuration validation failed.", result.stderr)
+        self.assertIn("apps.0.environment", result.stderr)
+        self.assertIn("path=", result.stderr)
