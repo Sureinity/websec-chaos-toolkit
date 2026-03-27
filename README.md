@@ -24,14 +24,14 @@ The scaffold creates the boundaries expected by the project contract:
 
 ## Local Setup
 
-The repository now includes packaging and quality-tool configuration:
+The canonical Python package manager for this repository is `uv` by Astral.
+Use `uv` for environment creation, dependency installation, and local tool
+execution.
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-pre-commit install
-pytest
+uv sync --extra dev
+uv run pre-commit install
+uv run pytest
 ```
 
 ## Command Tree

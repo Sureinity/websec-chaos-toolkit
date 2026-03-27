@@ -149,13 +149,12 @@ Currently Applicable
 
 - The repository now includes a `pyproject.toml` package definition.
 - Use Python-first tooling.
+- Use `uv` by Astral as the canonical Python package manager and tool runner.
 - Canonical bootstrap commands:
-  - `python3 -m venv .venv`
-  - `source .venv/bin/activate`
-  - `pip install -e ".[dev]"`
+  - `uv sync --extra dev`
 - The repository includes `.pre-commit-config.yaml`. Install hooks with
-  `pre-commit install`.
-- Run all hooks with `pre-commit run --all-files`.
+  `uv run pre-commit install`.
+- Run all hooks with `uv run pre-commit run --all-files`.
 - External binaries such as ZAP, Nuclei, Nmap, and Toxiproxy are not required
   for the current scaffold tests.
 
@@ -187,8 +186,8 @@ Planned / Future Expectations
   - `semgrep`
   - `docker`
   - `docker compose`
-- If package wrappers such as `make`, `uv`, `tox`, or task runners are added
-  later, document the canonical commands here and keep them accurate.
+- If package wrappers such as `make`, `tox`, or task runners are added later,
+  document the canonical `uv`-based commands here and keep them accurate.
 
 ## Development Workflow
 
@@ -200,6 +199,8 @@ Currently Applicable
 - Keep documentation changes aligned with the actual repository state.
 - Keep placeholder behavior explicit. Do not silently upgrade a stub into
   partially working behavior without updating tests and docs.
+- Prefer `uv run ...` for local development commands documented in this
+  repository.
 - Use Conventional Commits for commit messages.
 
 Planned / Future Expectations
@@ -235,7 +236,7 @@ Currently Applicable
 
 - Keep unit tests under `tests/unit/`.
 - Keep integration-style scaffold checks under `tests/integration/`.
-- Run `pytest` for the current scaffold when dependencies are installed.
+- Run `uv run pytest` for the current scaffold when dependencies are installed.
 - Use deterministic fixtures and assertions so bootstrap checks remain stable.
 
 Planned / Future Expectations

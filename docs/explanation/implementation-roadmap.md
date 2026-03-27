@@ -17,6 +17,8 @@ implemented without reopening the basic product shape.
   - `chaos-profiles.yaml`
 - Secrets are never stored directly in repository YAML. Config stores references
   such as environment variable names.
+- Use `uv` as the canonical Python package manager and tool runner for local
+  development, verification, and contributor documentation.
 - Run artifacts live under `outputs/<run-id>/raw/`,
   `outputs/<run-id>/normalized/`, and `outputs/<run-id>/reports/`.
 - Run commands create raw artifacts, normalized results, and reports in one
@@ -64,9 +66,9 @@ Acceptance criteria
 Verification commands
 
 ```bash
-python3 -m pytest tests/unit/config tests/integration/test_validate_command.py
-PYTHONPATH=src python3 -m toolkit validate --app sample-internal-app --env local
-pre-commit run --all-files
+uv run pytest tests/unit/config tests/integration/test_validate_command.py
+uv run toolkit validate --app sample-internal-app --env local
+uv run pre-commit run --all-files
 ```
 
 Dependencies on earlier milestones
@@ -110,9 +112,9 @@ Acceptance criteria
 Verification commands
 
 ```bash
-python3 -m pytest tests/unit/test_run_context.py tests/unit/test_report_writer.py
-PYTHONPATH=src python3 -m toolkit report build --run-id fixture-run-id
-pre-commit run --all-files
+uv run pytest tests/unit/test_run_context.py tests/unit/test_report_writer.py
+uv run toolkit report build --run-id fixture-run-id
+uv run pre-commit run --all-files
 ```
 
 Dependencies on earlier milestones
@@ -155,8 +157,8 @@ Acceptance criteria
 Verification commands
 
 ```bash
-python3 -m pytest tests/unit/auth tests/integration/test_auth_resolution.py tests/integration/test_form_login.py
-pre-commit run --all-files
+uv run pytest tests/unit/auth tests/integration/test_auth_resolution.py tests/integration/test_form_login.py
+uv run pre-commit run --all-files
 ```
 
 Dependencies on earlier milestones
@@ -202,9 +204,9 @@ Acceptance criteria
 Verification commands
 
 ```bash
-python3 -m pytest tests/unit/adapters
-python3 -m pytest -m external_tools tests/integration/test_tool_adapters_external.py
-pre-commit run --all-files
+uv run pytest tests/unit/adapters
+uv run pytest -m external_tools tests/integration/test_tool_adapters_external.py
+uv run pre-commit run --all-files
 ```
 
 Dependencies on earlier milestones
@@ -249,9 +251,9 @@ Acceptance criteria
 Verification commands
 
 ```bash
-python3 -m pytest tests/integration/test_pentest_run.py
-PYTHONPATH=src python3 -m toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline
-pre-commit run --all-files
+uv run pytest tests/integration/test_pentest_run.py
+uv run toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline
+uv run pre-commit run --all-files
 ```
 
 Dependencies on earlier milestones
@@ -302,10 +304,10 @@ Acceptance criteria
 Verification commands
 
 ```bash
-python3 -m pytest tests/unit/chaos tests/integration/test_chaos_run.py
-python3 -m pytest -m external_tools tests/integration/test_chaos_run_external.py
-PYTHONPATH=src python3 -m toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
-pre-commit run --all-files
+uv run pytest tests/unit/chaos tests/integration/test_chaos_run.py
+uv run pytest -m external_tools tests/integration/test_chaos_run_external.py
+uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
+uv run pre-commit run --all-files
 ```
 
 Dependencies on earlier milestones
@@ -352,9 +354,9 @@ Acceptance criteria
 Verification commands
 
 ```bash
-python3 -m pytest tests/integration/test_example_configs.py
-pre-commit run --all-files
-PYTHONPATH=src python3 -m toolkit validate --app sample-internal-app --env local
+uv run pytest tests/integration/test_example_configs.py
+uv run pre-commit run --all-files
+uv run toolkit validate --app sample-internal-app --env local
 ```
 
 Dependencies on earlier milestones
@@ -400,9 +402,9 @@ Acceptance criteria
 Verification commands
 
 ```bash
-python3 -m pytest tests/unit/adapters/test_trivy.py tests/unit/adapters/test_semgrep.py
-python3 -m pytest -m external_tools tests/integration/test_optional_adapters_external.py
-pre-commit run --all-files
+uv run pytest tests/unit/adapters/test_trivy.py tests/unit/adapters/test_semgrep.py
+uv run pytest -m external_tools tests/integration/test_optional_adapters_external.py
+uv run pre-commit run --all-files
 ```
 
 Dependencies on earlier milestones
