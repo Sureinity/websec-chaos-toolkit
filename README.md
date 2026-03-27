@@ -47,3 +47,8 @@ toolkit report build --run-id <id>
 
 Each command currently reports that the scaffold is present but the execution
 logic is not implemented yet.
+
+## Implementation Roadmap
+
+The planned delivery sequence for turning the scaffold into a working toolkit
+is documented in `docs/explanation/implementation-roadmap.md`.

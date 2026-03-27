@@ -6,3 +6,6 @@ The documentation scaffold follows the Diataxis framework:
 - `how-to/` for task-focused procedures
 - `reference/` for commands, config keys, outputs, and contracts
 - `explanation/` for architecture and rationale
+
+The implementation milestone plan lives in
+`docs/explanation/implementation-roadmap.md`.

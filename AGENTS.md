@@ -209,10 +209,12 @@ Planned / Future Expectations
   - configuration schema, CLI skeleton, validation flow, and report scaffolding
   - ZAP, Nuclei, and Nmap adapters with normalized findings
   - Toxiproxy-based chaos runner with health or metrics baseline and abort logic
-  - optional Trivy and Semgrep adapters for local code, artifact, or image
-    checks
   - scheduler-facing docs, sample configs, and pilot coverage for one or two
     internal apps
+  - optional Trivy and Semgrep adapters for local code, artifact, or image
+    checks
+- Keep the detailed milestone sequence in
+  `docs/explanation/implementation-roadmap.md` aligned with this order.
 - Keep allowed commit types to:
   - `feat`
   - `fix`
