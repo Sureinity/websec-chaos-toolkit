@@ -1,0 +1,10 @@
+profiles:
+  - name: controlled-restart-baseline
+    fault_type: controlled_restart
+    target_service: sample-api
+    baseline_duration_seconds: 60
+    experiment_duration_seconds: 120
+    abort_thresholds:
+      consecutive_health_failures: 2
+    rollback:
+      method: restart_service

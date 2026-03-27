@@ -1,0 +1,15 @@
+apps:
+  - id: auth-session-missing-header
+    environment: local
+    base_url: http://localhost:8000
+    host_targets:
+      - localhost
+    target_allowlist:
+      - localhost
+      - 127.0.0.1
+    auth:
+      method: session
+      session_value_env_var: SECURITY_TEST_SESSION_ID
+    health_endpoint: /health
+    enabled_modules:
+      - pentest

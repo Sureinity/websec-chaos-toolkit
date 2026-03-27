@@ -1,0 +1,82 @@
+apps:
+  - id: local-no-auth-app
+    environment: local
+    base_url: http://localhost:8000
+    host_targets:
+      - localhost
+    target_allowlist:
+      - localhost
+      - 127.0.0.1
+    auth:
+      method: none
+    health_endpoint: /health
+    enabled_modules:
+      - pentest
+      - chaos
+
+  - id: local-bearer-auth-app
+    environment: local
+    base_url: http://localhost:8001
+    host_targets:
+      - localhost
+    target_allowlist:
+      - localhost
+      - 127.0.0.1
+    auth:
+      method: bearer_token
+      token_env_var: SECURITY_TEST_BEARER_TOKEN
+    health_endpoint: /health
+    enabled_modules:
+      - pentest
+
+  - id: local-cookie-auth-app
+    environment: local
+    base_url: http://localhost:8002
+    host_targets:
+      - localhost
+    target_allowlist:
+      - localhost
+      - 127.0.0.1
+    auth:
+      method: cookie
+      cookie_name: sessionid
+      cookie_value_env_var: SECURITY_TEST_COOKIE_VALUE
+    health_endpoint: /healthz
+    enabled_modules:
+      - pentest
+
+  - id: local-session-auth-app
+    environment: local
+    base_url: http://localhost:8003
+    host_targets:
+      - localhost
+    target_allowlist:
+      - localhost
+      - 127.0.0.1
+    auth:
+      method: session
+      session_header: X-Session-ID
+      session_value_env_var: SECURITY_TEST_SESSION_ID
+    health_endpoint: /ready
+    enabled_modules:
+      - pentest
+      - chaos
+
+  - id: staging-form-auth-app
+    environment: staging
+    base_url: https://staging.internal.example
+    host_targets:
+      - staging.internal.example
+    target_allowlist:
+      - staging.internal.example
+    auth:
+      method: form
+      login_url: https://staging.internal.example/login
+      username_env_var: SECURITY_TEST_USERNAME
+      password_env_var: SECURITY_TEST_PASSWORD
+    health_endpoint: /health
+    metrics:
+      endpoint: https://staging.internal.example/metrics
+      query: up
+    enabled_modules:
+      - pentest

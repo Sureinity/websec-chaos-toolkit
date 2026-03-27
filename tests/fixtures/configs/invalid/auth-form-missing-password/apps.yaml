@@ -1,0 +1,15 @@
+apps:
+  - id: auth-form-missing-password
+    environment: staging
+    base_url: https://staging.internal.example
+    host_targets:
+      - staging.internal.example
+    target_allowlist:
+      - staging.internal.example
+    auth:
+      method: form
+      login_url: https://staging.internal.example/login
+      username_env_var: SECURITY_TEST_USERNAME
+    health_endpoint: /health
+    enabled_modules:
+      - pentest

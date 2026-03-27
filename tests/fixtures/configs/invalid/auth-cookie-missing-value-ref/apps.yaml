@@ -1,0 +1,15 @@
+apps:
+  - id: auth-cookie-missing-value-ref
+    environment: local
+    base_url: http://localhost:8000
+    host_targets:
+      - localhost
+    target_allowlist:
+      - localhost
+      - 127.0.0.1
+    auth:
+      method: cookie
+      cookie_name: sessionid
+    health_endpoint: /health
+    enabled_modules:
+      - pentest

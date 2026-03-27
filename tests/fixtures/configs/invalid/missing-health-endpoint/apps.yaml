@@ -1,0 +1,13 @@
+apps:
+  - id: missing-health-endpoint
+    environment: local
+    base_url: http://localhost:8000
+    host_targets:
+      - localhost
+    target_allowlist:
+      - localhost
+      - 127.0.0.1
+    auth:
+      method: none
+    enabled_modules:
+      - pentest

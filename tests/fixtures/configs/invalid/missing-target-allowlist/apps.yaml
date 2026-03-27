@@ -1,0 +1,12 @@
+apps:
+  - id: missing-target-allowlist
+    environment: local
+    base_url: http://localhost:8000
+    host_targets:
+      - localhost
+    target_allowlist: []
+    auth:
+      method: none
+    health_endpoint: /health
+    enabled_modules:
+      - pentest

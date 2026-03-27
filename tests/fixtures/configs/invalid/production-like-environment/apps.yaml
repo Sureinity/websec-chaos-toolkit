@@ -1,0 +1,13 @@
+apps:
+  - id: production-like-environment
+    environment: production
+    base_url: https://prod.internal.example
+    host_targets:
+      - prod.internal.example
+    target_allowlist:
+      - prod.internal.example
+    auth:
+      method: none
+    health_endpoint: /health
+    enabled_modules:
+      - pentest
