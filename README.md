@@ -7,10 +7,12 @@ The current state is intentionally narrow:
 
 - the package layout, command tree, docs skeleton, tests skeleton, and config
   placeholders exist
+- `toolkit validate` is implemented against the current config bundle and exit
+  code contract
 - operational scanners, chaos adapters, report generation, and full config
   validation are not implemented yet
-- scaffolded CLI commands currently exit with code `2` to signal that execution
-  flow is still pending
+- `toolkit pentest run`, `toolkit chaos run`, and `toolkit report build`
+  remain scaffold-only and currently exit with code `2`
 
 ## Bootstrap Layout
 
@@ -46,7 +48,8 @@ toolkit report build --run-id <id>
 ```
 
 Each command currently reports that the scaffold is present but the execution
-logic is not implemented yet.
+logic is not implemented yet, except for `toolkit validate`, which now performs
+real configuration loading and validation.
 
 ## Implementation Roadmap
 

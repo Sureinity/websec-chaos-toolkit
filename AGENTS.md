@@ -10,13 +10,14 @@ These instructions apply to this repository directory. If a deeper
 - The repository now contains a bootstrap Python package, packaging metadata,
   placeholder configuration files, basic tests, Diataxis documentation
   structure, and a scaffolded CLI surface.
+- `toolkit validate` is now implemented for config loading and validation.
 - The repository does not yet contain working scanner orchestration, live chaos
   execution, full schema validation coverage, notification delivery, or
   end-to-end report generation pipelines.
 - `security-testing-resources.md` exists as placeholder background reading
   material. Treat it as reference material, not as a behavioral contract.
-- The scaffolded CLI commands exist and currently exit with code `2` because
-  the runtime flow is intentionally not implemented yet.
+- `toolkit pentest run`, `toolkit chaos run`, and `toolkit report build`
+  remain scaffold-only and currently exit with code `2`.
 
 ## Project Overview (Future Intent)
 
@@ -99,12 +100,14 @@ These instructions apply to this repository directory. If a deeper
   - `toolkit pentest run --app <id> --env <env> --profile <name>`
   - `toolkit chaos run --app <id> --env <env> --profile <name>`
   - `toolkit report build --run-id <id>`
-- Current behavior is scaffold-only:
-  - commands are visible in help output
-  - commands print scaffold status information
-  - commands exit with `2`
-- Do not claim that validation, scanning, chaos execution, or report building
-  already work end-to-end.
+- Current behavior:
+  - `toolkit validate` loads and validates repository YAML config from the
+    current working directory and exits with `0` on success or `2` on
+    validation/runtime failure
+  - `toolkit pentest run`, `toolkit chaos run`, and `toolkit report build`
+    remain scaffold-only and exit with `2`
+- Do not claim that scanning, chaos execution, or report building already work
+  end-to-end.
 
 ## Future CLI Commands & Interfaces
 

@@ -11,9 +11,11 @@ toolkit report build --run-id <id>
 
 Current command behavior:
 
-- commands are registered and available in help output
-- commands print scaffold status information
-- commands exit with code `2` because execution flow is not implemented yet
+- `toolkit validate` loads the repository YAML files from the current working
+  directory, validates the selected `--app/--env` pair, and exits with `0` on
+  success
+- `toolkit pentest run`, `toolkit chaos run`, and `toolkit report build` remain
+  scaffold-only and currently exit with code `2`
 
 Stable exit-code contract:
 
