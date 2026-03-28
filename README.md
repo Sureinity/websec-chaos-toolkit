@@ -69,3 +69,6 @@ The current root sample apps are:
 
 The planned delivery sequence for turning the scaffold into a working toolkit
 is documented in `docs/explanation/implementation-roadmap.md`.
+
+The system overview and architecture diagrams live in
+`docs/explanation/architecture.md`.

@@ -7,5 +7,8 @@ The documentation scaffold follows the Diataxis framework:
 - `reference/` for commands, config keys, outputs, and contracts
 - `explanation/` for architecture and rationale
 
+The main system overview and high-level architecture live in
+`docs/explanation/architecture.md`.
+
 The implementation milestone plan lives in
 `docs/explanation/implementation-roadmap.md`.
