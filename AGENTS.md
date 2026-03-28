@@ -11,13 +11,15 @@ These instructions apply to this repository directory. If a deeper
   valid sample configuration files, basic tests, Diataxis documentation
   structure, and a scaffolded CLI surface.
 - `toolkit validate` is now implemented for config loading and validation.
+- `toolkit report build` is now implemented for stored normalized result
+  bundles.
 - The repository does not yet contain working scanner orchestration, live chaos
   execution, full schema validation coverage, notification delivery, or
   end-to-end report generation pipelines.
 - `security-testing-resources.md` exists as placeholder background reading
   material. Treat it as reference material, not as a behavioral contract.
-- `toolkit pentest run`, `toolkit chaos run`, and `toolkit report build`
-  remain scaffold-only and currently exit with code `2`.
+- `toolkit pentest run` and `toolkit chaos run` remain scaffold-only and
+  currently exit with code `2`.
 
 ## Project Overview (Future Intent)
 
@@ -104,10 +106,12 @@ These instructions apply to this repository directory. If a deeper
   - `toolkit validate` loads and validates repository YAML config from the
     current working directory and exits with `0` on success or `2` on
     validation/runtime failure
-  - `toolkit pentest run`, `toolkit chaos run`, and `toolkit report build`
-    remain scaffold-only and exit with `2`
-- Do not claim that scanning, chaos execution, or report building already work
-  end-to-end.
+  - `toolkit report build` rebuilds a Markdown summary from
+    `outputs/<run-id>/normalized/findings.json` and exits with `0` on success
+    or `2` on runtime/input failure
+  - `toolkit pentest run` and `toolkit chaos run` remain scaffold-only and exit
+    with `2`
+- Do not claim that scanning or chaos execution already work end-to-end.
 
 ## Future CLI Commands & Interfaces
 

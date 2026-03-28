@@ -14,8 +14,11 @@ Current command behavior:
 - `toolkit validate` loads the repository YAML files from the current working
   directory, validates the selected `--app/--env` pair, and exits with `0` on
   success
-- `toolkit pentest run`, `toolkit chaos run`, and `toolkit report build` remain
-  scaffold-only and currently exit with code `2`
+- `toolkit report build` reads `outputs/<run-id>/normalized/findings.json`,
+  writes `outputs/<run-id>/reports/executive-summary.md`, and exits with `0` on
+  success
+- `toolkit pentest run` and `toolkit chaos run` remain scaffold-only and
+  currently exit with code `2`
 
 Stable exit-code contract:
 

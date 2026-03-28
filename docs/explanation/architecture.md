@@ -17,12 +17,11 @@ Implemented now:
 - CLI registration and exit-code contract
 - YAML config loading, model validation, and cross-file validation
 - run artifact contract and initial `run_context` helpers
-- normalized result model and basic report builder scaffolding
+- normalized result model, persisted result bundles, and report rebuilding from
+  stored run data
 
 Planned next:
 
-- persisted normalized result bundles
-- report generation from stored run artifacts
 - pentest orchestration through external tool adapters
 - chaos orchestration through safe proxy-based experiments
 
@@ -247,10 +246,10 @@ even when underlying tools differ.
 Current state:
 
 - `toolkit validate` is implemented end-to-end for config validation
-- `toolkit pentest run`, `toolkit chaos run`, and `toolkit report build`
-  remain scaffold-only
-- config validation and run-context structure are the main implemented
-  foundations
+- `toolkit report build` is implemented for existing normalized result bundles
+- `toolkit pentest run` and `toolkit chaos run` remain scaffold-only
+- config validation, run-context structure, and report rebuilding are the main
+  implemented foundations
 
 Planned expansion:
 

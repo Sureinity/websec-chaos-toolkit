@@ -9,10 +9,11 @@ The current state is intentionally narrow:
   sample config files exist
 - `toolkit validate` is implemented against the current config bundle and exit
   code contract
-- operational scanners, chaos adapters, report generation, and full config
-  validation are not implemented yet
-- `toolkit pentest run`, `toolkit chaos run`, and `toolkit report build`
-  remain scaffold-only and currently exit with code `2`
+- `toolkit report build` is implemented for stored normalized result bundles
+- operational scanners, chaos adapters, and full execution flows are not
+  implemented yet
+- `toolkit pentest run` and `toolkit chaos run` remain scaffold-only and
+  currently exit with code `2`
 
 ## Bootstrap Layout
 
@@ -35,6 +36,7 @@ uv sync --extra dev
 uv run pre-commit install
 uv run pytest
 uv run toolkit validate --app sample-internal-app --env local
+uv run toolkit report build --run-id <existing-run-id>
 ```
 
 ## Command Tree
@@ -49,8 +51,9 @@ toolkit report build --run-id <id>
 ```
 
 `toolkit validate` now performs real configuration loading and validation.
-`toolkit pentest run`, `toolkit chaos run`, and `toolkit report build` remain
-scaffold-only.
+`toolkit report build` now rebuilds Markdown summaries from stored normalized
+results.
+`toolkit pentest run` and `toolkit chaos run` remain scaffold-only.
 
 ## Sample Configs
 
