@@ -5,6 +5,12 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from toolkit.core.run_context import RunRequest, prepare_run_context
+from toolkit.reports.builder import (
+    build_markdown_summary,
+    build_markdown_summary_from_run_dir,
+    executive_summary_path,
+    write_markdown_summary,
+)
 from toolkit.results.io import (
     read_normalized_results,
     read_normalized_results_from_path,
@@ -124,3 +130,69 @@ class NormalizedResultsIoTests(unittest.TestCase):
 
         self.assertEqual(len(loaded_results), 1)
         self.assertEqual(loaded_results[0].remediation_summary, "Set the missing security header.")
+
+
+class ReportBuilderTests(unittest.TestCase):
+    def test_build_markdown_summary_groups_by_app_and_severity(self) -> None:
+        results = [
+            build_result(severity="medium", tool="nuclei", category="exposure"),
+            build_result(severity="high", tool="zap", category="headers"),
+            build_result(
+                app_id="sample-api",
+                target="https://staging.internal.example",
+                severity="low",
+                tool="nmap",
+                category="ports",
+                remediation_summary="Close the exposed port.",
+            ),
+        ]
+
+        summary = build_markdown_summary("20260328-020304-deadbeef", results)
+
+        self.assertIn("# Run Summary: 20260328-020304-deadbeef", summary)
+        self.assertIn("## sample-api", summary)
+        self.assertIn("## sample-app", summary)
+        self.assertIn("### high (1)", summary)
+        self.assertIn("### medium (1)", summary)
+        self.assertIn("### low (1)", summary)
+        self.assertIn("- Tool: zap", summary)
+        self.assertIn("- Tool: nuclei", summary)
+        self.assertIn("- Tool: nmap", summary)
+
+    def test_build_markdown_summary_handles_empty_runs(self) -> None:
+        summary = build_markdown_summary("20260328-020304-deadbeef", [])
+
+        self.assertIn("Total findings: 0", summary)
+        self.assertIn("No findings were normalized for this run.", summary)
+
+    def test_write_markdown_summary_rebuilds_from_stored_bundle(self) -> None:
+        request = RunRequest(
+            app_id="sample-app",
+            environment="local",
+            profile="safe-baseline",
+            modules=("pentest",),
+        )
+        results = [
+            build_result(severity="high", tool="zap", category="headers"),
+            build_result(tool="nuclei", category="exposure", severity="medium"),
+        ]
+
+        with TemporaryDirectory() as temp_dir_name:
+            project_root = Path(temp_dir_name)
+            context = prepare_run_context(
+                project_root,
+                request,
+                run_id="20260328-020304-deadbeef",
+            )
+            write_normalized_results(context, results)
+
+            rebuilt_summary = build_markdown_summary_from_run_dir(context.run_dir)
+            summary_path = write_markdown_summary(context.run_dir)
+            written_summary = summary_path.read_text(encoding="utf-8")
+
+        self.assertEqual(summary_path, executive_summary_path(context.run_dir))
+        self.assertTrue(written_summary.endswith("\n"))
+        self.assertEqual(written_summary.rstrip("\n"), rebuilt_summary)
+        self.assertIn("## sample-app", rebuilt_summary)
+        self.assertIn("### high (1)", rebuilt_summary)
+        self.assertIn("### medium (1)", rebuilt_summary)
