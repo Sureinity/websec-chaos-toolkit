@@ -13,6 +13,9 @@ These instructions apply to this repository directory. If a deeper
 - `toolkit validate` is now implemented for config loading and validation.
 - `toolkit report build` is now implemented for stored normalized result
   bundles.
+- Fixture-driven scanner adapters for ZAP, Nuclei, and Nmap are implemented
+  with a shared contract, process runner, and normalizers. They are not yet
+  wired into scanner orchestration.
 - The repository does not yet contain working scanner orchestration, live chaos
   execution, full schema validation coverage, notification delivery, or
   end-to-end report generation pipelines.
@@ -215,7 +218,7 @@ Planned / Future Expectations
 - Build the project in this order unless a documented reason requires a
   different sequence:
   - configuration schema, CLI skeleton, validation flow, and report scaffolding
-  - ZAP, Nuclei, and Nmap adapters with normalized findings
+  - ~~ZAP, Nuclei, and Nmap adapters with normalized findings~~ (implemented)
   - Toxiproxy-based chaos runner with health or metrics baseline and abort logic
   - scheduler-facing docs, sample configs, and pilot coverage for one or two
     internal apps

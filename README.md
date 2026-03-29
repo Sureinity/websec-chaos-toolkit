@@ -10,8 +10,9 @@ The current state is intentionally narrow:
 - `toolkit validate` is implemented against the current config bundle and exit
   code contract
 - `toolkit report build` is implemented for stored normalized result bundles
-- operational scanners, chaos adapters, and full execution flows are not
-  implemented yet
+- fixture-driven scanner adapters (ZAP, Nuclei, Nmap) are implemented with a
+  shared contract and normalizers; execution-backed scanning, chaos adapters,
+  and full execution flows are not yet wired
 - `toolkit pentest run` and `toolkit chaos run` remain scaffold-only and
   currently exit with code `2`
 
