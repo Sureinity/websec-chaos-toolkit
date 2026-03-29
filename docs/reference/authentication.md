@@ -9,8 +9,9 @@ Current state:
 - config-level auth validation is implemented
 - env-backed runtime auth resolution is implemented for `bearer_token`,
   `cookie`, and `session`
-- form login helpers and the final shared session/auth interface are not
-  implemented yet
+- direct form login is implemented for standard `username` / `password` POST
+  fields and cookie-based session reuse
+- the final shared session/auth interface is not implemented yet
 - this document is still the contract the remaining auth helpers should follow
 
 ## Supported Auth Modes
@@ -56,6 +57,8 @@ Anything outside this list is out of scope for v1.
 - perform a scripted HTTP login against `login_url`
 - resolve credentials only from `username_env_var` and `password_env_var`
 - return reusable authenticated session material derived from the login flow
+- submit standard `username` and `password` form fields
+- treat reusable cookies as the success signal for the current implementation
 - do not attempt browser automation, SSO handshakes, or MFA bypass
 
 ## Failure Policy
