@@ -92,3 +92,60 @@ class ToolAdapter(Protocol):
 
     def build_execution(self) -> ToolExecution:
         """Return the safe command the adapter would run."""
+
+
+def build_success_result(
+    tool: str,
+    *,
+    execution: ToolExecution | None = None,
+    availability: AdapterAvailability | None = None,
+    artifacts: tuple[ToolArtifact, ...] = (),
+    findings: tuple[NormalizedResult, ...] = (),
+) -> AdapterRunResult:
+    """Build a successful adapter outcome."""
+
+    return AdapterRunResult(
+        tool=tool,
+        execution=execution,
+        availability=availability,
+        artifacts=artifacts,
+        findings=findings,
+    )
+
+
+def build_skipped_result(
+    tool: str,
+    *,
+    skip_reason: AdapterSkipReason,
+    execution: ToolExecution | None = None,
+    availability: AdapterAvailability | None = None,
+    artifacts: tuple[ToolArtifact, ...] = (),
+) -> AdapterRunResult:
+    """Build a skipped adapter outcome."""
+
+    return AdapterRunResult(
+        tool=tool,
+        execution=execution,
+        availability=availability,
+        artifacts=artifacts,
+        skip_reason=skip_reason,
+    )
+
+
+def build_failed_result(
+    tool: str,
+    *,
+    error_detail: str,
+    execution: ToolExecution | None = None,
+    availability: AdapterAvailability | None = None,
+    artifacts: tuple[ToolArtifact, ...] = (),
+) -> AdapterRunResult:
+    """Build a hard-failure adapter outcome."""
+
+    return AdapterRunResult(
+        tool=tool,
+        execution=execution,
+        availability=availability,
+        artifacts=artifacts,
+        error_detail=error_detail,
+    )

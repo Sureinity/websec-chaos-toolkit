@@ -10,10 +10,12 @@ from toolkit.adapters.base import (
     AdapterRunResult,
     ToolArtifact,
     ToolExecution,
+    build_success_result,
 )
 from toolkit.adapters.process import check_binary_available
 from toolkit.config.models import AppConfig, PentestToolSettings
-from toolkit.results.models import NormalizedResult, ResultTimestamps
+from toolkit.results.models import NormalizedResult
+from toolkit.results.normalizers import build_normalized_result
 
 
 @dataclass(slots=True, frozen=True)
@@ -83,7 +85,7 @@ class NmapAdapter:
                 service = port.find("service")
                 port_id = port.attrib.get("portid", "")
                 findings.append(
-                    NormalizedResult(
+                    build_normalized_result(
                         app_id=self.app.id,
                         environment=self.app.environment,
                         target=f"{host_target}:{port_id}",
@@ -93,10 +95,8 @@ class NmapAdapter:
                         confidence="high",
                         evidence=_build_evidence(service_name=service.attrib.get("name", "") if service is not None else "", port_id=port_id),
                         remediation_summary=_build_remediation_summary(service_name=service.attrib.get("name", "") if service is not None else "", port_id=port_id),
-                        timestamps=ResultTimestamps(
-                            started_at=resolved_started_at,
-                            finished_at=finished_at,
-                        ),
+                        started_at=resolved_started_at,
+                        finished_at=finished_at,
                     )
                 )
 
@@ -110,8 +110,8 @@ class NmapAdapter:
         started_at: datetime | None = None,
         finished_at: datetime | None = None,
     ) -> AdapterRunResult:
-        return AdapterRunResult(
-            tool=self.name,
+        return build_success_result(
+            self.name,
             execution=self.build_execution(),
             availability=availability or AdapterAvailability(available=True, binary=self.binary),
             artifacts=(self.build_raw_artifact(),),

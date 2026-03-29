@@ -10,10 +10,12 @@ from toolkit.adapters.base import (
     AdapterRunResult,
     ToolArtifact,
     ToolExecution,
+    build_success_result,
 )
 from toolkit.adapters.process import check_binary_available
 from toolkit.config.models import AppConfig, PentestToolSettings
-from toolkit.results.models import NormalizedResult, ResultTimestamps
+from toolkit.results.models import NormalizedResult
+from toolkit.results.normalizers import build_normalized_result
 
 
 @dataclass(slots=True, frozen=True)
@@ -78,20 +80,18 @@ class NucleiAdapter:
                 continue
             payload = json.loads(stripped)
             findings.append(
-                NormalizedResult(
+                build_normalized_result(
                     app_id=self.app.id,
                     environment=self.app.environment,
                     target=payload.get("matched-at", str(self.app.base_url)),
                     tool=self.name,
                     category=_category_from_template(payload.get("template-id", "unknown")),
-                    severity=_normalize_severity(payload.get("info", {}).get("severity")),
+                    severity=payload.get("info", {}).get("severity"),
                     confidence=_derive_confidence(payload),
                     evidence=_build_evidence(payload),
                     remediation_summary=_build_remediation_summary(payload),
-                    timestamps=ResultTimestamps(
-                        started_at=resolved_started_at,
-                        finished_at=finished_at,
-                    ),
+                    started_at=resolved_started_at,
+                    finished_at=finished_at,
                 )
             )
 
@@ -105,8 +105,8 @@ class NucleiAdapter:
         started_at: datetime | None = None,
         finished_at: datetime | None = None,
     ) -> AdapterRunResult:
-        return AdapterRunResult(
-            tool=self.name,
+        return build_success_result(
+            self.name,
             execution=self.build_execution(),
             availability=availability or AdapterAvailability(available=True, binary=self.binary),
             artifacts=(self.build_raw_artifact(),),
@@ -116,13 +116,6 @@ class NucleiAdapter:
                 finished_at=finished_at,
             ),
         )
-
-
-def _normalize_severity(value: str | None) -> str:
-    normalized = (value or "info").strip().lower()
-    if normalized in {"critical", "high", "medium", "low", "info"}:
-        return normalized
-    return "info"
 
 
 def _derive_confidence(payload: dict[str, object]) -> str:

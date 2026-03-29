@@ -10,10 +10,34 @@ from toolkit.adapters.base import (
     AdapterRunResult,
     ToolArtifact,
     ToolExecution,
+    build_success_result,
 )
 from toolkit.adapters.process import check_binary_available
 from toolkit.config.models import AppConfig, PentestToolSettings
-from toolkit.results.models import NormalizedResult, ResultTimestamps
+from toolkit.results.models import NormalizedResult
+from toolkit.results.normalizers import build_normalized_result
+
+_RISKCODE_MAPPING = {
+    "0": "info",
+    "1": "low",
+    "2": "medium",
+    "3": "high",
+    0: "info",
+    1: "low",
+    2: "medium",
+    3: "high",
+}
+
+_CONFIDENCE_MAPPING = {
+    "0": "low",
+    "1": "medium",
+    "2": "high",
+    "3": "high",
+    0: "low",
+    1: "medium",
+    2: "high",
+    3: "high",
+}
 
 
 @dataclass(slots=True, frozen=True)
@@ -74,20 +98,20 @@ class ZapAdapter:
                 if category not in self.settings.allowlisted_rules:
                     continue
                 findings.append(
-                    NormalizedResult(
+                    build_normalized_result(
                         app_id=self.app.id,
                         environment=self.app.environment,
                         target=_target_from_alert(alert, site.get("@name", str(self.app.base_url))),
                         tool=self.name,
                         category=category,
-                        severity=_severity_from_riskcode(alert.get("riskcode")),
-                        confidence=_confidence_from_confidence(alert.get("confidence")),
+                        severity=alert.get("riskcode"),
+                        confidence=alert.get("confidence"),
                         evidence=_build_evidence(alert),
                         remediation_summary=_build_remediation_summary(alert),
-                        timestamps=ResultTimestamps(
-                            started_at=resolved_started_at,
-                            finished_at=finished_at,
-                        ),
+                        started_at=resolved_started_at,
+                        finished_at=finished_at,
+                        severity_mapping=_RISKCODE_MAPPING,
+                        confidence_mapping=_CONFIDENCE_MAPPING,
                     )
                 )
 
@@ -101,8 +125,8 @@ class ZapAdapter:
         started_at: datetime | None = None,
         finished_at: datetime | None = None,
     ) -> AdapterRunResult:
-        return AdapterRunResult(
-            tool=self.name,
+        return build_success_result(
+            self.name,
             execution=self.build_execution(),
             availability=availability or AdapterAvailability(available=True, binary=self.binary),
             artifacts=(self.build_raw_artifact(),),
@@ -112,34 +136,6 @@ class ZapAdapter:
                 finished_at=finished_at,
             ),
         )
-
-
-def _severity_from_riskcode(value: str | int | None) -> str:
-    mapping = {
-        "0": "info",
-        "1": "low",
-        "2": "medium",
-        "3": "high",
-        0: "info",
-        1: "low",
-        2: "medium",
-        3: "high",
-    }
-    return mapping.get(value, "info")
-
-
-def _confidence_from_confidence(value: str | int | None) -> str:
-    mapping = {
-        "0": "low",
-        "1": "medium",
-        "2": "high",
-        "3": "high",
-        0: "low",
-        1: "medium",
-        2: "high",
-        3: "high",
-    }
-    return mapping.get(value, "medium")
 
 
 def _category_from_alert_name(name: str) -> str:
