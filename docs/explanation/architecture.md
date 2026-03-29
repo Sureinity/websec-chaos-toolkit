@@ -7,11 +7,10 @@ organized around, and the core structures that move through the system.
 ## Overview
 
 The toolkit is a Python-first CLI for safe internal testing in `local` and
-`staging`. The current implementation has two real command paths —
-`toolkit validate` and `toolkit report build` — with scaffolding for the
-future `pentest` and `chaos` workflows. The architecture is intentionally
-split early so later scanner and chaos integrations do not collapse into
-shell-heavy code.
+`staging`. The current implementation has three real command paths —
+`toolkit validate`, `toolkit pentest run`, and `toolkit report build` — with
+scaffolding for the future `chaos` workflow. The architecture is intentionally
+split early so later chaos integrations do not collapse into shell-heavy code.
 
 Implemented now:
 
@@ -23,10 +22,11 @@ Implemented now:
 - runtime auth resolution and shared auth/session payloads
 - the shared scanner adapter contract
 - the shared process runner and fixture-driven zap, nuclei, and nmap adapters
+- fixture-backed pentest planner and orchestration runner
 
 Planned next:
 
-- pentest orchestration through external tool adapters
+- execution-backed pentest scanning through real external tool binaries
 - chaos orchestration through safe proxy-based experiments
 
 ## Architectural Principles
@@ -46,7 +46,7 @@ flowchart TD
     config[Repository YAML config]
     validate[Validate flow<br/>Implemented]
     runctx[Run context and outputs<br/>Implemented]
-    pentest[Pentest orchestration<br/>Planned]
+    pentest[Pentest orchestration<br/>Fixture-backed]
     chaos[Chaos orchestration<br/>Planned]
     report[Report build<br/>Implemented]
     outputs[outputs/<run-id>/...]
@@ -112,7 +112,8 @@ Key boundaries:
 - `adapters/` owns the scanner contract, shared process runner, and the current
   fixture-driven zap, nuclei, and nmap implementations today, and will own the
   execution-backed concrete tool boundaries next
-- `pentest/` and `chaos/` will own orchestration flows
+- `pentest/` owns the fixture-backed planner and orchestration runner; will own execution-backed flows next
+- `chaos/` will own chaos orchestration flows
 - `results/` owns normalized finding contracts
 - `reports/` owns rendered outputs
 - `safety/` owns fail-closed checks shared across workflows
@@ -222,8 +223,7 @@ cannot be made safe by construction.
 
 ## Run Artifact Structure
 
-The planned run workspace is already fixed even though the execution flows are
-not yet complete.
+The run workspace is implemented and in use by the fixture-backed pentest flow.
 
 ```mermaid
 flowchart TD
@@ -260,8 +260,7 @@ Current state:
 
 Planned expansion:
 
-- `results/io` and report loading/writing for persisted bundles
-- safe adapters for ZAP, Nuclei, Nmap, and optional Trivy/Semgrep
-- pentest orchestration that writes raw artifacts and normalized findings
+- execution-backed pentest scanning through real external tool binaries
+- optional Trivy and Semgrep adapters for local code, artifact, or image checks
 - chaos orchestration that records baseline, fault execution, rollback, and
   recovery state

@@ -223,6 +223,7 @@ Planned / Future Expectations
   different sequence:
   - configuration schema, CLI skeleton, validation flow, and report scaffolding
   - ~~ZAP, Nuclei, and Nmap adapters with normalized findings~~ (implemented)
+  - ~~fixture-backed pentest planner and orchestration runner~~ (implemented)
   - Toxiproxy-based chaos runner with health or metrics baseline and abort logic
   - scheduler-facing docs, sample configs, and pilot coverage for one or two
     internal apps
