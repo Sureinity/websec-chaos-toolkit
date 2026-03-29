@@ -68,6 +68,9 @@ Locked auth rules:
 Config stores references only. Real tokens, cookie values, usernames,
 passwords, and session material must come from the runtime environment.
 
+Runtime auth behavior, failure policy, and unsupported flows are defined in
+`docs/reference/authentication.md`.
+
 Repository-root sample coverage:
 
 - `sample-internal-app`
