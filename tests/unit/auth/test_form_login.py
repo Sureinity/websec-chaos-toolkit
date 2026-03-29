@@ -56,8 +56,18 @@ class FormLoginUnitTests(unittest.TestCase):
         self.assertEqual(session.method, "form")
         self.assertEqual(session.cookies, {"sessionid": "session-cookie"})
         self.assertEqual(session.headers, {})
-        self.assertEqual(session.final_url, "https://staging.internal.example/dashboard")
-        self.assertEqual(session.status_code, HTTPStatus.OK)
+        self.assertTrue(session.is_authenticated)
+        self.assertEqual(
+            session.provenance,
+            {
+                "source": "form_login",
+                "login_url": "https://staging.internal.example/login",
+                "username_env_var": "SECURITY_TEST_USERNAME",
+                "password_env_var": "SECURITY_TEST_PASSWORD",
+                "final_url": "https://staging.internal.example/dashboard",
+                "status_code": "200",
+            },
+        )
 
     def test_perform_form_login_raises_for_missing_username_env_var(self) -> None:
         with self.assertRaises(MissingEnvironmentVariableError) as context:

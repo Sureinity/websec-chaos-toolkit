@@ -11,7 +11,8 @@ Current state:
   `cookie`, and `session`
 - direct form login is implemented for standard `username` / `password` POST
   fields and cookie-based session reuse
-- the final shared session/auth interface is not implemented yet
+- a shared runtime auth/session payload is implemented for supported auth modes
+- the higher-level auth bootstrap entrypoint is not implemented yet
 - this document is still the contract the remaining auth helpers should follow
 
 ## Supported Auth Modes
@@ -91,15 +92,15 @@ These flows must fail explicitly rather than partially working:
 - CAPTCHAs or human-verification checkpoints
 - any flow that requires manual operator intervention mid-run
 
-## Future Runtime Shape
+## Runtime Session Shape
 
-The runtime auth layer should normalize all supported modes into one reusable
-session/auth payload for adapters. That payload should be able to describe:
+The runtime auth layer now normalizes supported modes into one reusable
+session/auth payload for adapters. That payload describes:
 
 - auth method
 - headers to inject
 - cookies to inject
 - limited, redacted provenance metadata
 
-That normalized runtime shape is implemented in a later checkpoint, but the
-behavior above is already fixed by this contract.
+The remaining auth checkpoints build on top of that shared runtime shape rather
+than replacing it.

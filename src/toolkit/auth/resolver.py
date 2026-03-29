@@ -1,6 +1,5 @@
 """Runtime resolution helpers for environment-backed auth modes."""
 
-from dataclasses import dataclass, field
 import os
 from typing import Literal
 
@@ -9,25 +8,17 @@ from toolkit.auth.errors import (
     MissingEnvironmentVariableError,
     UnsupportedAuthFlowError,
 )
+from toolkit.auth.session import AuthSession
 from toolkit.config.models import AuthConfig
 
 ResolvedEnvAuthMethod = Literal["bearer_token", "cookie", "session"]
-
-
-@dataclass(slots=True, frozen=True)
-class ResolvedAuthMaterial:
-    """Normalized auth material for env-backed injection modes."""
-
-    method: ResolvedEnvAuthMethod
-    headers: dict[str, str] = field(default_factory=dict)
-    cookies: dict[str, str] = field(default_factory=dict)
 
 
 def resolve_supported_env_auth(
     auth_config: AuthConfig,
     *,
     environ: dict[str, str] | None = None,
-) -> ResolvedAuthMaterial:
+) -> AuthSession:
     """Resolve one of the env-backed v1 auth modes into injection material."""
 
     resolved_environ = os.environ if environ is None else environ
@@ -49,7 +40,7 @@ def resolve_bearer_auth(
     auth_config: AuthConfig,
     *,
     environ: dict[str, str] | None = None,
-) -> ResolvedAuthMaterial:
+) -> AuthSession:
     """Resolve bearer-token auth to a standard authorization header."""
 
     _ensure_method(auth_config, expected_method="bearer_token")
@@ -60,9 +51,13 @@ def resolve_bearer_auth(
         environ=resolved_environ,
     )
 
-    return ResolvedAuthMaterial(
+    return AuthSession(
         method="bearer_token",
         headers={"Authorization": f"Bearer {token}"},
+        provenance={
+            "source": "env",
+            "token_env_var": auth_config.token_env_var,
+        },
     )
 
 
@@ -70,7 +65,7 @@ def resolve_cookie_auth(
     auth_config: AuthConfig,
     *,
     environ: dict[str, str] | None = None,
-) -> ResolvedAuthMaterial:
+) -> AuthSession:
     """Resolve cookie auth to a cookie injection mapping."""
 
     _ensure_method(auth_config, expected_method="cookie")
@@ -81,9 +76,14 @@ def resolve_cookie_auth(
         environ=resolved_environ,
     )
 
-    return ResolvedAuthMaterial(
+    return AuthSession(
         method="cookie",
         cookies={auth_config.cookie_name: cookie_value},
+        provenance={
+            "source": "env",
+            "cookie_name": auth_config.cookie_name,
+            "cookie_value_env_var": auth_config.cookie_value_env_var,
+        },
     )
 
 
@@ -91,7 +91,7 @@ def resolve_session_auth(
     auth_config: AuthConfig,
     *,
     environ: dict[str, str] | None = None,
-) -> ResolvedAuthMaterial:
+) -> AuthSession:
     """Resolve session auth to a header injection mapping."""
 
     _ensure_method(auth_config, expected_method="session")
@@ -102,9 +102,14 @@ def resolve_session_auth(
         environ=resolved_environ,
     )
 
-    return ResolvedAuthMaterial(
+    return AuthSession(
         method="session",
         headers={auth_config.session_header: session_value},
+        provenance={
+            "source": "env",
+            "session_header": auth_config.session_header,
+            "session_value_env_var": auth_config.session_value_env_var,
+        },
     )
 
 

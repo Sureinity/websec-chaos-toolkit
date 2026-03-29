@@ -32,6 +32,11 @@ class AuthResolverTests(unittest.TestCase):
             {"Authorization": "Bearer secret-token"},
         )
         self.assertEqual(resolved.cookies, {})
+        self.assertTrue(resolved.is_authenticated)
+        self.assertEqual(
+            resolved.provenance,
+            {"source": "env", "token_env_var": "SECURITY_TEST_BEARER_TOKEN"},
+        )
 
     def test_resolve_cookie_auth_returns_cookie_mapping(self) -> None:
         auth_config = AuthConfig(
@@ -48,6 +53,15 @@ class AuthResolverTests(unittest.TestCase):
         self.assertEqual(resolved.method, "cookie")
         self.assertEqual(resolved.headers, {})
         self.assertEqual(resolved.cookies, {"sessionid": "cookie-value"})
+        self.assertTrue(resolved.is_authenticated)
+        self.assertEqual(
+            resolved.provenance,
+            {
+                "source": "env",
+                "cookie_name": "sessionid",
+                "cookie_value_env_var": "SECURITY_TEST_COOKIE",
+            },
+        )
 
     def test_resolve_session_auth_returns_header_mapping(self) -> None:
         auth_config = AuthConfig(
@@ -64,6 +78,15 @@ class AuthResolverTests(unittest.TestCase):
         self.assertEqual(resolved.method, "session")
         self.assertEqual(resolved.cookies, {})
         self.assertEqual(resolved.headers, {"X-Session-ID": "session-value"})
+        self.assertTrue(resolved.is_authenticated)
+        self.assertEqual(
+            resolved.provenance,
+            {
+                "source": "env",
+                "session_header": "X-Session-ID",
+                "session_value_env_var": "SECURITY_TEST_SESSION",
+            },
+        )
 
     def test_dispatch_resolves_supported_env_auth_modes(self) -> None:
         bearer_config = AuthConfig(

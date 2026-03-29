@@ -1,9 +1,7 @@
 """Direct HTTP form-login helpers for username/password auth."""
 
-from dataclasses import dataclass, field
 import os
 import re
-from typing import Literal
 
 import httpx
 
@@ -14,21 +12,11 @@ from toolkit.auth.errors import (
     MissingSessionMaterialError,
     UnsupportedAuthFlowError,
 )
+from toolkit.auth.session import AuthSession
 from toolkit.config.models import AuthConfig
 
 UNSUPPORTED_LOGIN_MARKERS = ("sso", "mfa", "captcha", "multi-factor")
 _WHITESPACE_RE = re.compile(r"\s+")
-
-
-@dataclass(slots=True, frozen=True)
-class FormLoginSession:
-    """Reusable authenticated session material produced by a login flow."""
-
-    method: Literal["form"]
-    cookies: dict[str, str]
-    headers: dict[str, str] = field(default_factory=dict)
-    final_url: str | None = None
-    status_code: int | None = None
 
 
 def perform_form_login(
@@ -37,7 +25,7 @@ def perform_form_login(
     environ: dict[str, str] | None = None,
     client: httpx.Client | None = None,
     timeout: float = 10.0,
-) -> FormLoginSession:
+) -> AuthSession:
     """Resolve credentials from env vars and perform a direct HTTP form login."""
 
     if auth_config.method != "form":
@@ -66,6 +54,8 @@ def perform_form_login(
             login_url=login_url,
             username=username,
             password=password,
+            username_env_var=auth_config.username_env_var,
+            password_env_var=auth_config.password_env_var,
             secrets=secrets,
         )
 
@@ -75,6 +65,8 @@ def perform_form_login(
             login_url=login_url,
             username=username,
             password=password,
+            username_env_var=auth_config.username_env_var,
+            password_env_var=auth_config.password_env_var,
             secrets=secrets,
         )
 
@@ -85,8 +77,10 @@ def _perform_login_request(
     login_url: str,
     username: str,
     password: str,
+    username_env_var: str,
+    password_env_var: str,
     secrets: tuple[str, ...],
-) -> FormLoginSession:
+) -> AuthSession:
     try:
         response = client.post(
             login_url,
@@ -124,11 +118,17 @@ def _perform_login_request(
             secrets=secrets,
         )
 
-    return FormLoginSession(
+    return AuthSession(
         method="form",
         cookies=cookies,
-        final_url=str(response.url),
-        status_code=response.status_code,
+        provenance={
+            "source": "form_login",
+            "login_url": login_url,
+            "username_env_var": username_env_var,
+            "password_env_var": password_env_var,
+            "final_url": str(response.url),
+            "status_code": str(response.status_code),
+        },
     )
 
 
