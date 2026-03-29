@@ -20,6 +20,8 @@ Implemented now:
 - full `run_context` module with run directory preparation, manifest writing, and stable path helpers
 - normalized result model, persisted result bundles, and report rebuilding from
   stored run data
+- runtime auth resolution and shared auth/session payloads
+- the shared scanner adapter contract
 
 Planned next:
 
@@ -106,7 +108,8 @@ Key boundaries:
   cross-file validation
 - `core/` owns shared execution concepts such as exit codes and run context
 - `auth/` owns runtime auth resolution and session helpers
-- `adapters/` will own external tool boundaries
+- `adapters/` owns the scanner contract today and will own concrete external
+  tool boundaries next
 - `pentest/` and `chaos/` will own orchestration flows
 - `results/` owns normalized finding contracts
 - `reports/` owns rendered outputs

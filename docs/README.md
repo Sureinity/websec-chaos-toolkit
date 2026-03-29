@@ -10,5 +10,8 @@ The documentation scaffold follows the Diataxis framework:
 The main system overview and high-level architecture live in
 `docs/explanation/architecture.md`.
 
+The scanner adapter contract lives in
+`docs/reference/pentest-adapters.md`.
+
 The implementation milestone plan lives in
 `docs/explanation/implementation-roadmap.md`.
