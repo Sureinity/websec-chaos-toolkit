@@ -86,8 +86,8 @@ class FormLoginIntegrationTests(unittest.TestCase):
         )
 
         self.assertEqual(session.cookies, {"sessionid": "session-cookie"})
-        self.assertEqual(session.final_url, f"{self.base_url}/dashboard")
-        self.assertEqual(session.status_code, HTTPStatus.OK)
+        self.assertEqual(session.provenance["final_url"], f"{self.base_url}/dashboard")
+        self.assertEqual(session.provenance["status_code"], "200")
 
     def test_form_login_rejects_mfa_page_from_local_server(self) -> None:
         _LoginHandler.mode = "mfa"

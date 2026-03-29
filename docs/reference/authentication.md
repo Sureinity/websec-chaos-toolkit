@@ -12,7 +12,8 @@ Current state:
 - direct form login is implemented for standard `username` / `password` POST
   fields and cookie-based session reuse
 - a shared runtime auth/session payload is implemented for supported auth modes
-- the higher-level auth bootstrap entrypoint is not implemented yet
+- a higher-level auth bootstrap entrypoint is implemented for validated app
+  config
 - this document is still the contract the remaining auth helpers should follow
 
 ## Supported Auth Modes
@@ -102,5 +103,11 @@ session/auth payload for adapters. That payload describes:
 - cookies to inject
 - limited, redacted provenance metadata
 
-The remaining auth checkpoints build on top of that shared runtime shape rather
-than replacing it.
+The current bootstrap entrypoint resolves a validated app config into that
+shared runtime session shape for:
+
+- `none`
+- `bearer_token`
+- `cookie`
+- `session`
+- `form`
