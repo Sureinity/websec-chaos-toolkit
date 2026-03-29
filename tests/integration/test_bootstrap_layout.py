@@ -16,3 +16,4 @@ class BootstrapLayoutTests(unittest.TestCase):
         self.assertTrue((root / "tests" / "integration" / "test_form_login.py").is_file())
         self.assertTrue((root / "tests" / "integration" / "test_auth_resolution.py").is_file())
         self.assertTrue((root / "tests" / "integration" / "test_tool_adapters_external.py").is_file())
+        self.assertTrue((root / "tests" / "integration" / "test_pentest_run.py").is_file())
