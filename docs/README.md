@@ -13,5 +13,8 @@ The main system overview and high-level architecture live in
 The scanner adapter contract lives in
 `docs/reference/pentest-adapters.md`.
 
+The pentest orchestration contract lives in
+`docs/reference/pentest-run.md`.
+
 The implementation milestone plan lives in
 `docs/explanation/implementation-roadmap.md`.
