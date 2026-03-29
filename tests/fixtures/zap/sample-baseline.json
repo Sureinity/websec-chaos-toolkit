@@ -1,0 +1,45 @@
+{
+  "site": [
+    {
+      "@name": "http://localhost:8000",
+      "alerts": [
+        {
+          "pluginid": "10020",
+          "name": "X-Frame-Options Header Not Set",
+          "riskcode": "1",
+          "confidence": "2",
+          "desc": "The X-Frame-Options header is not set.",
+          "instances": [
+            {
+              "uri": "http://localhost:8000/"
+            }
+          ]
+        },
+        {
+          "pluginid": "10096",
+          "name": "TLS Server Supports Weak Cipher Suites",
+          "riskcode": "2",
+          "confidence": "2",
+          "desc": "The server supports weak TLS cipher suites.",
+          "instances": [
+            {
+              "uri": "https://localhost:8443/"
+            }
+          ]
+        },
+        {
+          "pluginid": "10095",
+          "name": "Cookie No HttpOnly Flag",
+          "riskcode": "1",
+          "confidence": "1",
+          "desc": "A cookie was set without the HttpOnly flag.",
+          "instances": [
+            {
+              "uri": "http://localhost:8000/login"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

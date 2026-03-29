@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun>
+  <host>
+    <address addr="127.0.0.1" addrtype="ipv4" />
+    <ports>
+      <port protocol="tcp" portid="23">
+        <state state="open" reason="syn-ack" />
+        <service name="telnet" product="BusyBox telnetd" />
+      </port>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack" />
+        <service name="http" product="nginx" />
+      </port>
+      <port protocol="tcp" portid="22">
+        <state state="closed" reason="reset" />
+        <service name="ssh" product="OpenSSH" />
+      </port>
+    </ports>
+  </host>
+</nmaprun>
