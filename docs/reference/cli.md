@@ -14,11 +14,13 @@ Current command behavior:
 - `toolkit validate` loads the repository YAML files from the current working
   directory, validates the selected `--app/--env` pair, and exits with `0` on
   success
+- `toolkit pentest run` executes the current fixture-driven pentest flow,
+  writes run artifacts under `outputs/<run-id>/`, and exits with `0`, `1`, or
+  `2` according to the pentest outcome contract
 - `toolkit report build` reads `outputs/<run-id>/normalized/findings.json`,
   writes `outputs/<run-id>/reports/executive-summary.md`, and exits with `0` on
   success
-- `toolkit pentest run` and `toolkit chaos run` remain scaffold-only and
-  currently exit with code `2`
+- `toolkit chaos run` remains scaffold-only and currently exits with code `2`
 
 Stable exit-code contract:
 

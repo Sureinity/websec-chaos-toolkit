@@ -11,6 +11,8 @@ These instructions apply to this repository directory. If a deeper
   valid sample configuration files, basic tests, Diataxis documentation
   structure, and a scaffolded CLI surface.
 - `toolkit validate` is now implemented for config loading and validation.
+- `toolkit pentest run` is now implemented for the current fixture-backed
+  pentest flow.
 - `toolkit report build` is now implemented for stored normalized result
   bundles.
 - Fixture-driven scanner adapters for ZAP, Nuclei, and Nmap are implemented
@@ -21,8 +23,7 @@ These instructions apply to this repository directory. If a deeper
   end-to-end report generation pipelines.
 - `security-testing-resources.md` exists as placeholder background reading
   material. Treat it as reference material, not as a behavioral contract.
-- `toolkit pentest run` and `toolkit chaos run` remain scaffold-only and
-  currently exit with code `2`.
+- `toolkit chaos run` remains scaffold-only and currently exits with code `2`.
 
 ## Project Overview (Future Intent)
 
@@ -109,12 +110,15 @@ These instructions apply to this repository directory. If a deeper
   - `toolkit validate` loads and validates repository YAML config from the
     current working directory and exits with `0` on success or `2` on
     validation/runtime failure
+  - `toolkit pentest run` executes the current fixture-backed pentest flow,
+    writes raw artifacts, normalized findings, and a Markdown summary under
+    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
   - `toolkit report build` rebuilds a Markdown summary from
     `outputs/<run-id>/normalized/findings.json` and exits with `0` on success
     or `2` on runtime/input failure
-  - `toolkit pentest run` and `toolkit chaos run` remain scaffold-only and exit
-    with `2`
-- Do not claim that scanning or chaos execution already work end-to-end.
+  - `toolkit chaos run` remains scaffold-only and exits with `2`
+- Do not claim that external scanner execution or chaos execution already work
+  end-to-end.
 
 ## Future CLI Commands & Interfaces
 
