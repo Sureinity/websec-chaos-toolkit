@@ -7,8 +7,11 @@ scanner and chaos workflows.
 Current state:
 
 - config-level auth validation is implemented
-- runtime auth resolution helpers are not implemented yet
-- this document is the contract those helpers should follow
+- env-backed runtime auth resolution is implemented for `bearer_token`,
+  `cookie`, and `session`
+- form login helpers and the final shared session/auth interface are not
+  implemented yet
+- this document is still the contract the remaining auth helpers should follow
 
 ## Supported Auth Modes
 
@@ -33,7 +36,7 @@ Anything outside this list is out of scope for v1.
 ### `bearer_token`
 
 - resolve the token only from `token_env_var`
-- inject the resolved secret as an authorization header
+- inject the resolved secret as `Authorization: Bearer <token>`
 - do not support inline token values in YAML
 
 ### `cookie`
