@@ -14,7 +14,7 @@ Current state:
 - a shared runtime auth/session payload is implemented for supported auth modes
 - a higher-level auth bootstrap entrypoint is implemented for validated app
   config
-- this document is still the contract the remaining auth helpers should follow
+- this document remains the runtime auth contract for scanner and chaos adapter integration
 
 ## Supported Auth Modes
 

@@ -105,7 +105,7 @@ Key boundaries:
 - `config/` owns YAML paths, typed models, field validation, loader logic, and
   cross-file validation
 - `core/` owns shared execution concepts such as exit codes and run context
-- `auth/` will own reusable session and credential handling helpers
+- `auth/` owns runtime auth resolution and session helpers
 - `adapters/` will own external tool boundaries
 - `pentest/` and `chaos/` will own orchestration flows
 - `results/` owns normalized finding contracts
