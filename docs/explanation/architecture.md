@@ -252,10 +252,11 @@ even when underlying tools differ.
 Current state:
 
 - `toolkit validate` is implemented end-to-end for config validation
+- `toolkit pentest run` is implemented for the current fixture-backed pentest flow
 - `toolkit report build` is implemented for existing normalized result bundles
-- `toolkit pentest run` and `toolkit chaos run` remain scaffold-only
-- config validation, run-context structure, and report rebuilding are the main
-  implemented foundations
+- `toolkit chaos run` remains scaffold-only
+- config validation, run-context structure, pentest orchestration, and report
+  rebuilding are the main implemented foundations
 
 Planned expansion:
 
