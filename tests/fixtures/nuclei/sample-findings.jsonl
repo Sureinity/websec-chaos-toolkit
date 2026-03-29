@@ -1,0 +1,2 @@
+{"template-id":"http/exposures/panel", "info":{"name":"Exposed Admin Panel","severity":"medium"}, "matched-at":"http://localhost:8000/admin", "matcher-name":"word", "curl-command":"curl -X GET http://localhost:8000/admin"}
+{"template-id":"network/exposure/telnet", "info":{"name":"Telnet Exposed","severity":"high"}, "matched-at":"tcp://127.0.0.1:23", "curl-command":"nuclei -target 127.0.0.1"}

@@ -22,9 +22,11 @@ Implemented now:
   stored run data
 - runtime auth resolution and shared auth/session payloads
 - the shared scanner adapter contract
+- the shared process runner and the first concrete nuclei adapter slice
 
 Planned next:
 
+- remaining ZAP and Nmap adapter implementations
 - pentest orchestration through external tool adapters
 - chaos orchestration through safe proxy-based experiments
 
@@ -108,8 +110,9 @@ Key boundaries:
   cross-file validation
 - `core/` owns shared execution concepts such as exit codes and run context
 - `auth/` owns runtime auth resolution and session helpers
-- `adapters/` owns the scanner contract today and will own concrete external
-  tool boundaries next
+- `adapters/` owns the scanner contract, shared process runner, and the first
+  nuclei implementation slice today, and will own the remaining concrete tool
+  boundaries next
 - `pentest/` and `chaos/` will own orchestration flows
 - `results/` owns normalized finding contracts
 - `reports/` owns rendered outputs
