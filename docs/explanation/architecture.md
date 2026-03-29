@@ -7,16 +7,17 @@ organized around, and the core structures that move through the system.
 ## Overview
 
 The toolkit is a Python-first CLI for safe internal testing in `local` and
-`staging`. The current implementation has one real command path,
-`toolkit validate`, and scaffolding for the future `pentest`, `chaos`, and
-`report` workflows. The architecture is intentionally split early so later
-scanner and chaos integrations do not collapse into shell-heavy code.
+`staging`. The current implementation has two real command paths —
+`toolkit validate` and `toolkit report build` — with scaffolding for the
+future `pentest` and `chaos` workflows. The architecture is intentionally
+split early so later scanner and chaos integrations do not collapse into
+shell-heavy code.
 
 Implemented now:
 
 - CLI registration and exit-code contract
 - YAML config loading, model validation, and cross-file validation
-- run artifact contract and initial `run_context` helpers
+- full `run_context` module with run directory preparation, manifest writing, and stable path helpers
 - normalized result model, persisted result bundles, and report rebuilding from
   stored run data
 
@@ -41,10 +42,10 @@ flowchart TD
     cli[toolkit CLI]
     config[Repository YAML config]
     validate[Validate flow<br/>Implemented]
-    runctx[Run context and outputs<br/>Partially implemented]
+    runctx[Run context and outputs<br/>Implemented]
     pentest[Pentest orchestration<br/>Planned]
     chaos[Chaos orchestration<br/>Planned]
-    report[Report build<br/>Planned]
+    report[Report build<br/>Implemented]
     outputs[outputs/<run-id>/...]
 
     operator --> cli

@@ -1,8 +1,8 @@
 # Run Artifacts Reference
 
-This document defines the run output layout that the toolkit will adopt before any
-orchestration logic writes real artifacts. Treat it as the contract that `run_context`
-and the report builder implement.
+This document defines the run output layout implemented by `run_context` and the
+report builder. It serves as the stable contract for downstream tooling and future
+orchestration workflows.
 
 ## Layout
 
@@ -30,8 +30,8 @@ shared artifacts we care about for downstream automation.
 - Generated with `YYYYMMDD-HHMMSS-<short-hash>` (timestamp in UTC plus digest of
   the requested app/env/profile inputs).
 - Used to create the run directory and referenced in reports/notifications.
-- If the directory already exists, subsequent attempts should incrementally
-  reuse or reject based on `run_context` configuration.
+- If the directory already exists, `prepare_run_context` raises `FileExistsError`
+  by default. Pass `allow_existing=True` to reopen an existing run directory.
 
 ## Manifest
 
@@ -50,7 +50,7 @@ Future checkpoints can extend the manifest (e.g., tools metadata, triggered_by).
 
 ## Normalized Results Schema
 
-`normalized/findings.json` should be a JSON array of result objects with:
+`normalized/findings.json` is a JSON array of result objects with:
 
  - `app_id`
  - `environment`
@@ -63,5 +63,4 @@ Future checkpoints can extend the manifest (e.g., tools metadata, triggered_by).
  - `remediation_summary`
  - `timestamps` with `started_at` and optional `finished_at` in ISO format
 
-The json writer should sort keys and use consistent indentation so diffs stay
-readable.
+The json writer sorts keys and uses 2-space indentation so diffs stay readable.
