@@ -92,6 +92,10 @@ Locked pentest profile rules:
 - the core v1 tool set is `zap`, `nuclei`, and `nmap`
 - `trivy` and `semgrep` remain optional add-ons and should not change the
   DAST-first default
+- optional adapters participate in pentest runs only when explicitly enabled in
+  a profile
+- missing optional adapter binaries skip cleanly by default in the current
+  fixture-backed orchestration
 
 ## `chaos-profiles.yaml`
 

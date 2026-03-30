@@ -13,6 +13,9 @@ These instructions apply to this repository directory. If a deeper
 - `toolkit validate` is now implemented for config loading and validation.
 - `toolkit pentest run` is now implemented for the current fixture-backed
   pentest flow.
+- Optional Trivy and Semgrep adapters can now participate in the fixture-backed
+  pentest flow when explicitly enabled in a profile, and skip cleanly when
+  unavailable.
 - `toolkit chaos run` is now implemented for the current fixture-backed chaos
   flow.
 - `toolkit report build` is now implemented for stored normalized result
@@ -113,7 +116,8 @@ These instructions apply to this repository directory. If a deeper
     validation/runtime failure
   - `toolkit pentest run` executes the current fixture-backed pentest flow,
     writes raw artifacts, normalized findings, and a Markdown summary under
-    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
+    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`; optional Trivy and
+    Semgrep adapters join only when explicitly enabled
   - `toolkit chaos run` executes the current fixture-backed chaos flow, writes
     raw artifacts, normalized findings, and a Markdown summary under
     `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
