@@ -1,0 +1,17 @@
+apps:
+  - id: sample-api-bearer-app
+    environment: staging
+    base_url: https://staging.api.internal.example
+    host_targets:
+      - staging.api.internal.example
+    target_allowlist:
+      - staging.api.internal.example
+    auth:
+      method: bearer_token
+      token_env_var: SAMPLE_API_BEARER_TOKEN
+    health_endpoint: /healthz
+    metrics:
+      endpoint: https://metrics.internal.example/api/v1/query
+      query: http_error_rate
+    enabled_modules:
+      - pentest

@@ -25,3 +25,14 @@ Runtime auth resolution is fail-closed:
 The exhaustive contract matrix currently lives in `tests/fixtures/configs/`.
 The repository root YAML files provide the current human-facing sample bundle
 for `toolkit validate`.
+
+Current example packs:
+
+- `sample-webapp/`
+  - local-safe example with `auth.method: none`
+  - enables both `pentest` and `chaos`
+  - intended for fixture-backed operator walkthroughs
+- `sample-api/`
+  - staging-safe example with `auth.method: bearer_token`
+  - keeps secrets in `token_env_var` only
+  - intended for authenticated API-oriented validation examples
