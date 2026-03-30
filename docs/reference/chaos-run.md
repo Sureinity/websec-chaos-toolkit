@@ -38,6 +38,21 @@ dedicated implementation exists.
 
 Exactly one fault may be active at a time.
 
+## Planner Contract
+
+The planner must return one deterministic experiment plan containing:
+
+- app id
+- environment
+- profile name
+- target service
+- one supported fault type
+- baseline duration
+- experiment duration
+- health endpoint
+- rollback method
+- abort-threshold values
+
 ## Preconditions
 
 The chaos runner must refuse to start when these requirements are not met:
@@ -77,6 +92,7 @@ proxy or monitoring logs.
 The runner contract requires:
 
 - one active experiment per app/environment on the operator host
+- a repo-local filesystem lock under `.toolkit-locks/chaos/`
 - threshold-driven abort handling during the experiment window
 - rollback attempts on success, abort, timeout, and general error paths
 
