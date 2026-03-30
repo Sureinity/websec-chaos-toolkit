@@ -265,3 +265,10 @@ Planned expansion:
 - optional Trivy and Semgrep adapters for local code, artifact, or image checks
 - live chaos orchestration through a real Toxiproxy runtime that records
   baseline, fault execution, rollback, and recovery state
+
+See also:
+
+- `docs/explanation/safety-model.md` for fixture-backed boundary rationale and
+  guardrails
+- `examples/configs/sample-webapp/` and `examples/configs/sample-api/` for
+  sanitized operator config packs

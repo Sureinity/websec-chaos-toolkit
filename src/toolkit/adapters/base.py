@@ -83,6 +83,14 @@ class ToolAdapter(Protocol):
     - build commands from validated config only
     - stay safe by default and avoid destructive flags/templates
     - preserve raw artifacts and normalize findings into shared result models
+
+    Optional adapter policy:
+    - optional adapters may extend the pentest path without changing the
+      DAST-first default tool set
+    - missing binaries for optional adapters must skip cleanly unless later
+      policy explicitly requires them
+    - optional adapters must remain read-only and use the same normalized
+      result and exit-code contracts as the core scanner set
     """
 
     name: str

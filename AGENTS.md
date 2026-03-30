@@ -228,8 +228,7 @@ Planned / Future Expectations
   - ~~ZAP, Nuclei, and Nmap adapters with normalized findings~~ (implemented)
   - ~~fixture-backed pentest planner and orchestration runner~~ (implemented)
   - ~~Toxiproxy-based chaos runner with health or metrics baseline and abort logic~~ (fixture-backed implementation done; live Toxiproxy runtime is next)
-  - scheduler-facing docs, sample configs, and pilot coverage for one or two
-    internal apps
+  - ~~scheduler-facing docs, sample configs, and pilot coverage for one or two internal apps~~ (implemented: example config packs, operator how-to guides, safety model doc, and schedule-execution guide)
   - optional Trivy and Semgrep adapters for local code, artifact, or image
     checks
 - Keep the detailed milestone sequence in
