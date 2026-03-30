@@ -16,5 +16,8 @@ The scanner adapter contract lives in
 The pentest orchestration contract lives in
 `docs/reference/pentest-run.md`.
 
+The chaos orchestration contract lives in
+`docs/reference/chaos-run.md`.
+
 The implementation milestone plan lives in
 `docs/explanation/implementation-roadmap.md`.

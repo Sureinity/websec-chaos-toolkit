@@ -109,6 +109,9 @@ Locked chaos rules:
 
 - every injectable fault requires `abort_thresholds`
 - every injectable fault requires `rollback`
+- every run requires app-level `health_endpoint` monitoring before fault
+  injection
+- one profile execution maps to one reversible fault at a time
 - v1 faults are limited to safe, reversible proxy-style behaviors such as
   latency, bandwidth throttling, packet loss, timeout simulation, and
   connection refusal
