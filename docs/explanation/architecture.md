@@ -264,7 +264,6 @@ Current state:
 Planned expansion:
 
 - execution-backed pentest scanning through real external tool binaries
-- optional Trivy and Semgrep adapters for local code, artifact, or image checks
 - live chaos orchestration through a real Toxiproxy runtime that records
   baseline, fault execution, rollback, and recovery state
 
