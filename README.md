@@ -68,15 +68,18 @@ uv run pytest
 
 ## Example-Driven Start
 
-The default onboarding path uses the sanitized sample web app config pack in:
+Choose one sanitized example pack:
 
 - `examples/configs/sample-webapp/`
-
-The authenticated API variant lives in:
-
+  - default local-safe walkthrough
+  - `auth.method: none`
+  - `pentest` and `chaos` enabled
 - `examples/configs/sample-api/`
+  - authenticated API-oriented variant
+  - `auth.method: bearer_token`
+  - `pentest` enabled
 
-Start with the sample web app pack:
+Default walkthrough:
 
 ```bash
 cd examples/configs/sample-webapp
@@ -93,9 +96,16 @@ Task-oriented guides:
 - `docs/how-to/run-chaos.md`
 - `docs/how-to/schedule-execution.md`
 
+Reference and rationale:
+
+- `docs/reference/cli.md`
+- `docs/reference/output-artifacts.md`
+- `docs/explanation/safety-model.md`
+- `docs/explanation/architecture.md`
+
 ## Command Tree
 
-The public CLI surface has been stubbed to match the intended interface:
+The public CLI surface is implemented and uses one entrypoint:
 
 ```text
 toolkit validate --app <id> --env <env>
@@ -140,3 +150,5 @@ The system overview and architecture diagrams live in
 
 The current safety and fixture-boundary rationale lives in
 `docs/explanation/safety-model.md`.
+
+For the full docs index, see `docs/README.md`.

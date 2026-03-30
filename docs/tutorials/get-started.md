@@ -19,6 +19,12 @@ cd examples/configs/sample-webapp
 This tutorial keeps all commands inside that directory so the YAML bundle is in
 the current working directory.
 
+Alternative pack:
+
+- `examples/configs/sample-api/`
+  - use this when you want the authenticated API-oriented variant after
+    finishing the default walkthrough
+
 ## Steps
 
 1. Run `uv sync --extra dev`.
@@ -49,4 +55,6 @@ Next reading:
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-chaos.md`
 - `docs/how-to/schedule-execution.md`
+- `docs/reference/cli.md`
+- `docs/reference/output-artifacts.md`
 - `docs/explanation/safety-model.md`
