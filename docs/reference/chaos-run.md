@@ -149,6 +149,10 @@ Current command behavior:
 - `packet_loss` currently fails closed in the wrapper
 - missing fixture files cause the run to fail with exit code `2`
 
+Safety rationale:
+
+- `docs/explanation/safety-model.md`
+
 ## Locking And Rollback Guarantees
 
 The runner contract requires:

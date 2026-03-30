@@ -103,3 +103,4 @@ See also:
 
 - `docs/reference/cli.md`
 - `docs/how-to/schedule-execution.md`
+- `docs/explanation/safety-model.md`

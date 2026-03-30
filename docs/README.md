@@ -13,6 +13,9 @@ The main system overview and high-level architecture live in
 The operator documentation scope for Milestone 7 is locked in
 `docs/explanation/operator-docs-contract.md`.
 
+The current safety and fixture-boundary rationale lives in
+`docs/explanation/safety-model.md`.
+
 The scanner adapter contract lives in
 `docs/reference/pentest-adapters.md`.
 
