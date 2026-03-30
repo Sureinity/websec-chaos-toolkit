@@ -24,8 +24,10 @@ The chaos orchestration contract lives in
 
 Operator run guides live in:
 
+- `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-chaos.md`
+- `docs/how-to/schedule-execution.md`
 
 The implementation milestone plan lives in
 `docs/explanation/implementation-roadmap.md`.

@@ -72,3 +72,34 @@ Future checkpoints can extend the manifest (e.g., tools metadata, triggered_by).
  - `timestamps` with `started_at` and optional `finished_at` in ISO format
 
 The json writer sorts keys and uses 2-space indentation so diffs stay readable.
+
+## Rebuild A Report
+
+Operators can rebuild the Markdown summary from an existing normalized bundle
+without rerunning pentest or chaos commands.
+
+Command:
+
+```bash
+uv run toolkit report build --run-id <existing-run-id>
+```
+
+What the command expects:
+
+- `outputs/<run-id>/` exists
+- `outputs/<run-id>/normalized/findings.json` exists
+
+What the command writes:
+
+- `outputs/<run-id>/reports/executive-summary.md`
+
+Current behavior notes:
+
+- report rebuild is implemented now
+- it reads stored normalized findings only
+- it does not depend on raw vendor artifacts at rebuild time
+
+See also:
+
+- `docs/reference/cli.md`
+- `docs/how-to/schedule-execution.md`

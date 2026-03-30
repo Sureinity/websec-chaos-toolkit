@@ -29,3 +29,10 @@ Stable exit-code contract:
 - `0`: no findings or a passing experiment
 - `1`: medium or high findings, or a resilience failure
 - `2`: configuration or runtime errors
+
+For task-oriented operator procedures, see:
+
+- `docs/how-to/run-validation.md`
+- `docs/how-to/run-pentest.md`
+- `docs/how-to/run-chaos.md`
+- `docs/how-to/schedule-execution.md`
