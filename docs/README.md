@@ -10,6 +10,9 @@ The documentation scaffold follows the Diataxis framework:
 The main system overview and high-level architecture live in
 `docs/explanation/architecture.md`.
 
+The operator documentation scope for Milestone 7 is locked in
+`docs/explanation/operator-docs-contract.md`.
+
 The scanner adapter contract lives in
 `docs/reference/pentest-adapters.md`.
 

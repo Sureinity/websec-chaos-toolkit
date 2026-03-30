@@ -27,6 +27,8 @@ implemented without reopening the basic product shape.
 - External-tool tests remain behind markers or explicit environment checks.
 - Chaos v1 is proxy-first. `controlled_restart` remains schema-reserved but is
   rejected until a dedicated implementation exists.
+- Milestone 7 documentation scope, status language, and example personas are
+  locked in `docs/explanation/operator-docs-contract.md`.
 - The Trivy and Semgrep milestone is optional and does not block pilot
   readiness.
 
