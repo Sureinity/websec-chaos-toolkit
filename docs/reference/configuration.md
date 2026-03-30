@@ -96,6 +96,12 @@ Locked pentest profile rules:
   a profile
 - missing optional adapter binaries skip cleanly by default in the current
   fixture-backed orchestration
+- `tools.trivy.allowlisted_rules` map to supported Trivy scanner categories:
+  - `vulnerabilities`
+  - `misconfigurations`
+  - `secrets`
+- `tools.semgrep.allowlisted_rules` map to explicit Semgrep `--config` values
+  such as `p/default` and `p/secrets`
 
 ## `chaos-profiles.yaml`
 

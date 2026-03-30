@@ -21,8 +21,10 @@ Implemented now:
   stored run data
 - runtime auth resolution and shared auth/session payloads
 - the shared scanner adapter contract
-- the shared process runner and fixture-driven zap, nuclei, and nmap adapters
-- fixture-backed pentest planner and orchestration runner
+- the shared process runner and fixture-driven zap, nuclei, nmap, trivy, and
+  semgrep adapters
+- fixture-backed pentest planner and orchestration runner, including optional
+  adapter participation when explicitly enabled
 - fixture-backed chaos planner, Toxiproxy wrapper, monitoring baseline, and orchestration runner
 
 Planned next:

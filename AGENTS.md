@@ -23,6 +23,9 @@ These instructions apply to this repository directory. If a deeper
 - Fixture-driven scanner adapters for ZAP, Nuclei, and Nmap are implemented
   with a shared contract, process runner, normalizers, and fixture-backed
   pentest orchestration.
+- Fixture-driven Trivy and Semgrep adapters are implemented as optional
+  pentest add-ons, and optional external smoke tests exist behind the
+  `TOOLKIT_RUN_EXTERNAL_TOOL_TESTS=1` environment flag.
 - The repository does not yet contain execution-backed scanner orchestration,
   live chaos execution, full schema validation coverage, notification delivery,
   or end-to-end report generation pipelines.
@@ -178,6 +181,7 @@ Currently Applicable
 - Run all hooks with `uv run pre-commit run --all-files`.
 - External binaries such as ZAP, Nuclei, Nmap, and Toxiproxy are not required
   for the current scaffold tests.
+- Trivy and Semgrep are also not required for the default local test suite.
 
 Planned / Future Expectations
 
