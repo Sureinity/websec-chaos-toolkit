@@ -1,0 +1,7 @@
+{
+  "name": "payments-api",
+  "listen": "127.0.0.1:19000",
+  "upstream": "127.0.0.1:9000",
+  "enabled": true,
+  "toxics": []
+}

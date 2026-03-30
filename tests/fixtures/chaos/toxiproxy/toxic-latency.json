@@ -1,0 +1,10 @@
+{
+  "name": "toolkit-payments-api-latency-downstream",
+  "type": "latency",
+  "stream": "downstream",
+  "toxicity": 1.0,
+  "attributes": {
+    "latency": 250,
+    "jitter": 25
+  }
+}

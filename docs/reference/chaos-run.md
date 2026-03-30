@@ -38,6 +38,24 @@ dedicated implementation exists.
 
 Exactly one fault may be active at a time.
 
+## Toxiproxy Wrapper Contract
+
+The current wrapper layer translates runner-facing chaos faults into official
+Toxiproxy API operations:
+
+- `latency`
+  - create a `latency` toxic with `latency_ms` and optional `jitter_ms`
+- `bandwidth`
+  - create a `bandwidth` toxic with `rate_kbps`
+- `timeout`
+  - create a `timeout` toxic with `timeout_ms`
+- `connection_refused`
+  - disable the proxy and re-enable it during rollback
+
+`packet_loss` currently fails closed in the wrapper because the official
+Toxiproxy HTTP API does not expose a first-party packet-loss toxic. The runner
+must surface that as a runtime failure until a safe supported mapping exists.
+
 ## Planner Contract
 
 The planner must return one deterministic experiment plan containing:

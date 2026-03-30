@@ -1,0 +1,18 @@
+{
+  "name": "payments-api",
+  "listen": "127.0.0.1:19000",
+  "upstream": "127.0.0.1:9000",
+  "enabled": true,
+  "toxics": [
+    {
+      "name": "toolkit-payments-api-latency-downstream",
+      "type": "latency",
+      "stream": "downstream",
+      "toxicity": 1.0,
+      "attributes": {
+        "latency": 250,
+        "jitter": 25
+      }
+    }
+  ]
+}
