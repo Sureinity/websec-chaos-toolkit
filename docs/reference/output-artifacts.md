@@ -25,6 +25,14 @@ outputs/
 `raw/` can store vendor outputs; normalized JSON and Markdown summaries are the
 shared artifacts we care about for downstream automation.
 
+Current examples:
+
+- pentest runs write scanner artifacts under `raw/zap/`, `raw/nuclei/`, and
+  `raw/nmap/`
+- chaos runs write experiment artifacts under `raw/chaos/`, including
+  `baseline-observations.json`, `experiment-observations.json`, and
+  `orchestration-actions.json`
+
 ## Run ID
 
 - Generated with `YYYYMMDD-HHMMSS-<short-hash>` (timestamp in UTC plus digest of

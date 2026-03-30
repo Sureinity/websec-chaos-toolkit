@@ -13,17 +13,18 @@ These instructions apply to this repository directory. If a deeper
 - `toolkit validate` is now implemented for config loading and validation.
 - `toolkit pentest run` is now implemented for the current fixture-backed
   pentest flow.
+- `toolkit chaos run` is now implemented for the current fixture-backed chaos
+  flow.
 - `toolkit report build` is now implemented for stored normalized result
   bundles.
 - Fixture-driven scanner adapters for ZAP, Nuclei, and Nmap are implemented
-  with a shared contract, process runner, and normalizers. They are not yet
-  wired into scanner orchestration.
-- The repository does not yet contain working scanner orchestration, live chaos
-  execution, full schema validation coverage, notification delivery, or
-  end-to-end report generation pipelines.
+  with a shared contract, process runner, normalizers, and fixture-backed
+  pentest orchestration.
+- The repository does not yet contain execution-backed scanner orchestration,
+  live chaos execution, full schema validation coverage, notification delivery,
+  or end-to-end report generation pipelines.
 - `security-testing-resources.md` exists as placeholder background reading
   material. Treat it as reference material, not as a behavioral contract.
-- `toolkit chaos run` remains scaffold-only and currently exits with code `2`.
 
 ## Project Overview (Future Intent)
 
@@ -76,7 +77,7 @@ These instructions apply to this repository directory. If a deeper
   - `examples/`
   - `config/`
 - The Python package root is `src/toolkit/`.
-- The CLI command tree is scaffolded under `src/toolkit/commands/`.
+- The CLI command tree is implemented under `src/toolkit/commands/`.
 - Test layout is split into `tests/unit/` and `tests/integration/`.
 - Documentation is organized using Diataxis under `docs/tutorials/`,
   `docs/how-to/`, `docs/reference/`, and `docs/explanation/`.
@@ -113,12 +114,14 @@ These instructions apply to this repository directory. If a deeper
   - `toolkit pentest run` executes the current fixture-backed pentest flow,
     writes raw artifacts, normalized findings, and a Markdown summary under
     `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
+  - `toolkit chaos run` executes the current fixture-backed chaos flow, writes
+    raw artifacts, normalized findings, and a Markdown summary under
+    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
   - `toolkit report build` rebuilds a Markdown summary from
     `outputs/<run-id>/normalized/findings.json` and exits with `0` on success
     or `2` on runtime/input failure
-  - `toolkit chaos run` remains scaffold-only and exits with `2`
-- Do not claim that external scanner execution or chaos execution already work
-  end-to-end.
+- Do not claim that external scanner execution or live Toxiproxy-backed chaos
+  execution already work end-to-end.
 
 ## Future CLI Commands & Interfaces
 
@@ -224,7 +227,7 @@ Planned / Future Expectations
   - configuration schema, CLI skeleton, validation flow, and report scaffolding
   - ~~ZAP, Nuclei, and Nmap adapters with normalized findings~~ (implemented)
   - ~~fixture-backed pentest planner and orchestration runner~~ (implemented)
-  - Toxiproxy-based chaos runner with health or metrics baseline and abort logic
+  - ~~Toxiproxy-based chaos runner with health or metrics baseline and abort logic~~ (fixture-backed implementation done; live Toxiproxy runtime is next)
   - scheduler-facing docs, sample configs, and pilot coverage for one or two
     internal apps
   - optional Trivy and Semgrep adapters for local code, artifact, or image

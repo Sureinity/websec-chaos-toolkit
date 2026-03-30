@@ -1,13 +1,15 @@
 # Chaos Run Reference
 
-This document locks the orchestration contract for `toolkit chaos run` before
-the runner implementation lands.
+This document describes the current fixture-backed behavior of
+`toolkit chaos run` and the contract later chaos iterations must preserve.
 
 Current implementation status:
 
-- `toolkit chaos run` remains scaffold-only and currently exits with code `2`
-- this reference defines the lifecycle and safety rules that Checkpoints 2 to 6
-  must preserve
+- the fixture-backed chaos runner is implemented
+- the current command writes raw artifacts, normalized findings, a manifest,
+  and a Markdown summary
+- the current command uses fixture-backed monitoring observations and
+  Toxiproxy-like control instead of a live external Toxiproxy process
 
 ## Run Lifecycle
 
@@ -110,15 +112,42 @@ Health monitoring is mandatory. Metrics remain optional.
 
 ## Artifact Expectations
 
-The future chaos run path must write or preserve:
+The current chaos run path writes or preserves:
 
 - `outputs/<run-id>/manifest.json`
-- `outputs/<run-id>/raw/chaos/...`
+- `outputs/<run-id>/raw/chaos/baseline-observations.json`
+- `outputs/<run-id>/raw/chaos/experiment-observations.json`
+- `outputs/<run-id>/raw/chaos/orchestration-actions.json`
 - `outputs/<run-id>/normalized/findings.json`
 - `outputs/<run-id>/reports/executive-summary.md`
 
 The normalized bundle must preserve experiment outcome evidence, not just raw
 proxy or monitoring logs.
+
+## Current Command Usage
+
+Run the current fixture-backed flow from the repository root:
+
+```bash
+uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
+```
+
+Current command behavior:
+
+- loads the validated app, environment, and chaos profile
+- resolves runtime auth for the selected app
+- plans one reversible chaos experiment
+- loads fixture-backed baseline and experiment monitoring observations
+- injects one fixture-backed fault, evaluates thresholds, and attempts rollback
+- writes raw artifacts, normalized findings, a manifest, and a Markdown summary
+- exits with `0`, `1`, or `2` according to the chaos outcome contract
+
+## Current Limitations
+
+- this command currently uses fixture-backed monitoring and fault-control data,
+  not a live Toxiproxy runtime
+- `packet_loss` currently fails closed in the wrapper
+- missing fixture files cause the run to fail with exit code `2`
 
 ## Locking And Rollback Guarantees
 

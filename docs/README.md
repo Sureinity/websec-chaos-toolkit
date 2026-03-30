@@ -19,5 +19,10 @@ The pentest orchestration contract lives in
 The chaos orchestration contract lives in
 `docs/reference/chaos-run.md`.
 
+Operator run guides live in:
+
+- `docs/how-to/run-pentest.md`
+- `docs/how-to/run-chaos.md`
+
 The implementation milestone plan lives in
 `docs/explanation/implementation-roadmap.md`.

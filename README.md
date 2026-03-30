@@ -11,11 +11,12 @@ The current state is intentionally narrow:
   code contract
 - `toolkit pentest run` is implemented against the current fixture-backed
   pentest flow
+- `toolkit chaos run` is implemented against the current fixture-backed chaos
+  flow
 - `toolkit report build` is implemented for stored normalized result bundles
 - fixture-driven scanner adapters (ZAP, Nuclei, Nmap) are implemented with a
-  shared contract and normalizers; execution-backed scanning, chaos adapters,
-  and full execution flows are not yet wired
-- `toolkit chaos run` remains scaffold-only and currently exits with code `2`
+  shared contract and normalizers; execution-backed scanning and live external
+  chaos control are not yet wired
 
 ## Bootstrap Layout
 
@@ -38,7 +39,8 @@ uv sync --extra dev
 uv run pre-commit install
 uv run pytest
 uv run toolkit validate --app sample-internal-app --env local
-uv run toolkit pentest run --app local-no-auth-app --env local --profile safe-web-baseline
+uv run toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline
+uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
 uv run toolkit report build --run-id <existing-run-id>
 ```
 
@@ -56,9 +58,10 @@ toolkit report build --run-id <id>
 `toolkit validate` now performs real configuration loading and validation.
 `toolkit pentest run` now performs the current fixture-backed pentest flow and
 writes run artifacts.
+`toolkit chaos run` now performs the current fixture-backed chaos flow and
+writes run artifacts.
 `toolkit report build` now rebuilds Markdown summaries from stored normalized
 results.
-`toolkit chaos run` remains scaffold-only.
 
 ## Sample Configs
 

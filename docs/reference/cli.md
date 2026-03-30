@@ -20,8 +20,9 @@ Current command behavior:
 - `toolkit report build` reads `outputs/<run-id>/normalized/findings.json`,
   writes `outputs/<run-id>/reports/executive-summary.md`, and exits with `0` on
   success
-- `toolkit chaos run` remains scaffold-only and currently exits with code `2`;
-  the locked runner contract is documented in `docs/reference/chaos-run.md`
+- `toolkit chaos run` executes the current fixture-backed chaos flow, writes run
+  artifacts under `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
+  according to the chaos outcome contract
 
 Stable exit-code contract:
 
