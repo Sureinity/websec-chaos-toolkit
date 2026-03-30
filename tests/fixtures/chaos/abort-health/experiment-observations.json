@@ -1,0 +1,26 @@
+[
+  {
+    "observed_at": "2026-03-30T06:01:00Z",
+    "health": {
+      "url": "http://localhost:8000/health",
+      "observed_at": "2026-03-30T06:01:00Z",
+      "healthy": false,
+      "status_code": 503,
+      "response_time_ms": 950.0,
+      "detail": "service unavailable"
+    },
+    "metrics": null
+  },
+  {
+    "observed_at": "2026-03-30T06:01:30Z",
+    "health": {
+      "url": "http://localhost:8000/health",
+      "observed_at": "2026-03-30T06:01:30Z",
+      "healthy": false,
+      "status_code": 503,
+      "response_time_ms": 980.0,
+      "detail": "service unavailable"
+    },
+    "metrics": null
+  }
+]

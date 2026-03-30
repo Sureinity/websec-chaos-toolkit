@@ -79,8 +79,10 @@ class ChaosRunSummary:
     experiment_plan: ChaosExperimentPlan
     baseline_captured: bool
     rollback_attempted: bool
+    findings_count: int = 0
     aborted: bool = False
     abort_reason: str | None = None
+    error_detail: str | None = None
     normalized_bundle_path: Path | None = None
     report_path: Path | None = None
     raw_artifact_paths: tuple[Path, ...] = field(default_factory=tuple)

@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
 import json
+from pathlib import Path
 from time import perf_counter
 from typing import Any, Literal
 
@@ -283,6 +284,52 @@ def evaluate_abort_thresholds(
     )
 
 
+def read_monitoring_observations_from_path(path: Path) -> tuple[MonitoringObservation, ...]:
+    """Load fixture-backed monitoring observations from stable JSON."""
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        raise MonitoringRequestError(
+            operation=f"load monitoring observations from {path}",
+            detail="fixture payload must be a JSON array",
+        )
+    return tuple(_parse_monitoring_observation(item) for item in payload)
+
+
+def monitoring_observations_to_payload(
+    observations: Sequence[MonitoringObservation],
+) -> list[dict[str, object]]:
+    """Serialize monitoring observations into stable JSON-ready payloads."""
+
+    payload: list[dict[str, object]] = []
+    for observation in observations:
+        metrics_payload = None
+        if observation.metrics is not None:
+            metrics_payload = {
+                "url": observation.metrics.url,
+                "observed_at": _format_timestamp(observation.metrics.observed_at),
+                "query": observation.metrics.query,
+                "error_rate": observation.metrics.error_rate,
+                "source": observation.metrics.source,
+                "detail": observation.metrics.detail,
+            }
+        payload.append(
+            {
+                "observed_at": _format_timestamp(observation.observed_at),
+                "health": {
+                    "url": observation.health.url,
+                    "observed_at": _format_timestamp(observation.health.observed_at),
+                    "healthy": observation.health.healthy,
+                    "status_code": observation.health.status_code,
+                    "response_time_ms": observation.health.response_time_ms,
+                    "detail": observation.health.detail,
+                },
+                "metrics": metrics_payload,
+            }
+        )
+    return payload
+
+
 def _collect_monitoring_observation(
     app: AppConfig,
     *,
@@ -519,3 +566,112 @@ def _build_request_headers(
             f"{name}={value}" for name, value in cookies.items()
         )
     return request_headers
+
+
+def _parse_monitoring_observation(payload: object) -> MonitoringObservation:
+    if not isinstance(payload, Mapping):
+        raise MonitoringRequestError(
+            operation="parse monitoring observation",
+            detail="each observation must be a JSON object",
+        )
+    health_payload = payload.get("health")
+    if not isinstance(health_payload, Mapping):
+        raise MonitoringRequestError(
+            operation="parse monitoring observation",
+            detail="observation.health must be a JSON object",
+        )
+    metrics_payload = payload.get("metrics")
+
+    observed_at = _parse_timestamp(payload.get("observed_at"), field_name="observed_at")
+    health_observed_at = _parse_timestamp(
+        health_payload.get("observed_at"),
+        field_name="health.observed_at",
+    )
+    health_status_code = health_payload.get("status_code")
+    if health_status_code is not None and not isinstance(health_status_code, int):
+        raise MonitoringRequestError(
+            operation="parse monitoring observation",
+            detail="health.status_code must be an integer or null",
+        )
+    health = HealthObservation(
+        url=_require_string(health_payload.get("url"), field_name="health.url"),
+        observed_at=health_observed_at,
+        healthy=_require_bool(health_payload.get("healthy"), field_name="health.healthy"),
+        status_code=health_status_code,
+        response_time_ms=_coerce_numeric(
+            health_payload.get("response_time_ms"),
+            detail="health.response_time_ms must be numeric",
+        ),
+        detail=_optional_string(health_payload.get("detail"), field_name="health.detail"),
+    )
+
+    metrics = None
+    if metrics_payload is not None:
+        if not isinstance(metrics_payload, Mapping):
+            raise MonitoringRequestError(
+                operation="parse monitoring observation",
+                detail="observation.metrics must be a JSON object or null",
+            )
+        metrics = MetricsObservation(
+            url=_require_string(metrics_payload.get("url"), field_name="metrics.url"),
+            observed_at=_parse_timestamp(
+                metrics_payload.get("observed_at"),
+                field_name="metrics.observed_at",
+            ),
+            query=_optional_string(metrics_payload.get("query"), field_name="metrics.query"),
+            error_rate=_coerce_numeric(
+                metrics_payload.get("error_rate"),
+                detail="metrics.error_rate must be numeric",
+            ),
+            source=_require_string(metrics_payload.get("source"), field_name="metrics.source"),
+            detail=_optional_string(metrics_payload.get("detail"), field_name="metrics.detail"),
+        )
+
+    return MonitoringObservation(
+        observed_at=observed_at,
+        health=health,
+        metrics=metrics,
+    )
+
+
+def _parse_timestamp(value: object, *, field_name: str) -> datetime:
+    if not isinstance(value, str) or not value:
+        raise MonitoringRequestError(
+            operation="parse monitoring observation",
+            detail=f"{field_name} must be a non-empty ISO 8601 string",
+        )
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(UTC)
+    except ValueError as exc:
+        raise MonitoringRequestError(
+            operation="parse monitoring observation",
+            detail=f"{field_name} must be a valid ISO 8601 timestamp",
+        ) from exc
+
+
+def _format_timestamp(value: datetime) -> str:
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _require_string(value: object, *, field_name: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise MonitoringRequestError(
+            operation="parse monitoring observation",
+            detail=f"{field_name} must be a non-empty string",
+        )
+    return value
+
+
+def _optional_string(value: object, *, field_name: str) -> str | None:
+    if value is None:
+        return None
+    return _require_string(value, field_name=field_name)
+
+
+def _require_bool(value: object, *, field_name: str) -> bool:
+    if not isinstance(value, bool):
+        raise MonitoringRequestError(
+            operation="parse monitoring observation",
+            detail=f"{field_name} must be a boolean",
+        )
+    return value
