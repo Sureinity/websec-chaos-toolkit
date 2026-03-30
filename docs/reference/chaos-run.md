@@ -56,6 +56,21 @@ Toxiproxy API operations:
 Toxiproxy HTTP API does not expose a first-party packet-loss toxic. The runner
 must surface that as a runtime failure until a safe supported mapping exists.
 
+## Monitoring Contract
+
+The monitoring layer combines mandatory health checks with optional metrics
+sampling:
+
+- every observation records a health result and timestamp
+- metrics are optional, but when configured they must parse deterministically
+  into an error-rate value
+- steady-state baseline capture requires only healthy observations
+- abort evaluation records structured evidence for:
+  - consecutive health-check failures
+  - `max_error_rate` threshold breaches
+
+Health-only mode and health-plus-metrics mode both remain valid v1 paths.
+
 ## Planner Contract
 
 The planner must return one deterministic experiment plan containing:

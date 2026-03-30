@@ -1,0 +1,3 @@
+# HELP http_error_rate rolling error rate
+# TYPE http_error_rate gauge
+http_error_rate 0.02

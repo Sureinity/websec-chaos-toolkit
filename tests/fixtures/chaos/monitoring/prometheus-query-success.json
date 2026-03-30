@@ -1,0 +1,17 @@
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "service": "payments-api"
+        },
+        "value": [
+          1711761600,
+          "0.07"
+        ]
+      }
+    ]
+  }
+}
