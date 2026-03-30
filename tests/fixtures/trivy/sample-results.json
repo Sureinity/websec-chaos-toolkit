@@ -1,0 +1,49 @@
+{
+  "SchemaVersion": 2,
+  "ArtifactName": ".",
+  "ArtifactType": "filesystem",
+  "Results": [
+    {
+      "Target": "requirements.txt",
+      "Class": "lang-pkgs",
+      "Type": "python-pkg",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2026-0001",
+          "PkgName": "requests",
+          "InstalledVersion": "2.31.0",
+          "FixedVersion": "2.32.0",
+          "Severity": "HIGH",
+          "Title": "Example requests vulnerability",
+          "PrimaryURL": "https://example.invalid/CVE-2026-0001"
+        }
+      ]
+    },
+    {
+      "Target": "config/deployment.yaml",
+      "Class": "config",
+      "Type": "kubernetes",
+      "Misconfigurations": [
+        {
+          "ID": "AVD-KSV-0001",
+          "Title": "Container should not run as root",
+          "Severity": "MEDIUM",
+          "Resolution": "Set runAsNonRoot to true."
+        }
+      ]
+    },
+    {
+      "Target": "src/settings.py",
+      "Class": "secret",
+      "Type": "filesystem",
+      "Secrets": [
+        {
+          "RuleID": "aws-access-key-id",
+          "Category": "AWS",
+          "Severity": "HIGH",
+          "Title": "AWS Access Key ID"
+        }
+      ]
+    }
+  ]
+}
