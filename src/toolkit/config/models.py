@@ -295,7 +295,18 @@ class PentestToolSettings(BaseModel):
 
 
 class PentestToolsConfig(BaseModel):
-    """Pentest tool enablement map."""
+    """Pentest tool enablement map.
+
+    Core tools stay first-class in the default DAST-first product shape:
+    - ``zap``
+    - ``nuclei``
+    - ``nmap``
+
+    Optional tools may be configured explicitly without changing the default
+    flow:
+    - ``trivy``
+    - ``semgrep``
+    """
 
     zap: PentestToolSettings | None = None
     nuclei: PentestToolSettings | None = None
@@ -305,7 +316,11 @@ class PentestToolsConfig(BaseModel):
 
 
 class PentestProfile(BaseModel):
-    """Pentest profile description."""
+    """Pentest profile description.
+
+    Core tool ordering must remain deterministic. Optional adapters appear in
+    plans only when explicitly configured in a profile.
+    """
 
     name: str
     schedule_labels: list[str] = Field(default_factory=list)

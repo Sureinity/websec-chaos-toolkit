@@ -180,6 +180,42 @@ class ConfigModelValidationTests(unittest.TestCase):
 
         self.assertEqual(error["loc"], ("profiles", 0, "tools", "zap"))
 
+    def test_optional_pentest_tools_parse_when_explicitly_configured(self) -> None:
+        payload = {
+            "profiles": [
+                {
+                    "name": "optional-tool-profile",
+                    "tools": {
+                        "zap": {
+                            "enabled": True,
+                            "safe_mode": True,
+                            "profile": "baseline",
+                            "allowlisted_rules": ["headers"],
+                        },
+                        "trivy": {
+                            "enabled": True,
+                            "safe_mode": True,
+                            "profile": "config-audit",
+                            "allowlisted_rules": ["config/secrets"],
+                        },
+                        "semgrep": {
+                            "enabled": False,
+                            "safe_mode": True,
+                            "profile": "default",
+                            "allowlisted_rules": [],
+                        },
+                    },
+                }
+            ]
+        }
+
+        registry = PentestProfileRegistry.model_validate(payload)
+
+        self.assertEqual(len(registry.profiles), 1)
+        self.assertTrue(registry.profiles[0].tools.trivy.enabled)
+        self.assertFalse(registry.profiles[0].tools.semgrep.enabled)
+        self.assertIsNone(registry.profiles[0].tools.nmap)
+
     def test_missing_rollback_remains_invalid(self) -> None:
         payload = load_yaml(
             FIXTURE_ROOT / "invalid" / "chaos-missing-rollback" / "chaos-profiles.yaml"
