@@ -1,0 +1,58 @@
+{
+  "version": "1.122.0",
+  "results": [
+    {
+      "check_id": "python.lang.security.audit.dangerous-subprocess-use",
+      "path": "app/jobs/runner.py",
+      "start": {
+        "line": 14,
+        "col": 9,
+        "offset": 212
+      },
+      "end": {
+        "line": 14,
+        "col": 39,
+        "offset": 242
+      },
+      "extra": {
+        "message": "Potentially dangerous subprocess invocation with shell=True.",
+        "metadata": {
+          "category": "security",
+          "confidence": "HIGH"
+        },
+        "severity": "ERROR",
+        "lines": "subprocess.run(user_input, shell=True)"
+      }
+    },
+    {
+      "check_id": "generic.secrets.security.detected-private-key.detected-private-key",
+      "path": "config/example.env",
+      "start": {
+        "line": 3,
+        "col": 1,
+        "offset": 45
+      },
+      "end": {
+        "line": 3,
+        "col": 37,
+        "offset": 81
+      },
+      "extra": {
+        "message": "Potential secret material detected in the configuration file.",
+        "metadata": {
+          "category": "security",
+          "confidence": "MEDIUM"
+        },
+        "severity": "WARNING",
+        "lines": "AWS_SECRET_ACCESS_KEY=example-value"
+      }
+    }
+  ],
+  "errors": [],
+  "paths": {
+    "scanned": [
+      "app/jobs/runner.py",
+      "config/example.env"
+    ]
+  }
+}
