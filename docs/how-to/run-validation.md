@@ -16,6 +16,7 @@ bundle.
 ## Command
 
 ```bash
+cd examples/configs/sample-webapp
 uv run toolkit validate --app sample-internal-app --env local
 ```
 
@@ -70,3 +71,8 @@ Safe example config bundles live in:
 
 Use these to validate schema changes or verify local setup without introducing
 real targets or secrets.
+
+See also:
+
+- `examples/configs/README.md`
+- `docs/explanation/safety-model.md`

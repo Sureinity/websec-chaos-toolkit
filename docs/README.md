@@ -7,6 +7,15 @@ The documentation scaffold follows the Diataxis framework:
 - `reference/` for commands, config keys, outputs, and contracts
 - `explanation/` for architecture and rationale
 
+Start here for example-driven onboarding:
+
+1. `docs/tutorials/get-started.md`
+2. `examples/configs/sample-webapp/`
+3. `docs/how-to/run-validation.md`
+4. `docs/how-to/run-pentest.md`
+5. `docs/how-to/run-chaos.md`
+6. `docs/how-to/schedule-execution.md`
+
 The main system overview and high-level architecture live in
 `docs/explanation/architecture.md`.
 
@@ -31,6 +40,11 @@ Operator run guides live in:
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-chaos.md`
 - `docs/how-to/schedule-execution.md`
+
+Example config packs live in:
+
+- `examples/configs/sample-webapp/`
+- `examples/configs/sample-api/`
 
 The implementation milestone plan lives in
 `docs/explanation/implementation-roadmap.md`.

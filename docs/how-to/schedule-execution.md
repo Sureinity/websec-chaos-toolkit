@@ -79,3 +79,5 @@ Supporting references:
 - `docs/reference/cli.md`
 - `docs/reference/output-artifacts.md`
 - `docs/explanation/operator-docs-contract.md`
+- `docs/explanation/safety-model.md`
+- `examples/configs/sample-webapp/`

@@ -18,6 +18,32 @@ The current state is intentionally narrow:
   shared contract and normalizers; execution-backed scanning and live external
   chaos control are not yet wired
 
+## Current Status
+
+Implemented now:
+
+- `toolkit validate`
+- `toolkit pentest run`
+- `toolkit chaos run`
+- `toolkit report build`
+
+Fixture-backed now:
+
+- pentest runs use repository scanner fixtures rather than live external
+  scanner binaries
+- chaos runs use fixture-backed monitoring data and a Toxiproxy-like
+  controller rather than a live Toxiproxy runtime
+
+Planned later:
+
+- execution-backed pentest scanning through real external binaries
+- live Toxiproxy-backed chaos execution
+
+Optional external verification:
+
+- external-binary checks remain opt-in and are not required for the default
+  local workflow
+
 ## Bootstrap Layout
 
 The scaffold creates the boundaries expected by the project contract:
@@ -38,11 +64,34 @@ execution.
 uv sync --extra dev
 uv run pre-commit install
 uv run pytest
+```
+
+## Example-Driven Start
+
+The default onboarding path uses the sanitized sample web app config pack in:
+
+- `examples/configs/sample-webapp/`
+
+The authenticated API variant lives in:
+
+- `examples/configs/sample-api/`
+
+Start with the sample web app pack:
+
+```bash
+cd examples/configs/sample-webapp
 uv run toolkit validate --app sample-internal-app --env local
 uv run toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline
 uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
 uv run toolkit report build --run-id <existing-run-id>
 ```
+
+Task-oriented guides:
+
+- `docs/how-to/run-validation.md`
+- `docs/how-to/run-pentest.md`
+- `docs/how-to/run-chaos.md`
+- `docs/how-to/schedule-execution.md`
 
 ## Command Tree
 
@@ -76,6 +125,11 @@ The current root sample apps are:
 - `sample-internal-app` in `local` with `auth.method: none`
 - `sample-staging-auth-app` in `staging` with `auth.method: form`
 
+For example-driven onboarding, prefer:
+
+- `examples/configs/sample-webapp/`
+- `examples/configs/sample-api/`
+
 ## Implementation Roadmap
 
 The planned delivery sequence for turning the scaffold into a working toolkit
@@ -83,3 +137,6 @@ is documented in `docs/explanation/implementation-roadmap.md`.
 
 The system overview and architecture diagrams live in
 `docs/explanation/architecture.md`.
+
+The current safety and fixture-boundary rationale lives in
+`docs/explanation/safety-model.md`.

@@ -7,11 +7,13 @@ repository root.
 
 - install dependencies with `uv sync --extra dev`
 - keep the repository fixture files in place under `tests/fixtures/chaos/`
-- use a valid app/profile pair from the repository sample config
+- use the default example config pack in `examples/configs/sample-webapp/`, or
+  another valid repository-style config bundle
 
 ## Command
 
 ```bash
+cd examples/configs/sample-webapp
 uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
 ```
 
@@ -52,3 +54,10 @@ After a successful run, inspect:
 - `packet_loss` fails closed because the current Toxiproxy wrapper does not
   have a safe first-party mapping for it
 - missing fixture files cause the run to fail with exit code `2`
+
+See also:
+
+- `docs/reference/chaos-run.md`
+- `docs/reference/output-artifacts.md`
+- `docs/explanation/safety-model.md`
+- `examples/configs/sample-webapp/`
