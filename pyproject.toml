@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "internal-security-toolkit"
-version = "0.1.0"
+version = "0.2.0"
 description = "Bootstrap scaffold for safe internal pentest and chaos orchestration."
 readme = "README.md"
 requires-python = ">=3.11"
