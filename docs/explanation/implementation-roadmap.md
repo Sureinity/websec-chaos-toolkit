@@ -419,3 +419,62 @@ Optional status
 
 - This milestone is optional for initial pilot readiness and can land after the
   operator documentation milestone.
+
+## Milestone 9: Execution-Backed Pentest Runs
+
+Goal
+
+- Replace the current fixture-backed pentest execution path with real adapter
+  execution against live targets while preserving the existing safety,
+  artifact, and exit-code contracts.
+
+Deliverables
+
+- Execution-backed adapter invocation in `toolkit pentest run`
+- Preflight availability and skip/fail policy for core and optional tools
+- Raw artifact capture from real tool runs
+- Normalized findings built from real adapter outputs
+- Safe live-target integration coverage against a local test app
+- Clear operator docs for live pentest prerequisites and limits
+
+Files/directories to create
+
+- `src/toolkit/pentest/execution.py`
+- `tests/integration/test_pentest_run_live.py`
+- `tests/integration/test_pentest_command_live.py`
+- `tests/fixtures/results/live-pentest/`
+- `docs/how-to/run-live-pentest.md`
+- `docs/explanation/live-execution-model.md`
+
+Acceptance criteria
+
+- `toolkit pentest run` executes enabled core adapters against a live
+  reachable target instead of copying repository fixture artifacts
+- Missing required core binaries fail clearly with exit code `2`
+- Missing optional binaries skip cleanly when the tool is optional
+- Raw outputs, normalized findings, manifest, and Markdown summary are still
+  produced under `outputs/<run-id>/`
+- Exit codes remain unchanged:
+  - `0` for no actionable findings
+  - `1` for medium/high findings
+  - `2` for config/runtime failures
+- Safe-mode restrictions and allowlists remain enforced during live execution
+- Docs clearly distinguish live execution-backed runs from fixture-backed
+  examples
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.integration.test_pentest_run_live tests.integration.test_pentest_command_live
+uv run toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 2
+- Milestone 3
+- Milestone 4
+- Milestone 5
+- Milestone 8
