@@ -90,4 +90,25 @@ Each adapter returns `AdapterRunResult` with: `execution_ok`, `tool_available`, 
 - `tests/fixtures/results/` — normalized result examples
 
 ### Commit convention
-Conventional Commits: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`. Use `type(scope): summary`. Mark breaking changes with `!`.
+Use structured Conventional Commit messages.
+
+Allowed types:
+- `feat`
+- `fix`
+- `docs`
+- `refactor`
+- `style`
+- `test`
+- `chore`
+
+Format:
+- `type(optional-scope): short summary`
+
+Rules:
+- Keep the summary concise, ideally 50 characters or fewer
+- Use imperative mood such as `add`, `fix`, or `update`
+- After the title, add short bullet points in the commit body
+- Start each bullet with a verb
+- Describe what changed and why
+- Prefer lines around 72 characters wide
+- Mark breaking changes with `!` in the header or a `BREAKING CHANGE:` footer

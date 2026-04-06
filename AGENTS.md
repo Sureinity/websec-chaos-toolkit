@@ -226,7 +226,7 @@ Currently Applicable
   partially working behavior without updating tests and docs.
 - Prefer `uv run ...` for local development commands documented in this
   repository.
-- Use Conventional Commits for commit messages.
+- Use structured Conventional Commit messages.
 
 Planned / Future Expectations
 
@@ -246,10 +246,19 @@ Planned / Future Expectations
   - `docs`
   - `refactor`
   - `test`
-  - `build`
-  - `ci`
+  - `style`
   - `chore`
-- Use `type(scope): summary` when scope adds clarity.
+- Write commit titles as:
+  - `type(optional-scope): short summary`
+- Keep the summary concise:
+  - imperative mood
+  - about 50 characters or fewer when practical
+- After the title, include a short bullet list in the commit body.
+- Each commit-body bullet should:
+  - start with a verb
+  - describe what changed
+  - describe why it matters when that is not obvious
+- Prefer a wrapped body width of about 72 characters.
 - Mark breaking changes with `!` in the header or a `BREAKING CHANGE:` footer.
 - Keep commits focused. Do not mix refactors and behavior changes unless they
   are inseparable.
