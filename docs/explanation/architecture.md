@@ -7,12 +7,10 @@ organized around, and the core structures that move through the system.
 ## Overview
 
 The toolkit is a Python-first CLI for safe internal testing in `local` and
-`staging`. All four command paths — `toolkit validate`, `toolkit pentest run`,
-`toolkit chaos run`, and `toolkit report build` — are now implemented against
-fixture-backed flows. The architecture is intentionally split early so later
-real-execution integrations do not collapse into shell-heavy code.
+`staging`. The architecture is intentionally split so orchestration, tool
+adapters, config, and reporting remain independent and testable.
 
-Implemented now:
+Implemented:
 
 - CLI registration and exit-code contract
 - YAML config loading, model validation, and cross-file validation
@@ -21,15 +19,14 @@ Implemented now:
   stored run data
 - runtime auth resolution and shared auth/session payloads
 - the shared scanner adapter contract
-- the shared process runner and fixture-driven zap, nuclei, nmap, trivy, and
-  semgrep adapters
-- fixture-backed pentest planner and orchestration runner, including optional
-  adapter participation when explicitly enabled
+- the shared process runner and zap, nuclei, nmap, trivy, and semgrep adapters
+- pentest execution service with role-based CORE/OPTIONAL skip-versus-fail logic
+- live pentest planner and orchestration runner executing real scanner binaries
+- fixture-backed pentest flow preserved for onboarding and offline testing
 - fixture-backed chaos planner, Toxiproxy wrapper, monitoring baseline, and orchestration runner
 
 Planned next:
 
-- execution-backed pentest scanning through real external tool binaries
 - live chaos orchestration through a real Toxiproxy runtime
 
 ## Architectural Principles
@@ -49,7 +46,7 @@ flowchart TD
     config[Repository YAML config]
     validate[Validate flow<br/>Implemented]
     runctx[Run context and outputs<br/>Implemented]
-    pentest[Pentest orchestration<br/>Fixture-backed]
+    pentest[Pentest orchestration<br/>Live execution]
     chaos[Chaos orchestration<br/>Fixture-backed]
     report[Report build<br/>Implemented]
     outputs[outputs/<run-id>/...]
@@ -115,7 +112,7 @@ Key boundaries:
 - `adapters/` owns the scanner contract, shared process runner, and the current
   fixture-driven zap, nuclei, and nmap implementations today, and will own the
   execution-backed concrete tool boundaries next
-- `pentest/` owns the fixture-backed planner and orchestration runner; will own execution-backed flows next
+- `pentest/` owns the live execution service, planner, and orchestration runner; the fixture-backed flow is preserved as `run_pentest_fixture_flow()` for onboarding
 - `chaos/` owns the fixture-backed chaos planner and orchestration runner; will own live Toxiproxy-backed flows next
 - `results/` owns normalized finding contracts
 - `reports/` owns rendered outputs
@@ -255,7 +252,8 @@ even when underlying tools differ.
 Current state:
 
 - `toolkit validate` is implemented end-to-end for config validation
-- `toolkit pentest run` is implemented for the current fixture-backed pentest flow
+- `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
+  against a live target; fixture-backed flow preserved for onboarding and testing
 - `toolkit chaos run` is implemented for the current fixture-backed chaos flow
 - `toolkit report build` is implemented for existing normalized result bundles
 - config validation, run-context structure, pentest orchestration, chaos
@@ -263,7 +261,6 @@ Current state:
 
 Planned expansion:
 
-- execution-backed pentest scanning through real external tool binaries
 - live chaos orchestration through a real Toxiproxy runtime that records
   baseline, fault execution, rollback, and recovery state
 

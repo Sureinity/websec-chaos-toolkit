@@ -1,7 +1,7 @@
 # Safety Model
 
-This document explains why the toolkit behaves conservatively and how the
-current fixture-backed implementation stays within the v1 safety boundaries.
+This document explains why the toolkit behaves conservatively and how each
+execution path stays within the v1 safety boundaries.
 
 ## Why The Toolkit Fails Closed
 
@@ -33,7 +33,7 @@ The current implementation keeps these boundaries explicit:
 - `controlled_restart` is schema-reserved but rejected until a dedicated safe
   implementation exists
 
-These guardrails exist so later execution-backed integrations do not widen
+These guardrails exist so execution-backed integrations do not widen
 scope by accident.
 
 See also:
@@ -41,48 +41,59 @@ See also:
 - `docs/reference/configuration.md`
 - `docs/how-to/run-validation.md`
 
-## Fixture-Backed Boundary
+## Execution Mode Boundary
 
-The current pentest and chaos commands are implemented now, but they are
-fixture-backed.
+Two pentest execution modes are maintained with distinct safety profiles:
 
-That means:
+### Live execution mode (current default)
 
-- pentest adapters currently read repository fixture artifacts instead of
-  invoking live external scanner binaries
-- chaos orchestration currently uses fixture-backed monitoring observations and
-  a Toxiproxy-like controller instead of a live Toxiproxy runtime
-- report rebuild is fully implemented from stored normalized findings and does
-  not depend on replaying raw external tool output
+`toolkit pentest run` invokes real external scanner binaries against a live
+target. Safety limits in this mode:
 
-This boundary is deliberate. It keeps the command surface, artifact model, and
-exit-code contract stable while execution-backed integrations are added later.
+- environments must be `local` or `staging`; production-like targets are
+  rejected before any binary runs
+- all adapters operate in safe mode; `safe_mode: false` is a hard error
+- tool commands are built from allowlists only (ZAP rules, Nuclei templates)
+- core binary missing → hard failure (exit 2); no silent degradation
+- optional binary missing → explicit skip; run continues
 
-Do not describe the current state as live end-to-end scanner execution or live
-chaos execution.
+### Fixture-backed mode (onboarding and offline testing)
+
+`run_pentest_fixture_flow()` reads pre-recorded tool outputs from repository
+fixture files. No external binaries or live targets are required. This mode is
+used for onboarding, CI without scanner installations, and adapter unit tests.
+
+### Chaos execution (fixture-backed)
+
+`toolkit chaos run` currently uses fixture-backed monitoring observations and
+a Toxiproxy-like controller instead of a live Toxiproxy runtime. Live chaos
+orchestration is planned next.
+
+Report rebuild (`toolkit report build`) is fully implemented from stored
+normalized findings and does not depend on replaying raw tool output in either mode.
+
+Do not describe the current chaos path as live end-to-end chaos execution.
 
 ## Pentest Safety Boundaries
 
-The current pentest path preserves these operator-visible limits:
+The live pentest path preserves these operator-visible limits:
 
-- only the curated core v1 tool set is modeled by default:
-  - ZAP
-  - Nuclei
-  - Nmap
+- only the curated core v1 tool set runs by default: ZAP, Nuclei, Nmap
+- optional tools (Trivy, Semgrep) run only when explicitly enabled in the profile
 - command construction is safe by default and allowlist-driven
-- disabled tools skip cleanly instead of being run implicitly
+- disabled tools produce explicit skips rather than being run implicitly
 - destructive or exploit-heavy behavior is not part of the default profiles
 - findings are normalized before reporting so vendor-specific raw output does
   not leak into the stable report contract
-
-Today, the safety boundary is expressed through fixture-backed adapter outputs.
-Later execution-backed work must preserve the same operator-facing limits.
+- core tool binaries must be pre-installed; the toolkit never downloads them
 
 See also:
 
 - `docs/reference/pentest-adapters.md`
 - `docs/reference/pentest-run.md`
 - `docs/how-to/run-pentest.md`
+- `docs/how-to/run-live-pentest.md`
+- `docs/explanation/live-execution-model.md`
 
 ## Chaos Safety Boundaries
 

@@ -14,9 +14,10 @@ Current command behavior:
 - `toolkit validate` loads the repository YAML files from the current working
   directory, validates the selected `--app/--env` pair, and exits with `0` on
   success
-- `toolkit pentest run` executes the current fixture-driven pentest flow,
-  writes run artifacts under `outputs/<run-id>/`, and exits with `0`, `1`, or
-  `2` according to the pentest outcome contract
+- `toolkit pentest run` executes real scanner adapters (zap, nuclei, nmap)
+  against a live target, writes run artifacts under `outputs/<run-id>/`, and
+  exits with `0`, `1`, or `2` according to the pentest outcome contract;
+  requires `zap-baseline.py`, `nuclei`, and `nmap` binaries on `PATH`
 - `toolkit report build` reads `outputs/<run-id>/normalized/findings.json`,
   writes `outputs/<run-id>/reports/executive-summary.md`, and exits with `0` on
   success
