@@ -2,13 +2,22 @@ import re
 import shutil
 import unittest
 from contextlib import chdir
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
+from toolkit.adapters.base import (
+    AdapterAvailability,
+    AdapterSkipReason,
+    build_skipped_result,
+    build_success_result,
+)
 from toolkit.cli import app
 from toolkit.core.exits import ExitCode
+from toolkit.results.normalizers import build_normalized_result
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES_ROOT = REPO_ROOT / "examples" / "configs"
@@ -51,6 +60,42 @@ def extract_run_id(output: str) -> str:
     return match.group(1)
 
 
+def _sample_pentest_results_with_findings(app_id: str):
+    """Return mock execution results that produce findings for smoke tests."""
+    _when = datetime(2026, 4, 1, tzinfo=UTC)
+    finding = build_normalized_result(
+        app_id=app_id,
+        environment="local",
+        target="http://localhost:8000/",
+        tool="zap",
+        category="headers",
+        severity="medium",
+        confidence="high",
+        evidence=["Content-Security-Policy header missing"],
+        remediation_summary="Add a Content-Security-Policy header.",
+        started_at=_when,
+    )
+    return (
+        build_success_result("zap", findings=(finding,)),
+        build_success_result("nuclei"),
+        build_success_result("nmap"),
+        build_skipped_result(
+            "trivy",
+            skip_reason=AdapterSkipReason.DISABLED,
+            availability=AdapterAvailability(
+                available=False, reason="disabled in profile", binary="trivy"
+            ),
+        ),
+        build_skipped_result(
+            "semgrep",
+            skip_reason=AdapterSkipReason.DISABLED,
+            availability=AdapterAvailability(
+                available=False, reason="disabled in profile", binary="semgrep"
+            ),
+        ),
+    )
+
+
 class ExampleConfigSmokeTests(unittest.TestCase):
     def test_sample_webapp_pack_supports_validate_pentest_chaos_and_report(self) -> None:
         with TemporaryDirectory() as temp_dir_name:
@@ -65,20 +110,24 @@ class ExampleConfigSmokeTests(unittest.TestCase):
                     ["validate", "--app", "sample-internal-app", "--env", "local"],
                     catch_exceptions=False,
                 )
-                pentest_result = RUNNER.invoke(
-                    app,
-                    [
-                        "pentest",
-                        "run",
-                        "--app",
-                        "sample-internal-app",
-                        "--env",
-                        "local",
-                        "--profile",
-                        "safe-web-baseline",
-                    ],
-                    catch_exceptions=False,
-                )
+                with patch(
+                    "toolkit.pentest.runner.execute_pentest_plan",
+                    return_value=_sample_pentest_results_with_findings("sample-internal-app"),
+                ):
+                    pentest_result = RUNNER.invoke(
+                        app,
+                        [
+                            "pentest",
+                            "run",
+                            "--app",
+                            "sample-internal-app",
+                            "--env",
+                            "local",
+                            "--profile",
+                            "safe-web-baseline",
+                        ],
+                        catch_exceptions=False,
+                    )
                 pentest_run_id = extract_run_id(pentest_result.stdout)
                 report_result = RUNNER.invoke(
                     app,
@@ -140,21 +189,25 @@ class ExampleConfigSmokeTests(unittest.TestCase):
                     ["validate", "--app", "sample-api-bearer-app", "--env", "staging"],
                     catch_exceptions=False,
                 )
-                pentest_result = RUNNER.invoke(
-                    app,
-                    [
-                        "pentest",
-                        "run",
-                        "--app",
-                        "sample-api-bearer-app",
-                        "--env",
-                        "staging",
-                        "--profile",
-                        "safe-api-baseline",
-                    ],
-                    env={"SAMPLE_API_BEARER_TOKEN": "placeholder-token"},
-                    catch_exceptions=False,
-                )
+                with patch(
+                    "toolkit.pentest.runner.execute_pentest_plan",
+                    return_value=_sample_pentest_results_with_findings("sample-api-bearer-app"),
+                ):
+                    pentest_result = RUNNER.invoke(
+                        app,
+                        [
+                            "pentest",
+                            "run",
+                            "--app",
+                            "sample-api-bearer-app",
+                            "--env",
+                            "staging",
+                            "--profile",
+                            "safe-api-baseline",
+                        ],
+                        env={"SAMPLE_API_BEARER_TOKEN": "placeholder-token"},
+                        catch_exceptions=False,
+                    )
                 pentest_run_id = extract_run_id(pentest_result.stdout)
 
             pentest_run_dir = project_root / "outputs" / pentest_run_id
