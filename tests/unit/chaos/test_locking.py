@@ -1,11 +1,11 @@
 import json
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 from toolkit.chaos.locking import (
-    LOCKS_DIR_NAME,
     CHAOS_LOCKS_DIR_NAME,
+    LOCKS_DIR_NAME,
     ChaosLockAcquisitionError,
     acquire_chaos_lock,
     build_chaos_lock_key,

@@ -166,7 +166,9 @@ def _validate_app_safety(bundle: ValidatedConfigBundle, app: AppConfig) -> None:
         ) from exc
 
 
-def _validate_enabled_module_profile_coverage(bundle: ValidatedConfigBundle, app: AppConfig) -> None:
+def _validate_enabled_module_profile_coverage(
+    bundle: ValidatedConfigBundle, app: AppConfig
+) -> None:
     if "pentest" in app.enabled_modules and not bundle.pentest_profiles.profiles:
         raise BundleValidationError(
             f"App {app.id!r} enables 'pentest' but no pentest profiles are defined.",

@@ -13,9 +13,7 @@ class ConfigValidationCode(StrEnum):
     AUTH_COOKIE_REQUIRES_COOKIE_NAME = "auth_cookie_requires_cookie_name"
     AUTH_COOKIE_REQUIRES_COOKIE_VALUE_ENV_VAR = "auth_cookie_requires_cookie_value_env_var"
     AUTH_SESSION_REQUIRES_SESSION_HEADER = "auth_session_requires_session_header"
-    AUTH_SESSION_REQUIRES_SESSION_VALUE_ENV_VAR = (
-        "auth_session_requires_session_value_env_var"
-    )
+    AUTH_SESSION_REQUIRES_SESSION_VALUE_ENV_VAR = "auth_session_requires_session_value_env_var"
     AUTH_FORM_REQUIRES_LOGIN_URL = "auth_form_requires_login_url"
     AUTH_FORM_REQUIRES_USERNAME_ENV_VAR = "auth_form_requires_username_env_var"
     AUTH_FORM_REQUIRES_PASSWORD_ENV_VAR = "auth_form_requires_password_env_var"

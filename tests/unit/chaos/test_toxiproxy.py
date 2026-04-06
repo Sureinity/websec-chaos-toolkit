@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 import httpx
 
@@ -193,7 +193,11 @@ class ToxiproxyClientTests(unittest.TestCase):
 
         def handler(request: httpx.Request) -> httpx.Response:
             seen_requests.append((request.method, request.url.path))
-            if request.method == "DELETE" and request.url.path == "/proxies/payments-api/toxics/toolkit-payments-api-latency-downstream":
+            if (
+                request.method == "DELETE"
+                and request.url.path
+                == "/proxies/payments-api/toxics/toolkit-payments-api-latency-downstream"
+            ):
                 return httpx.Response(status_code=204, request=request)
             if request.method == "GET" and request.url.path == "/proxies/payments-api":
                 return httpx.Response(

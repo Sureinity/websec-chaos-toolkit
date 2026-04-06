@@ -1,9 +1,9 @@
 """Safe nmap adapter with fixture-driven normalization."""
 
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-import xml.etree.ElementTree as ET
 
 from toolkit.adapters.base import (
     AdapterAvailability,
@@ -91,10 +91,22 @@ class NmapAdapter:
                         target=f"{host_target}:{port_id}",
                         tool=self.name,
                         category="ports",
-                        severity=_severity_for_service(service.attrib.get("name", "") if service is not None else ""),
+                        severity=_severity_for_service(
+                            service.attrib.get("name", "") if service is not None else ""
+                        ),
                         confidence="high",
-                        evidence=_build_evidence(service_name=service.attrib.get("name", "") if service is not None else "", port_id=port_id),
-                        remediation_summary=_build_remediation_summary(service_name=service.attrib.get("name", "") if service is not None else "", port_id=port_id),
+                        evidence=_build_evidence(
+                            service_name=service.attrib.get("name", "")
+                            if service is not None
+                            else "",
+                            port_id=port_id,
+                        ),
+                        remediation_summary=_build_remediation_summary(
+                            service_name=service.attrib.get("name", "")
+                            if service is not None
+                            else "",
+                            port_id=port_id,
+                        ),
                         started_at=resolved_started_at,
                         finished_at=finished_at,
                     )

@@ -18,11 +18,7 @@ def redact_secret(value: str | None, *, visible_prefix: int = 2, visible_suffix:
     if len(stripped) <= visible_prefix + visible_suffix:
         return REDACTED_MARKER
 
-    return (
-        f"{stripped[:visible_prefix]}"
-        f"{REDACTED_MARKER}"
-        f"{stripped[-visible_suffix:]}"
-    )
+    return f"{stripped[:visible_prefix]}" f"{REDACTED_MARKER}" f"{stripped[-visible_suffix:]}"
 
 
 def redact_known_secrets(text: str, secrets: Iterable[str | None]) -> str:

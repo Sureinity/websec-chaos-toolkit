@@ -1,8 +1,8 @@
+import unittest
+import urllib.parse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
-import urllib.parse
-import unittest
 
 from toolkit.auth.errors import UnsupportedAuthFlowError
 from toolkit.auth.form_login import perform_form_login

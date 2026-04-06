@@ -1,8 +1,8 @@
 """Fixture-backed chaos orchestration core."""
 
+import json
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
-import json
 from pathlib import Path
 from typing import Protocol
 
@@ -26,9 +26,9 @@ from toolkit.chaos.monitoring import (
     ExperimentAssessment,
     MonitoringObservation,
     capture_steady_state_baseline,
+    evaluate_abort_thresholds,
     monitoring_observations_to_payload,
     read_monitoring_observations_from_path,
-    evaluate_abort_thresholds,
 )
 from toolkit.chaos.planner import build_chaos_experiment_plan
 from toolkit.chaos.service import (
@@ -146,9 +146,7 @@ def run_chaos_fixture_flow(
             attributes=default_fault_attributes(plan.fault_type),
         )
 
-        experiment_observations = load_observations(
-            fixture_paths.experiment_observations_path
-        )
+        experiment_observations = load_observations(fixture_paths.experiment_observations_path)
         experiment_path = _write_json_artifact(
             context.raw_dir / "chaos" / "experiment-observations.json",
             monitoring_observations_to_payload(experiment_observations),
@@ -266,8 +264,7 @@ def _build_findings(
         return []
 
     evidence = [
-        f"{item.summary}: {json.dumps(item.values, sort_keys=True)}"
-        for item in assessment.evidence
+        f"{item.summary}: {json.dumps(item.values, sort_keys=True)}" for item in assessment.evidence
     ]
     return [
         NormalizedResult(

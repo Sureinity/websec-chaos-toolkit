@@ -1,9 +1,9 @@
-from contextlib import chdir
-from pathlib import Path
 import re
 import shutil
-from tempfile import TemporaryDirectory
 import unittest
+from contextlib import chdir
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from typer.testing import CliRunner
 

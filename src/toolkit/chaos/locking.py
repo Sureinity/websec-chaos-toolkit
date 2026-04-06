@@ -1,14 +1,14 @@
 """Filesystem-backed operator-host locking for chaos runs."""
 
+import json
+import os
+import re
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
-import json
-import os
 from pathlib import Path
-import re
-from typing import Iterator
 
 LOCKS_DIR_NAME = ".toolkit-locks"
 CHAOS_LOCKS_DIR_NAME = "chaos"
@@ -50,7 +50,7 @@ def build_chaos_lock_key(*, app_id: str, environment: str) -> str:
 
     safe_app_id = _slugify(app_id) or "app"
     safe_environment = _slugify(environment) or "env"
-    digest = sha256(f"{app_id}\n{environment}".encode("utf-8")).hexdigest()[:12]
+    digest = sha256(f"{app_id}\n{environment}".encode()).hexdigest()[:12]
     return f"{safe_app_id}-{safe_environment}-{digest}"
 
 

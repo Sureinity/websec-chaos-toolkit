@@ -1,6 +1,6 @@
+import unittest
 from datetime import UTC, datetime
 from pathlib import Path
-import unittest
 from unittest.mock import patch
 
 from toolkit.adapters.base import AdapterAvailability

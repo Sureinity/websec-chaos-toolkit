@@ -1,5 +1,5 @@
-from datetime import UTC, datetime
 import unittest
+from datetime import UTC, datetime
 
 from toolkit.adapters.base import (
     AdapterAvailability,

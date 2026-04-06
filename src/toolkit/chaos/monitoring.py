@@ -1,10 +1,10 @@
 """Health and metrics monitoring helpers for chaos experiments."""
 
+import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-import json
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Literal
@@ -194,9 +194,7 @@ def capture_steady_state_baseline(
         average_response_time_ms=sum(response_times) / len(response_times),
         max_response_time_ms=max(response_times),
         max_error_rate=max(error_rates) if error_rates else None,
-        summary=(
-            f"Captured steady-state baseline from {len(observations)} healthy observations."
-        ),
+        summary=(f"Captured steady-state baseline from {len(observations)} healthy observations."),
         observations=tuple(observations),
     )
 
@@ -528,9 +526,7 @@ def _parse_text_error_rate(payload: str) -> float:
         raise MetricsParseError("text exposition did not contain any numeric samples")
 
     preferred = [
-        value
-        for name, value in candidates
-        if name == "error_rate" or name.endswith("_error_rate")
+        value for name, value in candidates if name == "error_rate" or name.endswith("_error_rate")
     ]
     if preferred:
         return preferred[0]
@@ -562,9 +558,7 @@ def _build_request_headers(
 ) -> dict[str, str]:
     request_headers = dict(headers or {})
     if cookies:
-        request_headers["Cookie"] = "; ".join(
-            f"{name}={value}" for name, value in cookies.items()
-        )
+        request_headers["Cookie"] = "; ".join(f"{name}={value}" for name, value in cookies.items())
     return request_headers
 
 

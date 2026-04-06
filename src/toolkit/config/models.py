@@ -104,7 +104,9 @@ class AuthConfig(BaseModel):
         }
 
         if self.method == "none":
-            populated_fields = [name for name, value in secret_ref_fields.items() if value is not None]
+            populated_fields = [
+                name for name, value in secret_ref_fields.items() if value is not None
+            ]
             if populated_fields:
                 raise config_error(
                     ConfigValidationCode.AUTH_NONE_FORBIDS_SECRET_REFS,

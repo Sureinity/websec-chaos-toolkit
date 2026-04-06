@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from toolkit.adapters.base import ToolExecution
 from toolkit.adapters.nmap import NmapAdapter
@@ -25,7 +25,9 @@ def build_app() -> AppConfig:
     )
 
 
-def build_settings(*, allowlisted_rules: list[str], profile: str = "baseline") -> PentestToolSettings:
+def build_settings(
+    *, allowlisted_rules: list[str], profile: str = "baseline"
+) -> PentestToolSettings:
     return PentestToolSettings(
         enabled=True,
         safe_mode=True,

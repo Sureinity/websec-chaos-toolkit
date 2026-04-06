@@ -1,8 +1,8 @@
-from datetime import UTC, datetime
 import json
+import unittest
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 import yaml
 
@@ -26,11 +26,7 @@ def load_valid_app_and_profile():
     profiles = ChaosProfileRegistry.model_validate(
         yaml.safe_load(
             (
-                FIXTURE_ROOT
-                / "configs"
-                / "valid"
-                / "auth-method-matrix"
-                / "chaos-profiles.yaml"
+                FIXTURE_ROOT / "configs" / "valid" / "auth-method-matrix" / "chaos-profiles.yaml"
             ).read_text(encoding="utf-8")
         )
     )

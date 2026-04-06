@@ -1,10 +1,10 @@
 """Helpers for stable per-run output directories and manifest metadata."""
 
+import json
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from hashlib import sha256
-import json
 from pathlib import Path
 
 OUTPUTS_DIR_NAME = "outputs"

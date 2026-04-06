@@ -1,8 +1,7 @@
+import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
-import unittest
 
 from toolkit.core.run_context import RunRequest, prepare_run_context
 from toolkit.reports.builder import (

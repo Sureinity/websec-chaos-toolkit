@@ -1,8 +1,8 @@
 """Safe Semgrep adapter with fixture-driven normalization."""
 
+import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-import json
 from pathlib import Path
 
 from toolkit.adapters.base import (
@@ -47,7 +47,9 @@ class SemgrepAdapter:
 
     def build_execution(self) -> ToolExecution:
         if not self.settings.safe_mode:
-            raise ValueError("semgrep adapter refuses to build commands when safe_mode is disabled.")
+            raise ValueError(
+                "semgrep adapter refuses to build commands when safe_mode is disabled."
+            )
 
         command = [
             self.binary,

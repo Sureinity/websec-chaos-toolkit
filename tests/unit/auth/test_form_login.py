@@ -1,5 +1,5 @@
-from http import HTTPStatus
 import unittest
+from http import HTTPStatus
 
 import httpx
 
@@ -26,7 +26,10 @@ def build_form_auth_config() -> AuthConfig:
 class FormLoginUnitTests(unittest.TestCase):
     def test_perform_form_login_returns_reusable_cookie_session(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
-            if request.method == "POST" and str(request.url) == "https://staging.internal.example/login":
+            if (
+                request.method == "POST"
+                and str(request.url) == "https://staging.internal.example/login"
+            ):
                 return httpx.Response(
                     status_code=HTTPStatus.FOUND,
                     headers={

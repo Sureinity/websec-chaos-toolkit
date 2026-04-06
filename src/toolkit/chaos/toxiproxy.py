@@ -264,9 +264,7 @@ class ToxiproxyClient:
             response = self._request(
                 "DELETE",
                 f"/proxies/{handle.proxy_name}/toxics/{handle.toxic_name}",
-                operation=(
-                    f"remove toxic {handle.toxic_name!r} from proxy {handle.proxy_name!r}"
-                ),
+                operation=(f"remove toxic {handle.toxic_name!r} from proxy {handle.proxy_name!r}"),
             )
             if response.status_code not in (
                 httpx.codes.OK,
@@ -495,10 +493,7 @@ def _reject_unknown_keys(
     if unknown_keys:
         raise UnsupportedToxiproxyFaultError(
             fault_type=fault_type,
-            detail=(
-                "unexpected attribute keys were provided: "
-                + ", ".join(sorted(unknown_keys))
-            ),
+            detail=("unexpected attribute keys were provided: " + ", ".join(sorted(unknown_keys))),
         )
 
 

@@ -1,5 +1,5 @@
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 
 class BootstrapLayoutTests(unittest.TestCase):
@@ -15,6 +15,8 @@ class BootstrapLayoutTests(unittest.TestCase):
         self.assertTrue((root / "tests" / "integration" / "test_report_command.py").is_file())
         self.assertTrue((root / "tests" / "integration" / "test_form_login.py").is_file())
         self.assertTrue((root / "tests" / "integration" / "test_auth_resolution.py").is_file())
-        self.assertTrue((root / "tests" / "integration" / "test_tool_adapters_external.py").is_file())
+        self.assertTrue(
+            (root / "tests" / "integration" / "test_tool_adapters_external.py").is_file()
+        )
         self.assertTrue((root / "tests" / "integration" / "test_pentest_run.py").is_file())
         self.assertTrue((root / "tests" / "integration" / "test_pentest_command.py").is_file())

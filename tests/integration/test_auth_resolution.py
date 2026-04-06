@@ -1,6 +1,5 @@
-from pathlib import Path
-
 import unittest
+from pathlib import Path
 
 import httpx
 import yaml
@@ -95,7 +94,9 @@ class AuthResolutionIntegrationTests(unittest.TestCase):
         self.assertTrue(session.is_authenticated)
         self.assertEqual(session.cookies, {"sessionid": "session-cookie"})
         self.assertEqual(session.provenance["source"], "form_login")
-        self.assertEqual(session.provenance["final_url"], "https://staging.internal.example/dashboard")
+        self.assertEqual(
+            session.provenance["final_url"], "https://staging.internal.example/dashboard"
+        )
 
     def test_resolve_auth_session_fails_for_missing_env_var(self) -> None:
         with self.assertRaises(MissingEnvironmentVariableError) as context:

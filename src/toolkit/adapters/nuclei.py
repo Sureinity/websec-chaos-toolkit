@@ -1,8 +1,8 @@
 """Safe nuclei adapter with fixture-driven normalization."""
 
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
-import json
 from pathlib import Path
 
 from toolkit.adapters.base import (

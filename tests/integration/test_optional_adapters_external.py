@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from toolkit.adapters.base import ToolExecution
 from toolkit.adapters.process import run_tool_execution

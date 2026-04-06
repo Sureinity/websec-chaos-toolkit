@@ -1,8 +1,7 @@
+import unittest
 from contextlib import chdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
-import unittest
 
 from typer.testing import CliRunner
 

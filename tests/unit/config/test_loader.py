@@ -1,7 +1,6 @@
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
-import unittest
 
 import yaml
 

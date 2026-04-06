@@ -39,7 +39,11 @@ class ProcessRunnerTests(unittest.TestCase):
     def test_run_tool_execution_captures_non_zero_exit(self) -> None:
         execution = ToolExecution(
             tool="python",
-            command=("python3", "-c", "import sys; sys.stderr.write('boom\\n'); raise SystemExit(7)"),
+            command=(
+                "python3",
+                "-c",
+                "import sys; sys.stderr.write('boom\\n'); raise SystemExit(7)",
+            ),
         )
 
         result = run_tool_execution(execution)

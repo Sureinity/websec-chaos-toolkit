@@ -1,6 +1,5 @@
-from pathlib import Path
-
 import unittest
+from pathlib import Path
 
 import yaml
 from pydantic import ValidationError
@@ -32,9 +31,7 @@ class ConfigModelValidationTests(unittest.TestCase):
         self.assertEqual(len(chaos_profiles.profiles), 1)
 
     def test_auth_none_forbids_secret_refs(self) -> None:
-        payload = load_yaml(
-            FIXTURE_ROOT / "invalid" / "auth-none-with-secret" / "apps.yaml"
-        )
+        payload = load_yaml(FIXTURE_ROOT / "invalid" / "auth-none-with-secret" / "apps.yaml")
 
         error = self.assert_validation_error(
             lambda: AppRegistry.model_validate(payload),
@@ -79,9 +76,7 @@ class ConfigModelValidationTests(unittest.TestCase):
         self.assertEqual(error["loc"], ("apps", 0, "auth"))
 
     def test_session_auth_requires_header(self) -> None:
-        payload = load_yaml(
-            FIXTURE_ROOT / "invalid" / "auth-session-missing-header" / "apps.yaml"
-        )
+        payload = load_yaml(FIXTURE_ROOT / "invalid" / "auth-session-missing-header" / "apps.yaml")
 
         error = self.assert_validation_error(
             lambda: AppRegistry.model_validate(payload),
@@ -91,9 +86,7 @@ class ConfigModelValidationTests(unittest.TestCase):
         self.assertEqual(error["loc"], ("apps", 0, "auth"))
 
     def test_form_auth_requires_password(self) -> None:
-        payload = load_yaml(
-            FIXTURE_ROOT / "invalid" / "auth-form-missing-password" / "apps.yaml"
-        )
+        payload = load_yaml(FIXTURE_ROOT / "invalid" / "auth-form-missing-password" / "apps.yaml")
 
         error = self.assert_validation_error(
             lambda: AppRegistry.model_validate(payload),
@@ -126,9 +119,7 @@ class ConfigModelValidationTests(unittest.TestCase):
         self.assertEqual(error["loc"], ("apps", 0))
 
     def test_missing_target_allowlist_remains_invalid(self) -> None:
-        payload = load_yaml(
-            FIXTURE_ROOT / "invalid" / "missing-target-allowlist" / "apps.yaml"
-        )
+        payload = load_yaml(FIXTURE_ROOT / "invalid" / "missing-target-allowlist" / "apps.yaml")
 
         with self.assertRaises(ValidationError) as context:
             AppRegistry.model_validate(payload)
@@ -136,9 +127,7 @@ class ConfigModelValidationTests(unittest.TestCase):
         self.assertEqual(context.exception.errors()[0]["loc"], ("apps", 0, "target_allowlist"))
 
     def test_missing_health_endpoint_remains_invalid(self) -> None:
-        payload = load_yaml(
-            FIXTURE_ROOT / "invalid" / "missing-health-endpoint" / "apps.yaml"
-        )
+        payload = load_yaml(FIXTURE_ROOT / "invalid" / "missing-health-endpoint" / "apps.yaml")
 
         with self.assertRaises(ValidationError) as context:
             AppRegistry.model_validate(payload)
@@ -227,9 +216,7 @@ class ConfigModelValidationTests(unittest.TestCase):
         self.assertEqual(context.exception.errors()[0]["loc"], ("profiles", 0, "rollback"))
 
     def test_production_like_environment_is_rejected_by_literal_contract(self) -> None:
-        payload = load_yaml(
-            FIXTURE_ROOT / "invalid" / "production-like-environment" / "apps.yaml"
-        )
+        payload = load_yaml(FIXTURE_ROOT / "invalid" / "production-like-environment" / "apps.yaml")
 
         with self.assertRaises(ValidationError) as context:
             AppRegistry.model_validate(payload)

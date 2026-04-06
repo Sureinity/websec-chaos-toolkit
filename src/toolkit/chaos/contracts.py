@@ -114,9 +114,7 @@ def ensure_chaos_contract_preconditions(
 
     normalized_rollback_method = (rollback_method or "").strip()
     if not normalized_rollback_method:
-        raise ValueError(
-            "Chaos runs require rollback configuration before any fault can start."
-        )
+        raise ValueError("Chaos runs require rollback configuration before any fault can start.")
 
     if fault_type in RESERVED_UNIMPLEMENTED_CHAOS_FAULT_TYPES:
         raise ValueError(

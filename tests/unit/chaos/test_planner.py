@@ -1,7 +1,7 @@
 import unittest
 
-from toolkit.config.models import AppConfig, ChaosProfileRegistry
 from toolkit.chaos.planner import build_chaos_experiment_plan
+from toolkit.config.models import AppConfig, ChaosProfileRegistry
 
 
 class ChaosPlannerTests(unittest.TestCase):

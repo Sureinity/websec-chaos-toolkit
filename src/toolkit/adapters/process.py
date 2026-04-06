@@ -1,10 +1,10 @@
 """Shared process execution helpers for scanner adapters."""
 
-from dataclasses import dataclass
 import os
-from pathlib import Path
 import shutil
 import subprocess
+from dataclasses import dataclass
+from pathlib import Path
 
 from toolkit.adapters.base import AdapterAvailability, ToolExecution
 

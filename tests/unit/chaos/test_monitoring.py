@@ -1,18 +1,17 @@
+import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-import unittest
 
 import httpx
 
 from toolkit.chaos.monitoring import (
     BaselineCaptureError,
     ExperimentWindowStatus,
-    collect_monitoring_observation,
     capture_steady_state_baseline,
+    collect_monitoring_observation,
     evaluate_abort_thresholds,
 )
 from toolkit.config.models import AppConfig
-
 
 FIXED_TIME = datetime(2026, 3, 30, 4, 0, 0, tzinfo=UTC)
 FIXTURE_ROOT = Path("tests/fixtures/chaos/monitoring")
@@ -21,7 +20,10 @@ FIXTURE_ROOT = Path("tests/fixtures/chaos/monitoring")
 class ChaosMonitoringTests(unittest.TestCase):
     def test_collect_monitoring_observation_health_only_mode_is_deterministic(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
-            if request.method == "GET" and str(request.url) == "https://sample.internal.test/healthz":
+            if (
+                request.method == "GET"
+                and str(request.url) == "https://sample.internal.test/healthz"
+            ):
                 return httpx.Response(
                     status_code=200,
                     text="ok",
@@ -49,9 +51,15 @@ class ChaosMonitoringTests(unittest.TestCase):
         metrics_payload = (FIXTURE_ROOT / "metrics-exposition.txt").read_text(encoding="utf-8")
 
         def handler(request: httpx.Request) -> httpx.Response:
-            if request.method == "GET" and str(request.url) == "https://sample.internal.test/healthz":
+            if (
+                request.method == "GET"
+                and str(request.url) == "https://sample.internal.test/healthz"
+            ):
                 return httpx.Response(status_code=200, text="ok", request=request)
-            if request.method == "GET" and str(request.url) == "https://metrics.internal.example/metrics":
+            if (
+                request.method == "GET"
+                and str(request.url) == "https://metrics.internal.example/metrics"
+            ):
                 return httpx.Response(status_code=200, text=metrics_payload, request=request)
             return httpx.Response(status_code=500, request=request)
 
@@ -71,12 +79,15 @@ class ChaosMonitoringTests(unittest.TestCase):
         self.assertEqual(observation.metrics.query, None)
 
     def test_collect_monitoring_observation_parses_prometheus_query_metrics(self) -> None:
-        metrics_payload = (
-            FIXTURE_ROOT / "prometheus-query-success.json"
-        ).read_text(encoding="utf-8")
+        metrics_payload = (FIXTURE_ROOT / "prometheus-query-success.json").read_text(
+            encoding="utf-8"
+        )
 
         def handler(request: httpx.Request) -> httpx.Response:
-            if request.method == "GET" and str(request.url) == "https://sample.internal.test/healthz":
+            if (
+                request.method == "GET"
+                and str(request.url) == "https://sample.internal.test/healthz"
+            ):
                 return httpx.Response(status_code=200, text="ok", request=request)
             if (
                 request.method == "GET"
@@ -176,8 +187,12 @@ class ChaosMonitoringTests(unittest.TestCase):
         assessment = evaluate_abort_thresholds(
             baseline=baseline,
             observations=(
-                build_observation(offset_seconds=30, healthy=False, status_code=503, detail="service unavailable"),
-                build_observation(offset_seconds=60, healthy=False, status_code=503, detail="service unavailable"),
+                build_observation(
+                    offset_seconds=30, healthy=False, status_code=503, detail="service unavailable"
+                ),
+                build_observation(
+                    offset_seconds=60, healthy=False, status_code=503, detail="service unavailable"
+                ),
             ),
             consecutive_health_failures_threshold=2,
             max_error_rate_threshold=None,

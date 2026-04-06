@@ -1,7 +1,7 @@
+import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 from unittest.mock import patch
 
 from toolkit.adapters.base import AdapterAvailability
@@ -33,8 +33,7 @@ def build_settings(
         enabled=True,
         safe_mode=safe_mode,
         profile="config-audit",
-        allowlisted_rules=allowlisted_rules
-        or ["vulnerabilities", "misconfigurations"],
+        allowlisted_rules=allowlisted_rules or ["vulnerabilities", "misconfigurations"],
     )
 
 
