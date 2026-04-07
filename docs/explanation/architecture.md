@@ -23,11 +23,8 @@ Implemented:
 - pentest execution service with role-based CORE/OPTIONAL skip-versus-fail logic
 - live pentest planner and orchestration runner executing real scanner binaries
 - fixture-backed pentest flow preserved for onboarding and offline testing
-- fixture-backed chaos planner, Toxiproxy wrapper, monitoring baseline, and orchestration runner
-
-Planned next:
-
-- live chaos orchestration through a real Toxiproxy runtime
+- live chaos execution service, Toxiproxy wrapper, monitoring, and orchestration runner
+- fixture-backed chaos flow preserved for onboarding and offline testing
 
 ## Architectural Principles
 
@@ -47,7 +44,7 @@ flowchart TD
     validate[Validate flow<br/>Implemented]
     runctx[Run context and outputs<br/>Implemented]
     pentest[Pentest orchestration<br/>Live execution]
-    chaos[Chaos orchestration<br/>Fixture-backed]
+    chaos[Chaos orchestration<br/>Live execution]
     report[Report build<br/>Implemented]
     outputs[outputs/<run-id>/...]
 
@@ -113,7 +110,7 @@ Key boundaries:
   fixture-driven zap, nuclei, and nmap implementations today, and will own the
   execution-backed concrete tool boundaries next
 - `pentest/` owns the live execution service, planner, and orchestration runner; the fixture-backed flow is preserved as `run_pentest_fixture_flow()` for onboarding
-- `chaos/` owns the fixture-backed chaos planner and orchestration runner; will own live Toxiproxy-backed flows next
+- `chaos/` owns the live execution service, Toxiproxy wrapper, monitoring, planner, and orchestration runner; the fixture-backed flow is preserved as `run_chaos_fixture_flow()` for onboarding
 - `results/` owns normalized finding contracts
 - `reports/` owns rendered outputs
 - `safety/` owns fail-closed checks shared across workflows
@@ -254,15 +251,15 @@ Current state:
 - `toolkit validate` is implemented end-to-end for config validation
 - `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
   against a live target; fixture-backed flow preserved for onboarding and testing
-- `toolkit chaos run` is implemented for the current fixture-backed chaos flow
+- `toolkit chaos run` executes live Toxiproxy-backed experiments; fixture-backed
+  flow preserved for onboarding and testing
 - `toolkit report build` is implemented for existing normalized result bundles
 - config validation, run-context structure, pentest orchestration, chaos
   orchestration, and report rebuilding are the main implemented foundations
 
-Planned expansion:
-
-- live chaos orchestration through a real Toxiproxy runtime that records
-  baseline, fault execution, rollback, and recovery state
+Both pentest and chaos paths now execute against live targets. Fixture-backed
+flows are preserved for onboarding, offline testing, and CI without external
+dependencies.
 
 See also:
 

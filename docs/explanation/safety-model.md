@@ -63,16 +63,28 @@ target. Safety limits in this mode:
 fixture files. No external binaries or live targets are required. This mode is
 used for onboarding, CI without scanner installations, and adapter unit tests.
 
-### Chaos execution (fixture-backed)
+### Live chaos execution mode (current default)
 
-`toolkit chaos run` currently uses fixture-backed monitoring observations and
-a Toxiproxy-like controller instead of a live Toxiproxy runtime. Live chaos
-orchestration is planned next.
+`toolkit chaos run` connects to a real Toxiproxy API server, captures live
+health observations, and injects real faults. Safety limits:
+
+- environments must be `local` or `staging`
+- health monitoring and rollback config are mandatory
+- one active experiment per app/environment (filesystem lock)
+- rollback always attempted (finally block)
+- `packet_loss` is fail-closed (no safe Toxiproxy mapping)
+- `controlled_restart` is rejected until a safe implementation exists
+- the toolkit never installs or manages Toxiproxy
+
+### Fixture-backed chaos mode (onboarding and offline testing)
+
+`run_chaos_fixture_flow()` reads pre-recorded observations from repository
+fixture files and uses a non-networked controller. No Toxiproxy or live
+target is required.
 
 Report rebuild (`toolkit report build`) is fully implemented from stored
-normalized findings and does not depend on replaying raw tool output in either mode.
-
-Do not describe the current chaos path as live end-to-end chaos execution.
+normalized findings and does not depend on replaying raw tool output in
+either mode.
 
 ## Pentest Safety Boundaries
 
@@ -122,6 +134,8 @@ See also:
 
 - `docs/reference/chaos-run.md`
 - `docs/how-to/run-chaos.md`
+- `docs/how-to/run-live-chaos.md`
+- `docs/explanation/live-chaos-model.md`
 
 ## External Verification Boundary
 

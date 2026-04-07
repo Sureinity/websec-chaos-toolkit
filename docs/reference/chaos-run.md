@@ -151,20 +151,26 @@ The runner contract requires:
 
 ## Current State
 
-- fixture-backed chaos runner is implemented
-- live Toxiproxy client wrapper is implemented
-- live monitoring layer (health + metrics HTTP sampling) is implemented
-- **the live execution flow and CLI wiring are in progress**
-- fixture-backed flow is preserved for onboarding and offline testing
+- live chaos execution service, monitoring, and runner are implemented
+- live Toxiproxy client wrapper with preflight, inject, and rollback is
+  implemented
+- live monitoring layer (health + metrics HTTP polling) is implemented
+- **the current command executes live Toxiproxy-backed experiments**
+- fixture-backed flow is preserved as `run_chaos_fixture_flow()` for
+  onboarding and offline testing
 
 ## Current Command Usage
 
-Run the fixture-backed flow from the repository root:
+Run against a live Toxiproxy runtime:
 
 ```bash
 uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
 ```
 
+Prerequisites: Toxiproxy server at `http://127.0.0.1:8474`, target proxy
+configured, and live target reachable at `base_url`.
+
 Safety rationale:
 
 - `docs/explanation/safety-model.md`
+- `docs/explanation/live-chaos-model.md`

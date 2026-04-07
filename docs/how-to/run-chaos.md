@@ -1,63 +1,66 @@
 # Run Chaos
 
-Use this guide to execute the current fixture-backed chaos flow from the
-repository root.
+This guide covers both ways to run `toolkit chaos run`:
 
-## Before You Start
+- **Live execution** (default): real Toxiproxy runtime against a live target
+- **Fixture-backed**: pre-recorded observations for onboarding and offline testing
 
-- install dependencies with `uv sync --extra dev`
-- keep the repository fixture files in place under `tests/fixtures/chaos/`
-- use the default example config pack in `examples/configs/sample-webapp/`, or
-  another valid repository-style config bundle
+## Live Execution
 
-## Command
+See [run-live-chaos.md](run-live-chaos.md) for full prerequisites including
+Toxiproxy setup, proxy configuration, and supported fault types.
+
+### Quick start
 
 ```bash
-cd examples/configs/sample-webapp
 uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
 ```
 
-## What The Command Does
+Requires: Toxiproxy server at `http://127.0.0.1:8474`, configured proxy, and
+live target reachable at `base_url`.
 
-- validates the selected app, environment, and chaos profile
-- resolves runtime auth for the selected app
-- builds one deterministic chaos experiment plan
-- acquires a per-app lock on the operator host
-- loads fixture-backed baseline and experiment observations
-- injects one fixture-backed proxy fault and always attempts rollback
-- writes run artifacts under `outputs/<run-id>/`
+### What it does
+
+- validates app, environment, and chaos profile
+- acquires per-app lock, preflights Toxiproxy
+- captures live baseline, injects one fault
+- monitors experiment window, aborts on threshold breach
+- always attempts rollback
+- writes artifacts under `outputs/<run-id>/`
+
+### Exit codes
+
+- `0` — experiment passed, resilience held
+- `1` — abort threshold breached (resilience failure)
+- `2` — config error, missing runtime, rollback failure, or other error
+
+## Fixture-Backed Execution (Onboarding And Offline Testing)
+
+The fixture-backed flow reads pre-recorded observations from repository
+fixture files. No Toxiproxy server or live target is required.
+
+> **Note**: The fixture-backed runner (`run_chaos_fixture_flow`) is available
+> in `src/toolkit/chaos/runner.py` for integration tests and onboarding use.
+> The default CLI command uses the live path. To use the fixture flow in
+> tests, call `run_chaos_fixture_flow` directly with fixture paths.
 
 ## Expected Outputs
 
-After a successful run, inspect:
+Both modes write the same artifact layout:
 
-- `outputs/<run-id>/manifest.json`
-- `outputs/<run-id>/raw/chaos/baseline-observations.json`
-- `outputs/<run-id>/raw/chaos/experiment-observations.json`
-- `outputs/<run-id>/raw/chaos/orchestration-actions.json`
-- `outputs/<run-id>/normalized/findings.json`
-- `outputs/<run-id>/reports/executive-summary.md`
+```
+outputs/<run-id>/manifest.json
+outputs/<run-id>/raw/chaos/baseline-observations.json
+outputs/<run-id>/raw/chaos/experiment-observations.json
+outputs/<run-id>/raw/chaos/orchestration-actions.json
+outputs/<run-id>/normalized/findings.json
+outputs/<run-id>/reports/executive-summary.md
+```
 
-## Exit Codes
+## See Also
 
-- `0`
-  - the experiment stayed within configured thresholds
-- `1`
-  - the experiment triggered a resilience failure or abort-threshold breach
-- `2`
-  - configuration error, auth/runtime failure, or orchestration failure
-
-## Current Limitations
-
-- this command currently uses fixture-backed monitoring and fault-control data,
-  not a live Toxiproxy environment
-- `packet_loss` fails closed because the current Toxiproxy wrapper does not
-  have a safe first-party mapping for it
-- missing fixture files cause the run to fail with exit code `2`
-
-See also:
-
-- `docs/reference/chaos-run.md`
-- `docs/reference/output-artifacts.md`
-- `docs/explanation/safety-model.md`
-- `examples/configs/sample-webapp/`
+- `docs/how-to/run-live-chaos.md` — live execution prerequisites
+- `docs/reference/chaos-run.md` — authoritative run contract
+- `docs/explanation/live-chaos-model.md` — how the live path works
+- `docs/explanation/safety-model.md` — safety rationale
+- `examples/configs/sample-webapp/` — sample config pack

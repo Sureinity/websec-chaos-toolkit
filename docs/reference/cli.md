@@ -21,9 +21,10 @@ Current command behavior:
 - `toolkit report build` reads `outputs/<run-id>/normalized/findings.json`,
   writes `outputs/<run-id>/reports/executive-summary.md`, and exits with `0` on
   success
-- `toolkit chaos run` executes the current fixture-backed chaos flow, writes run
-  artifacts under `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
-  according to the chaos outcome contract
+- `toolkit chaos run` executes a live Toxiproxy-backed chaos experiment,
+  writes run artifacts under `outputs/<run-id>/`, and exits with `0`, `1`,
+  or `2` according to the chaos outcome contract; requires a running
+  Toxiproxy server and a configured proxy for the target service
 
 Stable exit-code contract:
 
@@ -36,4 +37,5 @@ For task-oriented operator procedures, see:
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-chaos.md`
+- `docs/how-to/run-live-chaos.md`
 - `docs/how-to/schedule-execution.md`
