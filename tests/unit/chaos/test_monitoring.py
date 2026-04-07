@@ -7,7 +7,9 @@ import httpx
 from toolkit.chaos.monitoring import (
     BaselineCaptureError,
     ExperimentWindowStatus,
+    capture_live_baseline,
     capture_steady_state_baseline,
+    collect_live_experiment_observations,
     collect_monitoring_observation,
     evaluate_abort_thresholds,
 )
@@ -283,3 +285,81 @@ def build_observation(
         ),
         metrics=metrics,
     )
+
+
+class LiveBaselineTests(unittest.TestCase):
+    """Tests for capture_live_baseline using mocked HTTP transport."""
+
+    def test_capture_live_baseline_collects_healthy_observations(self) -> None:
+        app = build_app_config()
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(status_code=200, request=request)
+
+        with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+            baseline = capture_live_baseline(
+                app=app,
+                duration_seconds=2,
+                interval_seconds=1.0,
+                client=client,
+            )
+
+        self.assertGreaterEqual(baseline.observation_count, 2)
+        self.assertTrue(baseline.summary.startswith("Captured"))
+
+    def test_capture_live_baseline_rejects_unhealthy_observations(self) -> None:
+        app = build_app_config()
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(status_code=503, request=request)
+
+        with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+            with self.assertRaises(BaselineCaptureError):
+                capture_live_baseline(
+                    app=app,
+                    duration_seconds=1,
+                    interval_seconds=1.0,
+                    client=client,
+                )
+
+
+class LiveExperimentObservationTests(unittest.TestCase):
+    """Tests for collect_live_experiment_observations."""
+
+    def test_collects_observations_for_duration(self) -> None:
+        app = build_app_config()
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(status_code=200, request=request)
+
+        with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+            observations = collect_live_experiment_observations(
+                app=app,
+                duration_seconds=3,
+                interval_seconds=1.0,
+                client=client,
+            )
+
+        self.assertGreaterEqual(len(observations), 3)
+        self.assertTrue(all(obs.health.healthy for obs in observations))
+
+    def test_collects_unhealthy_observations_without_error(self) -> None:
+        app = build_app_config()
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                status_code=503,
+                text="service unavailable",
+                request=request,
+            )
+
+        with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+            observations = collect_live_experiment_observations(
+                app=app,
+                duration_seconds=2,
+                interval_seconds=1.0,
+                client=client,
+            )
+
+        self.assertGreaterEqual(len(observations), 2)
+        self.assertFalse(any(obs.health.healthy for obs in observations))

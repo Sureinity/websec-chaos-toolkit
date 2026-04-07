@@ -1,6 +1,20 @@
-"""Health and metrics monitoring helpers for chaos experiments."""
+"""Health and metrics monitoring helpers for chaos experiments.
+
+This module provides:
+
+- collect_monitoring_observation() — one HTTP health + optional metrics sample.
+- capture_steady_state_baseline() — aggregate baseline from a sequence of
+  observations (works with both fixture-loaded and live-sampled data).
+- capture_live_baseline() — poll health over a time window, then aggregate.
+- collect_live_experiment_observations() — poll health during the experiment.
+- evaluate_abort_thresholds() — detect threshold breaches from any observations.
+
+All aggregation functions accept observation sequences and do not care whether
+observations were loaded from fixtures or collected live.
+"""
 
 import json
+import time as _time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -197,6 +211,81 @@ def capture_steady_state_baseline(
         summary=(f"Captured steady-state baseline from {len(observations)} healthy observations."),
         observations=tuple(observations),
     )
+
+
+def capture_live_baseline(
+    *,
+    app: AppConfig,
+    duration_seconds: int,
+    interval_seconds: float = 5.0,
+    client: httpx.Client | None = None,
+    headers: Mapping[str, str] | None = None,
+    cookies: Mapping[str, str] | None = None,
+) -> SteadyStateBaseline:
+    """Poll health over a time window and build a steady-state baseline.
+
+    Collects observations at interval_seconds spacing for at least
+    duration_seconds total. Raises BaselineCaptureError if any observation
+    is unhealthy.
+    """
+    observations = _poll_observations(
+        app=app,
+        duration_seconds=duration_seconds,
+        interval_seconds=interval_seconds,
+        client=client,
+        headers=headers,
+        cookies=cookies,
+    )
+    return capture_steady_state_baseline(
+        app_id=app.id,
+        environment=app.environment,
+        observations=observations,
+    )
+
+
+def collect_live_experiment_observations(
+    *,
+    app: AppConfig,
+    duration_seconds: int,
+    interval_seconds: float = 5.0,
+    client: httpx.Client | None = None,
+    headers: Mapping[str, str] | None = None,
+    cookies: Mapping[str, str] | None = None,
+) -> tuple[MonitoringObservation, ...]:
+    """Poll health during the experiment window and return all observations."""
+    return _poll_observations(
+        app=app,
+        duration_seconds=duration_seconds,
+        interval_seconds=interval_seconds,
+        client=client,
+        headers=headers,
+        cookies=cookies,
+    )
+
+
+def _poll_observations(
+    *,
+    app: AppConfig,
+    duration_seconds: int,
+    interval_seconds: float,
+    client: httpx.Client | None,
+    headers: Mapping[str, str] | None,
+    cookies: Mapping[str, str] | None,
+) -> tuple[MonitoringObservation, ...]:
+    """Internal polling loop used by baseline and experiment collection."""
+    sample_count = max(1, int(duration_seconds / interval_seconds))
+    observations: list[MonitoringObservation] = []
+    for i in range(sample_count):
+        obs = collect_monitoring_observation(
+            app,
+            client=client,
+            headers=headers,
+            cookies=cookies,
+        )
+        observations.append(obs)
+        if i < sample_count - 1:
+            _time.sleep(interval_seconds)
+    return tuple(observations)
 
 
 def evaluate_abort_thresholds(
