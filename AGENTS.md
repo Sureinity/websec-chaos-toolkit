@@ -11,22 +11,21 @@ These instructions apply to this repository directory. If a deeper
   valid sample configuration files, basic tests, Diataxis documentation
   structure, and a scaffolded CLI surface.
 - `toolkit validate` is now implemented for config loading and validation.
-- `toolkit pentest run` is now implemented for the current fixture-backed
-  pentest flow.
-- Optional Trivy and Semgrep adapters can now participate in the fixture-backed
-  pentest flow when explicitly enabled in a profile, and skip cleanly when
+- `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
+  against a live target. A fixture-backed flow is preserved for onboarding and
+  offline testing.
+- Optional Trivy and Semgrep adapters participate in pentest runs when
+  explicitly enabled in a profile, and skip cleanly when their binaries are
   unavailable.
 - `toolkit chaos run` is now implemented for the current fixture-backed chaos
   flow.
 - `toolkit report build` is now implemented for stored normalized result
   bundles.
-- Fixture-driven scanner adapters for ZAP, Nuclei, and Nmap are implemented
-  with a shared contract, process runner, normalizers, and fixture-backed
-  pentest orchestration.
-- Fixture-driven Trivy and Semgrep adapters are implemented as optional
-  pentest add-ons, and optional external smoke tests exist behind the
+- Scanner adapters for ZAP, Nuclei, Nmap, Trivy, and Semgrep are implemented
+  with a shared contract, process runner, and normalizers.
+- Optional external smoke tests exist behind the
   `TOOLKIT_RUN_EXTERNAL_TOOL_TESTS=1` environment flag.
-- The repository does not yet contain execution-backed scanner orchestration,
+- The repository does not yet contain live chaos execution,
   live chaos execution, full schema validation coverage, notification delivery,
   or end-to-end report generation pipelines.
 - `security-testing-resources.md` exists as placeholder background reading
@@ -117,10 +116,10 @@ These instructions apply to this repository directory. If a deeper
   - `toolkit validate` loads and validates repository YAML config from the
     current working directory and exits with `0` on success or `2` on
     validation/runtime failure
-  - `toolkit pentest run` executes the current fixture-backed pentest flow,
+  - `toolkit pentest run` executes real scanner binaries against a live target,
     writes raw artifacts, normalized findings, and a Markdown summary under
-    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`; optional Trivy and
-    Semgrep adapters join only when explicitly enabled
+    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`; requires core
+    binaries on `PATH`; optional Trivy and Semgrep join when explicitly enabled
   - `toolkit chaos run` executes the current fixture-backed chaos flow, writes
     raw artifacts, normalized findings, and a Markdown summary under
     `outputs/<run-id>/`, and exits with `0`, `1`, or `2`

@@ -32,6 +32,9 @@ The operator documentation scope for Milestone 7 is locked in
 The current safety and fixture-boundary rationale lives in
 `docs/explanation/safety-model.md`.
 
+The live pentest execution model is explained in
+`docs/explanation/live-execution-model.md`.
+OCI
 The scanner adapter contract lives in
 `docs/reference/pentest-adapters.md`.
 
@@ -50,6 +53,7 @@ Operator run guides live in:
 
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`
+- `docs/how-to/run-live-pentest.md`
 - `docs/how-to/run-chaos.md`
 - `docs/how-to/schedule-execution.md`
 

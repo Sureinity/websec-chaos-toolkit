@@ -9,14 +9,13 @@ The current state is intentionally narrow:
   sample config files exist
 - `toolkit validate` is implemented against the current config bundle and exit
   code contract
-- `toolkit pentest run` is implemented against the current fixture-backed
-  pentest flow
+- `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
+  against a live target; a fixture-backed flow is preserved for onboarding
 - `toolkit chaos run` is implemented against the current fixture-backed chaos
   flow
 - `toolkit report build` is implemented for stored normalized result bundles
-- fixture-driven scanner adapters (ZAP, Nuclei, Nmap) are implemented with a
-  shared contract and normalizers; execution-backed scanning and live external
-  chaos control are not yet wired
+- scanner adapters (ZAP, Nuclei, Nmap, Trivy, Semgrep) are implemented with a
+  shared contract and normalizers; live external chaos control is not yet wired
 
 ## Current Status
 
@@ -27,16 +26,18 @@ Implemented now:
 - `toolkit chaos run`
 - `toolkit report build`
 
+Live execution now:
+
+- pentest runs execute real scanner binaries against a reachable target
+- a fixture-backed pentest flow is preserved for onboarding and offline testing
+
 Fixture-backed now:
 
-- pentest runs use repository scanner fixtures rather than live external
-  scanner binaries
 - chaos runs use fixture-backed monitoring data and a Toxiproxy-like
   controller rather than a live Toxiproxy runtime
 
 Planned later:
 
-- execution-backed pentest scanning through real external binaries
 - live Toxiproxy-backed chaos execution
 
 Optional external verification:
@@ -115,8 +116,8 @@ toolkit report build --run-id <id>
 ```
 
 `toolkit validate` now performs real configuration loading and validation.
-`toolkit pentest run` now performs the current fixture-backed pentest flow and
-writes run artifacts.
+`toolkit pentest run` now executes real scanner binaries against a live target
+and writes run artifacts.
 `toolkit chaos run` now performs the current fixture-backed chaos flow and
 writes run artifacts.
 `toolkit report build` now rebuilds Markdown summaries from stored normalized

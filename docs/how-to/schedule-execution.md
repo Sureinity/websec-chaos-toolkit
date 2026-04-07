@@ -19,8 +19,10 @@ Current implemented non-interactive commands:
 
 - install dependencies with `uv sync --extra dev`
 - keep the selected config bundle in the working directory
-- keep fixture assets available when running the current pentest or chaos flows
-  from a scheduled job
+- ensure core scanner binaries (zap-baseline.py, nuclei, nmap) are on `PATH`
+  for scheduled pentest runs
+- keep fixture assets available when running the current chaos flow from a
+  scheduled job
 - export any required auth environment variables before launching the command
 
 ## Exit Codes
@@ -45,7 +47,7 @@ cd /path/to/config-bundle
 UV_CACHE_DIR=/tmp/uv-cache uv run toolkit validate --app sample-internal-app --env local
 ```
 
-Fixture-backed pentest:
+Live pentest:
 
 ```bash
 cd /path/to/config-bundle
@@ -68,11 +70,10 @@ UV_CACHE_DIR=/tmp/uv-cache uv run toolkit report build --run-id <existing-run-id
 
 ## Current Limits
 
-- the current pentest and chaos commands are implemented now, but remain
-  fixture-backed
-- external-binary verification remains opt-in
-- live scanner execution and live Toxiproxy-backed chaos execution are planned
-  later
+- the pentest command executes real scanner binaries and requires core tools on
+  `PATH` for scheduled runs
+- the chaos command remains fixture-backed
+- live Toxiproxy-backed chaos execution is planned later
 
 Supporting references:
 
