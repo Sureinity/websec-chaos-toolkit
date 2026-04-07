@@ -11,11 +11,11 @@ The current state is intentionally narrow:
   code contract
 - `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
   against a live target; a fixture-backed flow is preserved for onboarding
-- `toolkit chaos run` is implemented against the current fixture-backed chaos
-  flow
+- `toolkit chaos run` executes live Toxiproxy-backed experiments; a
+  fixture-backed flow is preserved for onboarding
 - `toolkit report build` is implemented for stored normalized result bundles
 - scanner adapters (ZAP, Nuclei, Nmap, Trivy, Semgrep) are implemented with a
-  shared contract and normalizers; live external chaos control is not yet wired
+  shared contract and normalizers
 
 ## Current Status
 
@@ -29,16 +29,8 @@ Implemented now:
 Live execution now:
 
 - pentest runs execute real scanner binaries against a reachable target
-- a fixture-backed pentest flow is preserved for onboarding and offline testing
-
-Fixture-backed now:
-
-- chaos runs use fixture-backed monitoring data and a Toxiproxy-like
-  controller rather than a live Toxiproxy runtime
-
-Planned later:
-
-- live Toxiproxy-backed chaos execution
+- chaos runs execute live Toxiproxy-backed experiments against a live target
+- fixture-backed flows preserved for onboarding and offline testing
 
 Optional external verification:
 
@@ -118,8 +110,8 @@ toolkit report build --run-id <id>
 `toolkit validate` now performs real configuration loading and validation.
 `toolkit pentest run` now executes real scanner binaries against a live target
 and writes run artifacts.
-`toolkit chaos run` now performs the current fixture-backed chaos flow and
-writes run artifacts.
+`toolkit chaos run` now executes live Toxiproxy-backed experiments and writes
+run artifacts.
 `toolkit report build` now rebuilds Markdown summaries from stored normalized
 results.
 

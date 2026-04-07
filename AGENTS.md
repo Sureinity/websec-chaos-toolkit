@@ -17,17 +17,16 @@ These instructions apply to this repository directory. If a deeper
 - Optional Trivy and Semgrep adapters participate in pentest runs when
   explicitly enabled in a profile, and skip cleanly when their binaries are
   unavailable.
-- `toolkit chaos run` is now implemented for the current fixture-backed chaos
-  flow.
+- `toolkit chaos run` executes live Toxiproxy-backed experiments. A
+  fixture-backed flow is preserved for onboarding and offline testing.
 - `toolkit report build` is now implemented for stored normalized result
   bundles.
 - Scanner adapters for ZAP, Nuclei, Nmap, Trivy, and Semgrep are implemented
   with a shared contract, process runner, and normalizers.
 - Optional external smoke tests exist behind the
   `TOOLKIT_RUN_EXTERNAL_TOOL_TESTS=1` environment flag.
-- The repository does not yet contain live chaos execution,
-  live chaos execution, full schema validation coverage, notification delivery,
-  or end-to-end report generation pipelines.
+- The repository does not yet contain full schema validation coverage,
+  notification delivery, or end-to-end report generation pipelines.
 - `security-testing-resources.md` exists as placeholder background reading
   material. Treat it as reference material, not as a behavioral contract.
 
@@ -120,14 +119,15 @@ These instructions apply to this repository directory. If a deeper
     writes raw artifacts, normalized findings, and a Markdown summary under
     `outputs/<run-id>/`, and exits with `0`, `1`, or `2`; requires core
     binaries on `PATH`; optional Trivy and Semgrep join when explicitly enabled
-  - `toolkit chaos run` executes the current fixture-backed chaos flow, writes
-    raw artifacts, normalized findings, and a Markdown summary under
-    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
+  - `toolkit chaos run` executes a live Toxiproxy-backed chaos experiment,
+    writes raw artifacts, normalized findings, and a Markdown summary under
+    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`; requires a running
+    Toxiproxy server and a configured proxy
   - `toolkit report build` rebuilds a Markdown summary from
     `outputs/<run-id>/normalized/findings.json` and exits with `0` on success
     or `2` on runtime/input failure
-- Do not claim that external scanner execution or live Toxiproxy-backed chaos
-  execution already work end-to-end.
+- Both pentest and chaos paths execute against live targets. Fixture-backed
+  flows are preserved for onboarding and offline testing.
 
 ## Future CLI Commands & Interfaces
 
@@ -234,12 +234,12 @@ Planned / Future Expectations
   - configuration schema, CLI skeleton, validation flow, and report scaffolding
   - ~~ZAP, Nuclei, and Nmap adapters with normalized findings~~ (implemented)
   - ~~fixture-backed pentest planner and orchestration runner~~ (implemented)
-  - ~~Toxiproxy-based chaos runner with health or metrics baseline and abort logic~~ (fixture-backed implementation done)
+  - ~~Toxiproxy-based chaos runner with health or metrics baseline and abort logic~~ (implemented: live execution via real Toxiproxy runtime)
   - ~~scheduler-facing docs, sample configs, and pilot coverage for one or two internal apps~~ (implemented: example config packs, operator how-to guides, safety model doc, and schedule-execution guide)
   - ~~optional Trivy and Semgrep adapters for local code, artifact, or image checks~~ (implemented: fixture-backed, explicitly enabled, skip cleanly when unavailable)
-  - live chaos execution through a real Toxiproxy runtime
+  - ~~live chaos execution through a real Toxiproxy runtime~~ (implemented)
   - containerized tool runtime for portable execution across generic Linux
-    environments after the live chaos path is in place
+    environments
 - Keep the detailed milestone sequence in
   `docs/explanation/implementation-roadmap.md` aligned with this order.
 - Keep allowed commit types to:

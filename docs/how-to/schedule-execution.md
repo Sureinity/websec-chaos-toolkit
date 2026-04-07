@@ -21,8 +21,8 @@ Current implemented non-interactive commands:
 - keep the selected config bundle in the working directory
 - ensure core scanner binaries (zap-baseline.py, nuclei, nmap) are on `PATH`
   for scheduled pentest runs
-- keep fixture assets available when running the current chaos flow from a
-  scheduled job
+- ensure a Toxiproxy server is running and the target proxy is configured for
+  scheduled chaos runs
 - export any required auth environment variables before launching the command
 
 ## Exit Codes
@@ -54,7 +54,7 @@ cd /path/to/config-bundle
 UV_CACHE_DIR=/tmp/uv-cache uv run toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline
 ```
 
-Fixture-backed chaos:
+Live chaos:
 
 ```bash
 cd /path/to/config-bundle
@@ -72,8 +72,8 @@ UV_CACHE_DIR=/tmp/uv-cache uv run toolkit report build --run-id <existing-run-id
 
 - the pentest command executes real scanner binaries and requires core tools on
   `PATH` for scheduled runs
-- the chaos command remains fixture-backed
-- live Toxiproxy-backed chaos execution is planned later
+- the chaos command executes live Toxiproxy-backed experiments and requires a
+  running Toxiproxy server with a configured proxy
 
 Supporting references:
 

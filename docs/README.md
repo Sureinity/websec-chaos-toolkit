@@ -34,7 +34,10 @@ The current safety and fixture-boundary rationale lives in
 
 The live pentest execution model is explained in
 `docs/explanation/live-execution-model.md`.
-OCI
+
+The live chaos execution model is explained in
+`docs/explanation/live-chaos-model.md`.
+
 The scanner adapter contract lives in
 `docs/reference/pentest-adapters.md`.
 
@@ -55,6 +58,7 @@ Operator run guides live in:
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-live-pentest.md`
 - `docs/how-to/run-chaos.md`
+- `docs/how-to/run-live-chaos.md`
 - `docs/how-to/schedule-execution.md`
 
 Example config packs live in:
