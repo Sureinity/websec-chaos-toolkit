@@ -239,7 +239,7 @@ Planned / Future Expectations
   - ~~optional Trivy and Semgrep adapters for local code, artifact, or image checks~~ (implemented: fixture-backed, explicitly enabled, skip cleanly when unavailable)
   - live chaos execution through a real Toxiproxy runtime
   - containerized tool runtime for portable execution across generic Linux
-    environments
+    environments after the live chaos path is in place
 - Keep the detailed milestone sequence in
   `docs/explanation/implementation-roadmap.md` aligned with this order.
 - Keep allowed commit types to:

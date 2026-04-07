@@ -535,3 +535,72 @@ Dependencies on earlier milestones
 - Milestone 3
 - Milestone 6
 - Milestone 9
+
+## Milestone 11: Containerized Tool Runtime
+
+Goal
+
+- Make live pentest execution portable across generic Linux environments by
+  running scanner tools through a managed container runtime instead of
+  requiring host-installed binaries.
+
+Deliverables
+
+- Runtime abstraction for host-binary mode and container mode
+- Container-backed execution for core pentest tools:
+  - ZAP
+  - Nuclei
+  - Nmap
+- Optional container-backed execution support for:
+  - Trivy
+  - Semgrep
+- Mounted raw artifact capture from containerized runs
+- Stable environment, network, and volume mapping contract
+- Operator docs for Docker-first usage
+
+Files/directories to create
+
+- `src/toolkit/runtime/base.py`
+- `src/toolkit/runtime/host.py`
+- `src/toolkit/runtime/container.py`
+- `src/toolkit/runtime/models.py`
+- `tests/unit/runtime/`
+- `tests/integration/test_pentest_run_container.py`
+- `tests/integration/test_runtime_container.py`
+- `docs/how-to/run-pentest-with-docker.md`
+- `docs/explanation/container-runtime-model.md`
+
+Acceptance criteria
+
+- `toolkit pentest run` can execute enabled core adapters through a container
+  runtime without requiring the scanner binaries on the host
+- The same pentest artifact layout is preserved:
+  - `raw/`
+  - `normalized/findings.json`
+  - `reports/executive-summary.md`
+  - `manifest.json`
+- Host-binary mode continues to work as a supported fallback
+- Missing Docker/container runtime availability fails clearly with exit code `2`
+- Containerized optional adapters still require explicit enablement and skip
+  cleanly when unavailable
+- Docs clearly state the preferred Docker-first path and the remaining safety
+  boundaries
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.unit.runtime tests.integration.test_runtime_container tests.integration.test_pentest_run_container
+uv run toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 2
+- Milestone 3
+- Milestone 4
+- Milestone 5
+- Milestone 8
+- Milestone 9
+- Milestone 10
