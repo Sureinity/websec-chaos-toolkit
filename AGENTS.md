@@ -234,9 +234,12 @@ Planned / Future Expectations
   - configuration schema, CLI skeleton, validation flow, and report scaffolding
   - ~~ZAP, Nuclei, and Nmap adapters with normalized findings~~ (implemented)
   - ~~fixture-backed pentest planner and orchestration runner~~ (implemented)
-  - ~~Toxiproxy-based chaos runner with health or metrics baseline and abort logic~~ (fixture-backed implementation done; live Toxiproxy runtime is next)
+  - ~~Toxiproxy-based chaos runner with health or metrics baseline and abort logic~~ (fixture-backed implementation done)
   - ~~scheduler-facing docs, sample configs, and pilot coverage for one or two internal apps~~ (implemented: example config packs, operator how-to guides, safety model doc, and schedule-execution guide)
   - ~~optional Trivy and Semgrep adapters for local code, artifact, or image checks~~ (implemented: fixture-backed, explicitly enabled, skip cleanly when unavailable)
+  - live chaos execution through a real Toxiproxy runtime
+  - containerized tool runtime for portable execution across generic Linux
+    environments
 - Keep the detailed milestone sequence in
   `docs/explanation/implementation-roadmap.md` aligned with this order.
 - Keep allowed commit types to:

@@ -478,3 +478,60 @@ Dependencies on earlier milestones
 - Milestone 4
 - Milestone 5
 - Milestone 8
+
+## Milestone 10: Live Chaos Execution
+
+Goal
+
+- Replace the current fixture-backed chaos path with real Toxiproxy-backed
+  chaos execution while preserving the existing safety, artifact, and exit-code
+  contracts.
+
+Deliverables
+
+- Live Toxiproxy runtime integration in `toolkit chaos run`
+- Real proxy lookup, toxic injection, and rollback execution
+- Live health and optional metrics observation during experiments
+- Abort-threshold enforcement against live observations
+- One-active-experiment-per-app lock enforcement in real runs
+- Safe live chaos operator docs and integration coverage
+
+Files/directories to create
+
+- `src/toolkit/chaos/execution.py`
+- `tests/integration/test_chaos_run_live.py`
+- `tests/integration/test_chaos_command_live.py`
+- `docs/how-to/run-live-chaos.md`
+- `docs/explanation/live-chaos-model.md`
+
+Acceptance criteria
+
+- `toolkit chaos run` performs real reversible proxy-based fault injection
+  against a live reachable target
+- Baseline capture, abort evaluation, and rollback are executed against live
+  observations rather than fixture JSON
+- Missing Toxiproxy runtime or missing required runtime dependencies fail
+  clearly with exit code `2`
+- Output artifacts remain stable under `outputs/<run-id>/`
+- Exit codes remain unchanged:
+  - `0` for a passing experiment
+  - `1` for a resilience failure
+  - `2` for configuration or runtime failures
+- Docs clearly distinguish live chaos execution from the earlier fixture-backed
+  path
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.integration.test_chaos_run_live tests.integration.test_chaos_command_live
+uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 2
+- Milestone 3
+- Milestone 6
+- Milestone 9
