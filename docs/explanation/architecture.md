@@ -88,9 +88,11 @@ flowchart TD
     commands --> pentest
     commands --> chaos
     commands --> reports
+    runtime[runtime/]
     pentest --> adapters
     pentest --> auth
     pentest --> results
+    pentest --> runtime
     chaos --> adapters
     chaos --> results
     chaos --> safety
@@ -111,6 +113,7 @@ Key boundaries:
   execution-backed concrete tool boundaries next
 - `pentest/` owns the live execution service, planner, and orchestration runner; the fixture-backed flow is preserved as `run_pentest_fixture_flow()` for onboarding
 - `chaos/` owns the live execution service, Toxiproxy wrapper, monitoring, planner, and orchestration runner; the fixture-backed flow is preserved as `run_chaos_fixture_flow()` for onboarding
+- `runtime/` owns the `RuntimeBackend` protocol, host subprocess backend, and Docker container backend; pentest execution routes through the selected backend
 - `results/` owns normalized finding contracts
 - `reports/` owns rendered outputs
 - `safety/` owns fail-closed checks shared across workflows
