@@ -1,0 +1,138 @@
+"""Docker-backed container runtime for scanner tool execution.
+
+Translates adapter execution intent into docker run invocations with
+bind mounts for raw output. The container runs with --network=host so the
+target app remains reachable. Config inputs and output directories are
+mounted read-write; no other host paths are exposed.
+
+Failure contract:
+- Missing Docker binary on PATH: AdapterAvailability(available=False).
+- Missing container image: RuntimeResult with non-zero returncode.
+- Container execution failure: RuntimeResult with non-zero returncode.
+"""
+
+import os
+import subprocess
+from pathlib import Path
+
+from toolkit.adapters.base import AdapterAvailability
+from toolkit.adapters.process import find_binary
+from toolkit.runtime.contracts import CONTAINER_TOOL_IMAGES
+from toolkit.runtime.models import RuntimeRequest, RuntimeResult
+
+
+class ContainerRuntime:
+    """Execute scanner tools inside Docker containers."""
+
+    def __init__(
+        self,
+        *,
+        image_overrides: dict[str, str] | None = None,
+    ) -> None:
+        self._image_overrides = dict(image_overrides or {})
+
+    def check_tool_available(self, tool: str) -> AdapterAvailability:
+        docker_path = find_binary("docker")
+        if docker_path is None:
+            return AdapterAvailability(
+                available=False,
+                reason="docker binary was not found on PATH",
+                binary="docker",
+            )
+        image = self._resolve_image(tool)
+        if image is None:
+            return AdapterAvailability(
+                available=False,
+                reason=f"no container image configured for tool: {tool}",
+                binary="docker",
+            )
+        return AdapterAvailability(
+            available=True,
+            binary=f"docker:{image}",
+        )
+
+    def execute(self, request: RuntimeRequest) -> RuntimeResult:
+        image = self._resolve_image(request.tool)
+        if image is None:
+            return RuntimeResult(
+                command=request.command,
+                returncode=1,
+                stdout="",
+                stderr=(
+                    f"no container image configured for tool: {request.tool}"
+                ),
+            )
+
+        docker_command = self._build_docker_command(request, image=image)
+
+        merged_env = dict(os.environ)
+        merged_env.update(request.env_overrides)
+
+        try:
+            completed = subprocess.run(
+                docker_command,
+                env=merged_env,
+                capture_output=True,
+                text=True,
+                timeout=request.timeout_seconds,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            stdout = exc.stdout if isinstance(exc.stdout, str) else ""
+            stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+            return RuntimeResult(
+                command=docker_command,
+                returncode=-1,
+                stdout=stdout,
+                stderr=stderr,
+                timed_out=True,
+            )
+
+        return RuntimeResult(
+            command=docker_command,
+            returncode=completed.returncode,
+            stdout=completed.stdout,
+            stderr=completed.stderr,
+        )
+
+    def _resolve_image(self, tool: str) -> str | None:
+        if tool in self._image_overrides:
+            return self._image_overrides[tool]
+        return CONTAINER_TOOL_IMAGES.get(tool)
+
+    def _build_docker_command(
+        self,
+        request: RuntimeRequest,
+        *,
+        image: str,
+    ) -> tuple[str, ...]:
+        parts: list[str] = [
+            "docker",
+            "run",
+            "--rm",
+            "--network=host",
+        ]
+
+        # Mount the output directory so the tool can write artifacts.
+        output_dir = request.output_path.parent
+        parts.extend([
+            "-v",
+            f"{output_dir}:{output_dir}",
+        ])
+
+        # Mount cwd if specified and different from output dir.
+        if request.cwd is not None and request.cwd != output_dir:
+            parts.extend(["-v", f"{request.cwd}:{request.cwd}"])
+
+        # Forward env overrides as container env vars.
+        for key, value in request.env_overrides.items():
+            parts.extend(["-e", f"{key}={value}"])
+
+        parts.append(image)
+
+        # Append the original command arguments (skip the binary name since
+        # the image entrypoint replaces it).
+        if len(request.command) > 1:
+            parts.extend(request.command[1:])
+
+        return tuple(parts)
