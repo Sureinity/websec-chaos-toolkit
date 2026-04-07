@@ -3,6 +3,8 @@ from pathlib import Path
 
 from toolkit.chaos.contracts import (
     CHAOS_RUN_LIFECYCLE,
+    LIVE_CHAOS_RUN_LIFECYCLE,
+    PACKET_LOSS_FAIL_CLOSED_REASON,
     RESERVED_UNIMPLEMENTED_CHAOS_FAULT_TYPES,
     SUPPORTED_CHAOS_FAULT_TYPES,
     ChaosExperimentPlan,
@@ -10,6 +12,10 @@ from toolkit.chaos.contracts import (
     ChaosRunSummary,
     determine_chaos_exit_code,
     ensure_chaos_contract_preconditions,
+)
+from toolkit.chaos.toxiproxy import (
+    UnsupportedToxiproxyFaultError,
+    build_toxiproxy_fault_request,
 )
 from toolkit.core.exits import ExitCode
 
@@ -133,3 +139,41 @@ class ChaosContractTests(unittest.TestCase):
         self.assertTrue(summary.rollback_attempted)
         self.assertTrue(summary.aborted)
         self.assertEqual(summary.status, ChaosRunStatus.RESILIENCE_FAILURE)
+
+    def test_live_lifecycle_includes_toxiproxy_preflight(self) -> None:
+        self.assertIn(
+            "preflight the Toxiproxy runtime and target proxy",
+            LIVE_CHAOS_RUN_LIFECYCLE,
+        )
+        self.assertEqual(len(LIVE_CHAOS_RUN_LIFECYCLE), 10)
+
+    def test_packet_loss_fail_closed_at_runtime(self) -> None:
+        with self.assertRaises(UnsupportedToxiproxyFaultError):
+            build_toxiproxy_fault_request(
+                proxy_name="test-proxy",
+                fault_type="packet_loss",
+            )
+
+    def test_packet_loss_fail_closed_reason_is_documented(self) -> None:
+        self.assertIn("packet_loss", PACKET_LOSS_FAIL_CLOSED_REASON)
+        self.assertIn("Toxiproxy", PACKET_LOSS_FAIL_CLOSED_REASON)
+
+    def test_preconditions_accept_all_live_supported_faults_except_packet_loss(
+        self,
+    ) -> None:
+        live_faults = ("latency", "bandwidth", "timeout", "connection_refused")
+        for fault in live_faults:
+            ensure_chaos_contract_preconditions(
+                health_endpoint="/healthz",
+                rollback_method="immediate",
+                fault_type=fault,
+            )
+
+    def test_preconditions_accept_packet_loss_at_schema_level(self) -> None:
+        # packet_loss passes contract preconditions (schema-supported)
+        # but fails at Toxiproxy runtime (fail-closed mapping).
+        ensure_chaos_contract_preconditions(
+            health_endpoint="/healthz",
+            rollback_method="immediate",
+            fault_type="packet_loss",
+        )
