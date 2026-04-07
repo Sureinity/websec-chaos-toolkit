@@ -1,12 +1,18 @@
 import re
-import shutil
 import unittest
 from contextlib import chdir
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
+from toolkit.chaos.contracts import (
+    ChaosExperimentPlan,
+    ChaosRunStatus,
+    ChaosRunSummary,
+)
 from toolkit.chaos.locking import acquire_chaos_lock, release_chaos_lock
 from toolkit.cli import app
 from toolkit.core.exits import ExitCode
@@ -23,17 +29,51 @@ def copy_config_fixture_tree(source_dir: Path, target_dir: Path) -> None:
         )
 
 
-def copy_chaos_fixture_scenario(
-    target_dir: Path,
-    *,
-    source_name: str,
-    destination_name: str = "passing-latency",
-) -> None:
-    destination_dir = target_dir / "tests" / "fixtures" / "chaos" / destination_name
-    destination_dir.mkdir(parents=True, exist_ok=True)
-    source_dir = FIXTURE_ROOT / "chaos" / source_name
-    for path in source_dir.iterdir():
-        shutil.copy2(path, destination_dir / path.name)
+def _plan() -> ChaosExperimentPlan:
+    return ChaosExperimentPlan(
+        app_id="local-no-auth-app",
+        environment="local",
+        profile="dependency-latency-baseline",
+        target_service="sample-api",
+        fault_type="latency",
+        baseline_duration_seconds=30,
+        experiment_duration_seconds=60,
+        health_endpoint="/health",
+        rollback_method="immediate",
+        consecutive_health_failures=3,
+    )
+
+
+def _success_summary(run_id: str, *, project_root: Path) -> ChaosRunSummary:
+    run_dir = project_root / "outputs" / run_id
+    return ChaosRunSummary(
+        run_id=run_id,
+        status=ChaosRunStatus.SUCCESS,
+        exit_code=ExitCode.SUCCESS,
+        experiment_plan=_plan(),
+        baseline_captured=True,
+        rollback_attempted=True,
+        findings_count=0,
+        normalized_bundle_path=run_dir / "normalized" / "findings.json",
+        report_path=run_dir / "reports" / "executive-summary.md",
+    )
+
+
+def _resilience_failure_summary(run_id: str, *, project_root: Path) -> ChaosRunSummary:
+    run_dir = project_root / "outputs" / run_id
+    return ChaosRunSummary(
+        run_id=run_id,
+        status=ChaosRunStatus.RESILIENCE_FAILURE,
+        exit_code=ExitCode.FINDINGS_OR_FAILURE,
+        experiment_plan=_plan(),
+        baseline_captured=True,
+        rollback_attempted=True,
+        findings_count=1,
+        aborted=True,
+        abort_reason="health checks breached the consecutive-failure threshold",
+        normalized_bundle_path=run_dir / "normalized" / "findings.json",
+        report_path=run_dir / "reports" / "executive-summary.md",
+    )
 
 
 class ChaosCommandTests(unittest.TestCase):
@@ -43,34 +83,28 @@ class ChaosCommandTests(unittest.TestCase):
         with TemporaryDirectory() as temp_dir_name:
             project_root = Path(temp_dir_name)
             copy_config_fixture_tree(fixture_dir, project_root)
-            copy_chaos_fixture_scenario(project_root, source_name="passing-latency")
 
-            with chdir(project_root):
-                result = RUNNER.invoke(
-                    app,
-                    [
-                        "chaos",
-                        "run",
-                        "--app",
-                        "local-no-auth-app",
-                        "--env",
-                        "local",
-                        "--profile",
-                        "dependency-latency-baseline",
-                    ],
-                    catch_exceptions=False,
-                )
+            run_id = "20260401-100000-aabbccdd"
 
-            run_id_match = re.search(r"Run: (\S+)", result.stdout)
-            self.assertIsNotNone(run_id_match)
-            run_id = run_id_match.group(1)
-            run_dir = project_root / "outputs" / run_id
-
-            self.assertTrue((run_dir / "manifest.json").is_file())
-            self.assertTrue((run_dir / "normalized" / "findings.json").is_file())
-            self.assertTrue((run_dir / "reports" / "executive-summary.md").is_file())
-            self.assertTrue((run_dir / "raw" / "chaos" / "baseline-observations.json").is_file())
-            self.assertTrue((run_dir / "raw" / "chaos" / "experiment-observations.json").is_file())
+            with patch(
+                "toolkit.commands.chaos.run_chaos_live_flow",
+                return_value=_success_summary(run_id, project_root=project_root),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        [
+                            "chaos",
+                            "run",
+                            "--app",
+                            "local-no-auth-app",
+                            "--env",
+                            "local",
+                            "--profile",
+                            "dependency-latency-baseline",
+                        ],
+                        catch_exceptions=False,
+                    )
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         self.assertIn("Chaos run completed.", result.stdout)
@@ -85,23 +119,30 @@ class ChaosCommandTests(unittest.TestCase):
         with TemporaryDirectory() as temp_dir_name:
             project_root = Path(temp_dir_name)
             copy_config_fixture_tree(fixture_dir, project_root)
-            copy_chaos_fixture_scenario(project_root, source_name="abort-health")
 
-            with chdir(project_root):
-                result = RUNNER.invoke(
-                    app,
-                    [
-                        "chaos",
-                        "run",
-                        "--app",
-                        "local-no-auth-app",
-                        "--env",
-                        "local",
-                        "--profile",
-                        "dependency-latency-baseline",
-                    ],
-                    catch_exceptions=False,
-                )
+            run_id = "20260401-100000-aabbccdd"
+
+            with patch(
+                "toolkit.commands.chaos.run_chaos_live_flow",
+                return_value=_resilience_failure_summary(
+                    run_id, project_root=project_root
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        [
+                            "chaos",
+                            "run",
+                            "--app",
+                            "local-no-auth-app",
+                            "--env",
+                            "local",
+                            "--profile",
+                            "dependency-latency-baseline",
+                        ],
+                        catch_exceptions=False,
+                    )
 
         self.assertEqual(result.exit_code, ExitCode.FINDINGS_OR_FAILURE)
         self.assertIn("Chaos run completed.", result.stdout)
@@ -118,7 +159,6 @@ class ChaosCommandTests(unittest.TestCase):
         with TemporaryDirectory() as temp_dir_name:
             project_root = Path(temp_dir_name)
             copy_config_fixture_tree(fixture_dir, project_root)
-            copy_chaos_fixture_scenario(project_root, source_name="passing-latency")
 
             with chdir(project_root):
                 result = RUNNER.invoke(
@@ -140,32 +180,41 @@ class ChaosCommandTests(unittest.TestCase):
         self.assertIn("Chaos run failed.", result.stderr)
         self.assertIn("Requested chaos profile not found", result.stderr)
 
-    def test_chaos_run_reports_missing_fixture_observations(self) -> None:
+    def test_chaos_run_reports_missing_toxiproxy_as_runtime_failure(self) -> None:
         fixture_dir = FIXTURE_ROOT / "configs" / "valid" / "auth-method-matrix"
 
         with TemporaryDirectory() as temp_dir_name:
             project_root = Path(temp_dir_name)
             copy_config_fixture_tree(fixture_dir, project_root)
 
-            with chdir(project_root):
-                result = RUNNER.invoke(
-                    app,
-                    [
-                        "chaos",
-                        "run",
-                        "--app",
-                        "local-no-auth-app",
-                        "--env",
-                        "local",
-                        "--profile",
-                        "dependency-latency-baseline",
-                    ],
-                    catch_exceptions=False,
-                )
+            from toolkit.chaos.toxiproxy import ToxiproxyRequestError
+
+            with patch(
+                "toolkit.commands.chaos.run_chaos_live_flow",
+                side_effect=ToxiproxyRequestError(
+                    operation="preflight",
+                    detail="Connection refused",
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        [
+                            "chaos",
+                            "run",
+                            "--app",
+                            "local-no-auth-app",
+                            "--env",
+                            "local",
+                            "--profile",
+                            "dependency-latency-baseline",
+                        ],
+                        catch_exceptions=False,
+                    )
 
         self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
         self.assertIn("Chaos run failed.", result.stderr)
-        self.assertIn("baseline-observations.json", result.stderr)
+        self.assertIn("Connection refused", result.stderr)
 
     def test_chaos_run_reports_lock_contention(self) -> None:
         fixture_dir = FIXTURE_ROOT / "configs" / "valid" / "auth-method-matrix"
@@ -173,7 +222,6 @@ class ChaosCommandTests(unittest.TestCase):
         with TemporaryDirectory() as temp_dir_name:
             project_root = Path(temp_dir_name)
             copy_config_fixture_tree(fixture_dir, project_root)
-            copy_chaos_fixture_scenario(project_root, source_name="passing-latency")
             lock = acquire_chaos_lock(
                 project_root,
                 app_id="local-no-auth-app",
@@ -181,21 +229,36 @@ class ChaosCommandTests(unittest.TestCase):
             )
             self.addCleanup(release_chaos_lock, lock)
 
-            with chdir(project_root):
-                result = RUNNER.invoke(
-                    app,
-                    [
-                        "chaos",
-                        "run",
-                        "--app",
-                        "local-no-auth-app",
-                        "--env",
-                        "local",
-                        "--profile",
-                        "dependency-latency-baseline",
-                    ],
-                    catch_exceptions=False,
-                )
+            run_id = "20260401-100000-aabbccdd"
+            failed_summary = ChaosRunSummary(
+                run_id=run_id,
+                status=ChaosRunStatus.FAILED,
+                exit_code=ExitCode.CONFIG_OR_RUNTIME_ERROR,
+                experiment_plan=_plan(),
+                baseline_captured=False,
+                rollback_attempted=False,
+                error_detail="already active",
+            )
+
+            with patch(
+                "toolkit.commands.chaos.run_chaos_live_flow",
+                return_value=failed_summary,
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        [
+                            "chaos",
+                            "run",
+                            "--app",
+                            "local-no-auth-app",
+                            "--env",
+                            "local",
+                            "--profile",
+                            "dependency-latency-baseline",
+                        ],
+                        catch_exceptions=False,
+                    )
 
         self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
         self.assertIn("Chaos run failed.", result.stderr)

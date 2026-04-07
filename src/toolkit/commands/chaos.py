@@ -6,8 +6,12 @@ from typing import Annotated
 import typer
 
 from toolkit.auth.errors import AuthRuntimeError
-from toolkit.chaos.runner import run_chaos_fixture_flow
-from toolkit.chaos.service import default_fixture_paths
+from toolkit.chaos.runner import run_chaos_live_flow
+from toolkit.chaos.toxiproxy import (
+    ToxiproxyProxyNotFoundError,
+    ToxiproxyProxyStateError,
+    ToxiproxyRequestError,
+)
 from toolkit.config.loader import ConfigLoadError, load_bootstrap_config
 from toolkit.core.exits import ExitCode
 
@@ -29,7 +33,7 @@ def run(
         typer.Option("--profile", help="Chaos profile name."),
     ],
 ) -> None:
-    """Run a single chaos workflow."""
+    """Run a single chaos workflow against a live target."""
 
     project_root = Path.cwd()
 
@@ -48,17 +52,19 @@ def run(
                 section="selection",
             )
 
-        summary = run_chaos_fixture_flow(
+        summary = run_chaos_live_flow(
             project_root=project_root,
             app=app_config,
             profile=chaos_profile,
-            fixture_paths=default_fixture_paths(project_root, profile_name=chaos_profile.name),
         )
     except (
         AuthRuntimeError,
         ConfigLoadError,
         FileExistsError,
         FileNotFoundError,
+        ToxiproxyProxyNotFoundError,
+        ToxiproxyProxyStateError,
+        ToxiproxyRequestError,
         ValueError,
     ) as exc:
         typer.echo("Chaos run failed.", err=True)
