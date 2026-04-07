@@ -25,6 +25,7 @@ Implemented:
 - fixture-backed pentest flow preserved for onboarding and offline testing
 - live chaos execution service, Toxiproxy wrapper, monitoring, and orchestration runner
 - fixture-backed chaos flow preserved for onboarding and offline testing
+- `runtime/` abstraction with host subprocess and Docker container backends for pentest execution
 
 ## Architectural Principles
 

@@ -38,6 +38,9 @@ The live pentest execution model is explained in
 The live chaos execution model is explained in
 `docs/explanation/live-chaos-model.md`.
 
+The container runtime abstraction is explained in
+`docs/explanation/container-runtime-model.md`.
+
 The scanner adapter contract lives in
 `docs/reference/pentest-adapters.md`.
 
@@ -57,6 +60,7 @@ Operator run guides live in:
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-live-pentest.md`
+- `docs/how-to/run-pentest-with-docker.md`
 - `docs/how-to/run-chaos.md`
 - `docs/how-to/run-live-chaos.md`
 - `docs/how-to/schedule-execution.md`

@@ -28,7 +28,8 @@ Implemented now:
 
 Live execution now:
 
-- pentest runs execute real scanner binaries against a reachable target
+- pentest runs execute real scanner binaries against a reachable target;
+  `--runtime host` (default) or `--runtime container` (Docker)
 - chaos runs execute live Toxiproxy-backed experiments against a live target
 - fixture-backed flows preserved for onboarding and offline testing
 
@@ -102,7 +103,7 @@ The public CLI surface is implemented and uses one entrypoint:
 
 ```text
 toolkit validate --app <id> --env <env>
-toolkit pentest run --app <id> --env <env> --profile <name>
+toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
 toolkit chaos run --app <id> --env <env> --profile <name>
 toolkit report build --run-id <id>
 ```

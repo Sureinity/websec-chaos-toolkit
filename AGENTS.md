@@ -238,8 +238,7 @@ Planned / Future Expectations
   - ~~scheduler-facing docs, sample configs, and pilot coverage for one or two internal apps~~ (implemented: example config packs, operator how-to guides, safety model doc, and schedule-execution guide)
   - ~~optional Trivy and Semgrep adapters for local code, artifact, or image checks~~ (implemented: fixture-backed, explicitly enabled, skip cleanly when unavailable)
   - ~~live chaos execution through a real Toxiproxy runtime~~ (implemented)
-  - containerized tool runtime for portable execution across generic Linux
-    environments
+  - ~~containerized tool runtime for portable execution across generic Linux environments~~ (implemented: Docker container backend via `--runtime container`)
 - Keep the detailed milestone sequence in
   `docs/explanation/implementation-roadmap.md` aligned with this order.
 - Keep allowed commit types to:
