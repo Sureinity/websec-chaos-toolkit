@@ -33,11 +33,34 @@ Stable exit-code contract:
 - `1`: medium or high findings, or a resilience failure
 - `2`: configuration or runtime errors
 
+## Compose Operator Workflow
+
+The preferred Docker-first operator path runs the toolkit as a service
+inside `docker-compose.yml` alongside an example target app and an
+optional Toxiproxy service:
+
+```bash
+docker compose up -d toolkit-runner sample-app
+docker compose exec toolkit-runner toolkit pentest run \
+  --app sample-internal-app --env local --profile safe-web-baseline \
+  --runtime container
+```
+
+For chaos workflows, add the Toxiproxy profile:
+
+```bash
+docker compose --profile chaos up -d toolkit-runner sample-app toxiproxy
+```
+
+See `docs/how-to/run-with-compose.md` for the full workflow.
+
 For task-oriented operator procedures, see:
 
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-chaos.md`
+- `docs/how-to/run-live-pentest.md`
 - `docs/how-to/run-live-chaos.md`
 - `docs/how-to/run-pentest-with-docker.md`
+- `docs/how-to/run-with-compose.md`
 - `docs/how-to/schedule-execution.md`

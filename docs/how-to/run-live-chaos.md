@@ -127,6 +127,26 @@ Artifacts are written even on failure, so failed runs remain auditable.
 - The toolkit never installs or manages Toxiproxy; operators are responsible
   for the runtime
 
+## Compose-Based Operator Path
+
+For a portable, Docker-first workflow that brings up Toxiproxy, the
+target app, and the toolkit runner together, use the Compose path:
+
+```bash
+docker compose --profile chaos up -d toolkit-runner sample-app toxiproxy
+
+docker compose exec toxiproxy /toxiproxy-cli create \
+  --listen 0.0.0.0:19000 --upstream sample-app:8080 sample-app
+
+docker compose exec \
+  -e TOOLKIT_TOXIPROXY_URL=http://toxiproxy:8474 \
+  toolkit-runner toolkit chaos run \
+  --app sample-internal-app --env local \
+  --profile dependency-latency-baseline
+```
+
+See `docs/how-to/run-with-compose.md` for the full Compose workflow.
+
 ## Live Versus Fixture-Backed Runs
 
 The fixture-backed flow (`run_chaos_fixture_flow`) is preserved for onboarding

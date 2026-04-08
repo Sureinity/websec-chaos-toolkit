@@ -112,6 +112,81 @@ relying on `--network=host`.
 | `src/` | `/workspace/src` | read-only | toolkit source |
 | `pyproject.toml` | `/workspace/pyproject.toml` | read-only | dependencies |
 
+## Live Pentest Through Compose
+
+Once `toolkit-runner` and `sample-app` are up:
+
+```bash
+docker compose exec toolkit-runner toolkit pentest run \
+  --app sample-internal-app \
+  --env local \
+  --profile safe-web-baseline \
+  --runtime container
+```
+
+Notes:
+
+- `--runtime container` makes the toolkit-runner invoke scanner containers
+  via the host Docker socket if it is mounted, or fall back to the
+  in-runner host backend if not
+- raw artifacts, normalized findings, and the executive summary are written
+  to `/workspace/outputs/<run-id>/...` and persist to `./outputs` on the host
+- the runner reads the YAML bundle from `/workspace/config`
+
+Required environment variables (set via `compose/toolkit-runner.env`):
+
+- `SAMPLE_API_BEARER_TOKEN` — only needed when running the sample-api pack
+- `NUCLEI_DISABLE_UPDATE_CHECK=true` — recommended for deterministic runs
+
+## Live Chaos Through Compose
+
+Bring up the chaos profile (which includes Toxiproxy):
+
+```bash
+docker compose --profile chaos up -d toolkit-runner sample-app toxiproxy
+```
+
+Wait for Toxiproxy to be reachable, then create a proxy for the target:
+
+```bash
+docker compose exec toxiproxy /toxiproxy-cli create \
+  --listen 0.0.0.0:19000 \
+  --upstream sample-app:8080 \
+  sample-app
+```
+
+Run the chaos workflow:
+
+```bash
+docker compose exec \
+  -e TOOLKIT_TOXIPROXY_URL=http://toxiproxy:8474 \
+  toolkit-runner toolkit chaos run \
+  --app sample-internal-app \
+  --env local \
+  --profile dependency-latency-baseline
+```
+
+Startup order matters for chaos:
+
+1. `sample-app` must be healthy before `toxiproxy` proxies traffic to it
+2. `toxiproxy` must be running before the toolkit attempts proxy creation
+3. The toolkit container reaches Toxiproxy via service-name DNS at
+   `http://toxiproxy:8474`
+
+## Shared Outputs And Report Rebuild
+
+All run artifacts under `/workspace/outputs/` persist to `./outputs/` on
+the host. After a pentest or chaos run, you can rebuild the executive
+summary from any earlier run:
+
+```bash
+docker compose exec toolkit-runner toolkit report build --run-id <run-id>
+```
+
+The same `outputs/` directory is shared across runs, so a host-side
+`uv run toolkit report build --run-id <run-id>` works against artifacts
+created by the Compose runner.
+
 ## Stopping
 
 ```bash
