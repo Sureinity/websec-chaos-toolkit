@@ -1,0 +1,68 @@
+# Docker Compose workflow for the internal security toolkit.
+#
+# This is the preferred Docker-first operator path. It runs the toolkit
+# as a service alongside an example target app and an optional Toxiproxy
+# service for live chaos experiments.
+#
+# Operator modes:
+#   - pentest only: docker compose up toolkit-runner sample-app
+#   - pentest + chaos: docker compose up toolkit-runner sample-app toxiproxy
+#
+# Mount layout (inside toolkit-runner):
+#   - /workspace/config   read-only config bundle (apps.yaml etc.)
+#   - /workspace/outputs  read-write run artifacts
+#
+# Service-name networking: services on toolkit-net resolve each other by
+# their service name. The example apps.yaml uses http://sample-app:8080
+# as the target base_url so the toolkit container reaches it without
+# --network=host hacks.
+
+services:
+  toolkit-runner:
+    image: python:3.13-slim
+    container_name: toolkit-runner
+    working_dir: /workspace
+    networks:
+      - toolkit-net
+    volumes:
+      - ./examples/configs/sample-webapp:/workspace/config:ro
+      - ./outputs:/workspace/outputs
+      - ./src:/workspace/src:ro
+      - ./pyproject.toml:/workspace/pyproject.toml:ro
+      - ./uv.lock:/workspace/uv.lock:ro
+    env_file:
+      - ./compose/toolkit-runner.env.example
+    environment:
+      - PYTHONPATH=/workspace/src
+    command: ["sleep", "infinity"]
+    # Operators exec into the running container to invoke toolkit commands:
+    #   docker compose exec toolkit-runner toolkit validate \
+    #     --app sample-internal-app --env local
+
+  sample-app:
+    image: nginx:alpine
+    container_name: sample-app
+    networks:
+      - toolkit-net
+    expose:
+      - "8080"
+    # Replace with the real target app image when wiring a project.
+    # The toolkit container reaches it via http://sample-app:8080.
+
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:latest
+    container_name: toxiproxy
+    networks:
+      - toolkit-net
+    expose:
+      - "8474"   # Toxiproxy admin API
+      - "19000"  # example proxy listen port
+    # Optional service for live chaos experiments.
+    # The toolkit container reaches the admin API via http://toxiproxy:8474.
+    profiles:
+      - chaos
+
+networks:
+  toolkit-net:
+    driver: bridge
+    name: toolkit-net
