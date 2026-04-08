@@ -1,0 +1,1 @@
+"""Compose workflow contract namespace."""
