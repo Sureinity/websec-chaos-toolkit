@@ -114,24 +114,30 @@ class ContainerRuntime:
         ]
 
         # Mount the output directory so the tool can write artifacts.
+        # The :z suffix relabels the mount for SELinux-enabled hosts
+        # (Fedora, RHEL, CentOS) so the container user can write.
         output_dir = request.output_path.parent
         parts.extend([
             "-v",
-            f"{output_dir}:{output_dir}",
+            f"{output_dir}:{output_dir}:z",
         ])
 
         # Mount cwd if specified and different from output dir.
         if request.cwd is not None and request.cwd != output_dir:
-            parts.extend(["-v", f"{request.cwd}:{request.cwd}"])
+            parts.extend(["-v", f"{request.cwd}:{request.cwd}:z"])
 
         # Forward env overrides as container env vars.
         for key, value in request.env_overrides.items():
             parts.extend(["-e", f"{key}={value}"])
 
+        # Override the entrypoint with the actual tool binary so the
+        # command works regardless of whether the image defines one.
+        if request.command:
+            parts.extend(["--entrypoint", request.command[0]])
+
         parts.append(image)
 
-        # Append the original command arguments (skip the binary name since
-        # the image entrypoint replaces it).
+        # Append the remaining command arguments after the image.
         if len(request.command) > 1:
             parts.extend(request.command[1:])
 

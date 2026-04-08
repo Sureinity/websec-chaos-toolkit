@@ -75,11 +75,14 @@ class ContainerCommandBuildTests(unittest.TestCase):
         self.assertIn("--rm", cmd)
         self.assertIn("--network=host", cmd)
         self.assertIn("instrumentisto/nmap:latest", cmd)
-        # Original command args (minus binary) appended after image.
+        # Entrypoint overridden with the tool binary.
+        ep_idx = list(cmd).index("--entrypoint")
+        self.assertEqual(cmd[ep_idx + 1], "nmap")
+        # Remaining args appended after the image.
         self.assertIn("-F", cmd)
         self.assertIn("localhost", cmd)
 
-    def test_mounts_output_directory(self) -> None:
+    def test_mounts_output_directory_with_selinux_label(self) -> None:
         runtime = ContainerRuntime()
         request = RuntimeRequest(
             tool="nmap",
@@ -94,6 +97,7 @@ class ContainerCommandBuildTests(unittest.TestCase):
         idx = cmd.index("-v")
         mount = cmd[idx + 1]
         self.assertIn("/tmp/outputs/nmap", mount)
+        self.assertTrue(mount.endswith(":z"), f"mount missing :z suffix: {mount}")
 
     def test_forwards_env_overrides(self) -> None:
         runtime = ContainerRuntime()
