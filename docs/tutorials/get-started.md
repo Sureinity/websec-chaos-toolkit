@@ -37,17 +37,17 @@ Alternative pack:
 8. Run `uv run pytest` to verify the minimal scaffold checks.
 
 `toolkit report build` is implemented and rebuilds summaries from stored
-normalized findings. `toolkit pentest run` and `toolkit chaos run` are
-implemented for the current fixture-backed flows.
+normalized findings. `toolkit pentest run` and `toolkit chaos run` execute
+against live targets by default. Fixture-backed flows are preserved for
+onboarding and offline testing.
 
 Status guide:
 
-- Implemented now:
-  - validate, pentest run, chaos run, report build
-- Fixture-backed now:
-  - pentest and chaos flows
-- Planned later:
-  - live scanner execution and live Toxiproxy-backed chaos execution
+- Live execution now:
+  - pentest runs execute real scanner binaries (`--runtime host` or `--runtime container`)
+  - chaos runs execute live Toxiproxy-backed experiments
+- Fixture-backed flows preserved for onboarding and offline testing
+- All four commands implemented: validate, pentest run, chaos run, report build
 
 Next reading:
 

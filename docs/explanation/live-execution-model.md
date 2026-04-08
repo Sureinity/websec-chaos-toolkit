@@ -145,11 +145,8 @@ Additional safety constraints in the live path:
 
 ## What Remains Planned
 
-The live execution model covers the pentest path only. These items are planned
-but not yet implemented:
+These items are planned but not yet implemented:
 
-- **Live chaos execution**: Toxiproxy integration for real fault injection and
-  health monitoring. The chaos path remains fixture-backed.
 - **Scheduler integration**: No daemon, web UI, or CI-native runtime.
 - **Notification sinks**: No webhook or alerting integration.
 - **Kubernetes and SSO auth**: Not yet supported; only the five auth methods

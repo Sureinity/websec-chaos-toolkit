@@ -189,10 +189,11 @@ Milestone 7 documentation must keep these statements explicit:
 
 - `toolkit validate`, `toolkit pentest run`, `toolkit chaos run`, and
   `toolkit report build` are implemented now
-- pentest and chaos runs are fixture-backed today
+- pentest runs execute real scanner binaries against a live target
+  (`--runtime host` or `--runtime container`)
+- chaos runs execute live Toxiproxy-backed experiments
+- fixture-backed flows are preserved for onboarding and offline testing
 - external-binary checks remain opt-in
-- live scanner execution and live Toxiproxy-backed chaos execution are planned
-  later
 
 This document is the decision point later Milestone 7 checkpoints should follow
 without reopening scope.

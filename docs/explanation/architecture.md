@@ -109,9 +109,7 @@ Key boundaries:
   cross-file validation
 - `core/` owns shared execution concepts such as exit codes and run context
 - `auth/` owns runtime auth resolution and session helpers
-- `adapters/` owns the scanner contract, shared process runner, and the current
-  fixture-driven zap, nuclei, and nmap implementations today, and will own the
-  execution-backed concrete tool boundaries next
+- `adapters/` owns the scanner contract, shared process runner, and the zap, nuclei, nmap, trivy, and semgrep adapter implementations; adapters execute through the `runtime/` backend abstraction
 - `pentest/` owns the live execution service, planner, and orchestration runner; the fixture-backed flow is preserved as `run_pentest_fixture_flow()` for onboarding
 - `chaos/` owns the live execution service, Toxiproxy wrapper, monitoring, planner, and orchestration runner; the fixture-backed flow is preserved as `run_chaos_fixture_flow()` for onboarding
 - `runtime/` owns the `RuntimeBackend` protocol, host subprocess backend, and Docker container backend; pentest execution routes through the selected backend

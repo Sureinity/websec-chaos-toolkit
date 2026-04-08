@@ -1,21 +1,21 @@
 # Internal Security Toolkit
 
-This repository now contains the initial scaffold for a Python-first internal
-security testing toolkit.
+This repository contains a Python-first internal security testing toolkit
+with four implemented commands and live execution against real targets.
 
-The current state is intentionally narrow:
+Current state:
 
-- the package layout, command tree, docs skeleton, tests skeleton, and valid
-  sample config files exist
-- `toolkit validate` is implemented against the current config bundle and exit
-  code contract
+- `toolkit validate` validates app/profile config against the locked schema
 - `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
-  against a live target; a fixture-backed flow is preserved for onboarding
-- `toolkit chaos run` executes live Toxiproxy-backed experiments; a
-  fixture-backed flow is preserved for onboarding
-- `toolkit report build` is implemented for stored normalized result bundles
+  against a live target via host subprocess or Docker container backend; a
+  fixture-backed flow is preserved for onboarding and offline testing
+- `toolkit chaos run` executes live Toxiproxy-backed experiments against a
+  live target; a fixture-backed flow is preserved for onboarding and offline
+  testing
+- `toolkit report build` rebuilds Markdown summaries from stored normalized
+  result bundles
 - scanner adapters (ZAP, Nuclei, Nmap, Trivy, Semgrep) are implemented with a
-  shared contract and normalizers
+  shared contract, runtime backend abstraction, and normalizers
 
 ## Current Status
 
@@ -33,10 +33,16 @@ Live execution now:
 - chaos runs execute live Toxiproxy-backed experiments against a live target
 - fixture-backed flows preserved for onboarding and offline testing
 
-Optional external verification:
+External tool requirements:
 
-- external-binary checks remain opt-in and are not required for the default
-  local workflow
+- `toolkit pentest run --runtime host` requires `zap-baseline.py`, `nuclei`,
+  and `nmap` on `PATH`
+- `toolkit pentest run --runtime container` requires Docker on `PATH` and
+  pre-pulled scanner images
+- `toolkit chaos run` requires a running Toxiproxy server and a configured
+  proxy for the target service
+- optional adapter smoke tests are gated behind
+  `TOOLKIT_RUN_EXTERNAL_TOOL_TESTS=1` and skip cleanly when binaries are absent
 
 ## Bootstrap Layout
 
@@ -142,7 +148,7 @@ is documented in `docs/explanation/implementation-roadmap.md`.
 The system overview and architecture diagrams live in
 `docs/explanation/architecture.md`.
 
-The current safety and fixture-boundary rationale lives in
+The safety model and execution mode boundaries live in
 `docs/explanation/safety-model.md`.
 
 For the full docs index, see `docs/README.md`.
