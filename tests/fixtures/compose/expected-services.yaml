@@ -1,0 +1,21 @@
+# Reference data for Compose workflow integration tests.
+#
+# This fixture lists the services and properties that the integration
+# test asserts are present in the root docker-compose.yml. Update this
+# file when intentionally adding or removing Compose services.
+
+services:
+  - name: toolkit-runner
+    required: true
+    expected_workdir: /workspace
+    expected_volumes:
+      - /workspace/config
+      - /workspace/outputs
+  - name: sample-app
+    required: true
+  - name: toxiproxy
+    required: false
+    profiles:
+      - chaos
+
+network: toolkit-net
