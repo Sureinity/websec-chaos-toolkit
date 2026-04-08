@@ -1,0 +1,24 @@
+# Compose override for the sample-webapp-compose config pack.
+#
+# Use this overlay together with the root docker-compose.yml to mount
+# the Compose-aware example config bundle into the toolkit-runner.
+#
+# Usage:
+#   docker compose -f docker-compose.yml \
+#     -f compose/examples/sample-webapp-compose/docker-compose.override.yml \
+#     up -d toolkit-runner sample-app
+#
+# This file demonstrates the expected service-name networking model and
+# can be copied as a starting point for project-specific Compose setups.
+
+services:
+  toolkit-runner:
+    volumes:
+      - ../../../examples/configs/sample-webapp-compose:/workspace/config:ro
+
+  sample-app:
+    # The example sample-app uses nginx:alpine which serves on port 80.
+    # Map the apps.yaml port (8080) to the container's actual port.
+    expose:
+      - "8080"
+      - "80"

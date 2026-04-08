@@ -1,0 +1,22 @@
+# Compose-aware variant of the sample-webapp config bundle.
+#
+# This bundle is designed to run inside the toolkit-runner Compose service.
+# The base_url uses the Compose service name "sample-app" which resolves
+# on the shared toolkit-net network. The Toxiproxy service hostname
+# "toxiproxy" resolves the same way for chaos workflows.
+apps:
+  - id: sample-internal-app
+    environment: local
+    base_url: http://sample-app:8080
+    host_targets:
+      - sample-app
+    target_allowlist:
+      - sample-app
+      - localhost
+      - 127.0.0.1
+    auth:
+      method: none
+    health_endpoint: /
+    enabled_modules:
+      - pentest
+      - chaos

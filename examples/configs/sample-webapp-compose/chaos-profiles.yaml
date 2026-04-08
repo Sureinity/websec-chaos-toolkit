@@ -1,0 +1,15 @@
+profiles:
+  - name: dependency-latency-baseline
+    fault_type: latency
+    # Target service must match a Toxiproxy proxy name configured on the
+    # toxiproxy service. The toolkit-runner reaches the Toxiproxy admin
+    # API at http://toxiproxy:8474 on the shared toolkit-net network.
+    target_service: sample-app
+    baseline_duration_seconds: 60
+    experiment_duration_seconds: 120
+    abort_thresholds:
+      consecutive_health_failures: 2
+      max_error_rate: 0.1
+    rollback:
+      method: toxiproxy_reset
+      description: Remove injected proxy toxicity and verify health recovery.
