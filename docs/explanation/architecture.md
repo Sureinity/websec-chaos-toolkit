@@ -113,6 +113,7 @@ Key boundaries:
 - `pentest/` owns the live execution service, planner, and orchestration runner; the fixture-backed flow is preserved as `run_pentest_fixture_flow()` for onboarding
 - `chaos/` owns the live execution service, Toxiproxy wrapper, monitoring, planner, and orchestration runner; the fixture-backed flow is preserved as `run_chaos_fixture_flow()` for onboarding
 - `runtime/` owns the `RuntimeBackend` protocol, host subprocess backend, and Docker container backend; pentest execution routes through the selected backend
+- `compose/` owns the Docker Compose workflow contract (service names, mount paths, network model); the root `docker-compose.yml` and `compose/` assets implement that contract for the Docker-first operator path
 - `results/` owns normalized finding contracts
 - `reports/` owns rendered outputs
 - `safety/` owns fail-closed checks shared across workflows

@@ -7,7 +7,14 @@ The documentation scaffold follows the Diataxis framework:
 - `reference/` for commands, config keys, outputs, and contracts
 - `explanation/` for architecture and rationale
 
-Start here for example-driven onboarding:
+Preferred Docker-first onboarding path:
+
+1. `docs/tutorials/get-started.md`
+2. `docs/how-to/run-with-compose.md` — Compose-based operator workflow
+3. `examples/configs/sample-webapp-compose/` — Compose-aware config pack
+4. `docs/explanation/compose-workflow-model.md` — service topology rationale
+
+Direct CLI onboarding path:
 
 1. `docs/tutorials/get-started.md`
 2. `examples/configs/sample-webapp/`
@@ -41,6 +48,9 @@ The live chaos execution model is explained in
 The container runtime abstraction is explained in
 `docs/explanation/container-runtime-model.md`.
 
+The Compose-based operator workflow and service topology are explained in
+`docs/explanation/compose-workflow-model.md`.
+
 The scanner adapter contract lives in
 `docs/reference/pentest-adapters.md`.
 
@@ -57,6 +67,7 @@ The chaos orchestration contract lives in
 
 Operator run guides live in:
 
+- `docs/how-to/run-with-compose.md`
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-live-pentest.md`
@@ -68,6 +79,7 @@ Operator run guides live in:
 Example config packs live in:
 
 - `examples/configs/sample-webapp/`
+- `examples/configs/sample-webapp-compose/`
 - `examples/configs/sample-api/`
 
 Status language used across the docs:

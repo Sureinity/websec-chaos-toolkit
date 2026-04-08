@@ -66,18 +66,39 @@ uv run pre-commit install
 uv run pytest
 ```
 
-## Example-Driven Start
+## Docker-First Operator Workflow (Preferred)
+
+The preferred portability path runs the toolkit, target app, and optional
+Toxiproxy service together via Docker Compose:
+
+```bash
+docker compose up -d toolkit-runner sample-app
+docker compose exec toolkit-runner toolkit validate \
+  --app sample-internal-app --env local
+docker compose exec toolkit-runner toolkit pentest run \
+  --app sample-internal-app --env local --profile safe-web-baseline \
+  --runtime container
+```
+
+Add the chaos profile when running live chaos experiments:
+
+```bash
+docker compose --profile chaos up -d toolkit-runner sample-app toxiproxy
+```
+
+See `docs/how-to/run-with-compose.md` for the complete workflow.
+
+## Example-Driven Start (Direct CLI)
+
+For development on a host that already has the required binaries, the
+direct CLI path also works.
 
 Choose one sanitized example pack:
 
-- `examples/configs/sample-webapp/`
-  - default local-safe walkthrough
-  - `auth.method: none`
-  - `pentest` and `chaos` enabled
-- `examples/configs/sample-api/`
-  - authenticated API-oriented variant
-  - `auth.method: bearer_token`
-  - `pentest` enabled
+- `examples/configs/sample-webapp/` — default local walkthrough
+- `examples/configs/sample-webapp-compose/` — Compose-aware variant with
+  service-name URLs
+- `examples/configs/sample-api/` — authenticated API-oriented variant
 
 Default walkthrough:
 
@@ -91,6 +112,8 @@ uv run toolkit report build --run-id <existing-run-id>
 
 Task-oriented guides:
 
+- `docs/how-to/run-with-compose.md` — Compose-based operator workflow
+- `docs/how-to/run-pentest-with-docker.md` — Docker container runtime
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-chaos.md`
@@ -100,6 +123,7 @@ Reference and rationale:
 
 - `docs/reference/cli.md`
 - `docs/reference/output-artifacts.md`
+- `docs/explanation/compose-workflow-model.md`
 - `docs/explanation/safety-model.md`
 - `docs/explanation/architecture.md`
 

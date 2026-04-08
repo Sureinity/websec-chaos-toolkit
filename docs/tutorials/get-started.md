@@ -1,7 +1,22 @@
 # Get Started
 
-This tutorial is for contributors who want to inspect the implemented
-fixture-backed workflows locally.
+This tutorial walks contributors through running the implemented toolkit
+workflows locally.
+
+## Two Operator Paths
+
+The toolkit supports two workflows:
+
+1. **Compose-based (preferred for operators)**: run the toolkit, the
+   target app, and the optional Toxiproxy service together via Docker
+   Compose. No scanner binaries are required on the host. Start here:
+   `docs/how-to/run-with-compose.md`.
+2. **Direct CLI (for development)**: run the toolkit on the host with
+   `uv run toolkit ...`. This path is useful for inspecting the toolkit
+   source and iterating on adapter behavior.
+
+This tutorial walks through the direct CLI path. Operators running the
+toolkit in CI or on shared infrastructure should prefer the Compose path.
 
 ## Goal
 
@@ -51,6 +66,8 @@ Status guide:
 
 Next reading:
 
+- `docs/how-to/run-with-compose.md` — Compose-based operator workflow
+- `docs/explanation/compose-workflow-model.md` — service topology rationale
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-chaos.md`
