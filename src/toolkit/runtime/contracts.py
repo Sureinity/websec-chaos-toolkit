@@ -60,8 +60,14 @@ CONTAINER_TOOL_IMAGES: dict[str, str] = {
     "zap": "ghcr.io/zaproxy/zaproxy:stable",
     "nuclei": "projectdiscovery/nuclei:latest",
     "nmap": "instrumentisto/nmap:latest",
-    "trivy": "aquasec/trivy:latest",
+    "trivy": "aquasec/trivy:0.69.3",
     "semgrep": "semgrep/semgrep:latest",
+}
+
+# Adapter binaries do not always match the logical tool key used for
+# container image resolution. Resolve those binary names to the tool key.
+CONTAINER_TOOL_ALIASES: dict[str, str] = {
+    "zap-baseline.py": "zap",
 }
 
 # Tools that are required to be available in the container runtime.

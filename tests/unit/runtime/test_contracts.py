@@ -3,6 +3,7 @@
 import unittest
 
 from toolkit.runtime.contracts import (
+    CONTAINER_TOOL_ALIASES,
     CONTAINER_CORE_TOOLS,
     CONTAINER_TOOL_IMAGES,
     RuntimeMode,
@@ -39,3 +40,9 @@ class RuntimeContractTests(unittest.TestCase):
                 image.strip(),
                 f"container image for {tool} must be non-empty",
             )
+
+    def test_container_aliases_cover_zap_binary_name(self) -> None:
+        self.assertEqual(
+            CONTAINER_TOOL_ALIASES["zap-baseline.py"],
+            "zap",
+        )

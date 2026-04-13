@@ -17,7 +17,7 @@ from pathlib import Path
 
 from toolkit.adapters.base import AdapterAvailability
 from toolkit.adapters.process import find_binary
-from toolkit.runtime.contracts import CONTAINER_TOOL_IMAGES
+from toolkit.runtime.contracts import CONTAINER_TOOL_ALIASES, CONTAINER_TOOL_IMAGES
 from toolkit.runtime.models import RuntimeRequest, RuntimeResult
 
 
@@ -96,6 +96,7 @@ class ContainerRuntime:
         )
 
     def _resolve_image(self, tool: str) -> str | None:
+        tool = CONTAINER_TOOL_ALIASES.get(tool, tool)
         if tool in self._image_overrides:
             return self._image_overrides[tool]
         return CONTAINER_TOOL_IMAGES.get(tool)
@@ -106,6 +107,7 @@ class ContainerRuntime:
         *,
         image: str,
     ) -> tuple[str, ...]:
+        container_output_dir = _container_output_dir(request)
         parts: list[str] = [
             "docker",
             "run",
@@ -119,7 +121,7 @@ class ContainerRuntime:
         output_dir = request.output_path.parent
         parts.extend([
             "-v",
-            f"{output_dir}:{output_dir}:z",
+            f"{output_dir}:{container_output_dir}:z",
         ])
 
         # Mount cwd if specified and different from output dir.
@@ -139,6 +141,40 @@ class ContainerRuntime:
 
         # Append the remaining command arguments after the image.
         if len(request.command) > 1:
-            parts.extend(request.command[1:])
+            parts.extend(
+                _translated_tool_args(
+                    request,
+                    container_output_dir=container_output_dir,
+                )
+            )
 
         return tuple(parts)
+
+
+def _container_output_dir(request: RuntimeRequest) -> Path:
+    if request.tool == "zap":
+        # The ZAP baseline image expects file outputs to live under /zap/wrk.
+        return Path("/zap/wrk")
+    return request.output_path.parent
+
+
+def _translated_tool_args(
+    request: RuntimeRequest,
+    *,
+    container_output_dir: Path,
+) -> tuple[str, ...]:
+    translated_args: list[str] = []
+    if request.tool == "zap":
+        # The ZAP baseline wrapper already assumes /zap/wrk as reportDir inside
+        # the container, so its -J argument must be the report filename only.
+        container_output_arg = request.output_path.name
+    else:
+        container_output_arg = str(container_output_dir / request.output_path.name)
+
+    for arg in request.command[1:]:
+        if arg == str(request.output_path):
+            translated_args.append(container_output_arg)
+            continue
+        translated_args.append(arg)
+
+    return tuple(translated_args)

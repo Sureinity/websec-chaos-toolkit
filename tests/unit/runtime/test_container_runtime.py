@@ -56,6 +56,17 @@ class ContainerRuntimeAvailabilityTests(unittest.TestCase):
         self.assertTrue(result.available)
         self.assertIn("my-registry/nmap:v1", result.binary)
 
+    def test_zap_binary_name_resolves_to_zap_container_image(self) -> None:
+        runtime = ContainerRuntime()
+        with patch(
+            "toolkit.runtime.container.find_binary",
+            return_value=Path("/usr/bin/docker"),
+        ):
+            result = runtime.check_tool_available("zap-baseline.py")
+
+        self.assertTrue(result.available)
+        self.assertIn("ghcr.io/zaproxy/zaproxy:stable", result.binary)
+
 
 class ContainerCommandBuildTests(unittest.TestCase):
     def test_builds_docker_run_with_network_host(self) -> None:
@@ -98,6 +109,55 @@ class ContainerCommandBuildTests(unittest.TestCase):
         mount = cmd[idx + 1]
         self.assertIn("/tmp/outputs/nmap", mount)
         self.assertTrue(mount.endswith(":z"), f"mount missing :z suffix: {mount}")
+
+    def test_zap_mounts_output_dir_to_zap_wrk(self) -> None:
+        runtime = ContainerRuntime()
+        request = RuntimeRequest(
+            tool="zap",
+            command=(
+                "zap-baseline.py",
+                "-t",
+                "http://localhost:8080",
+                "-J",
+                "/tmp/outputs/zap/results.json",
+                "-m",
+                "1",
+            ),
+            output_path=Path("/tmp/outputs/zap/results.json"),
+        )
+
+        cmd = runtime._build_docker_command(
+            request, image="ghcr.io/zaproxy/zaproxy:stable"
+        )
+
+        mount_args = [cmd[i + 1] for i in range(len(cmd)) if cmd[i] == "-v"]
+        self.assertIn("/tmp/outputs/zap:/zap/wrk:z", mount_args)
+
+    def test_zap_rewrites_output_argument_to_filename_only(self) -> None:
+        runtime = ContainerRuntime()
+        request = RuntimeRequest(
+            tool="zap",
+            command=(
+                "zap-baseline.py",
+                "-t",
+                "http://localhost:8080",
+                "-J",
+                "/tmp/outputs/zap/results.json",
+                "-m",
+                "1",
+            ),
+            output_path=Path("/tmp/outputs/zap/results.json"),
+        )
+
+        cmd = runtime._build_docker_command(
+            request, image="ghcr.io/zaproxy/zaproxy:stable"
+        )
+
+        image_idx = cmd.index("ghcr.io/zaproxy/zaproxy:stable")
+        tool_args = cmd[image_idx + 1 :]
+        self.assertIn("results.json", tool_args)
+        self.assertNotIn("/zap/wrk/results.json", tool_args)
+        self.assertNotIn("/tmp/outputs/zap/results.json", tool_args)
 
     def test_forwards_env_overrides(self) -> None:
         runtime = ContainerRuntime()
