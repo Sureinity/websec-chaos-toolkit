@@ -1,7 +1,7 @@
-import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import unittest
 from unittest.mock import patch
 
 from toolkit.adapters.base import AdapterAvailability
@@ -81,13 +81,12 @@ class TrivyAdapterTests(unittest.TestCase):
                 "--output",
                 str(output_path),
                 "--quiet",
-                "--skip-db-update",
-                "--skip-java-db-update",
                 "--scanners",
                 "vuln,misconfig",
-                str(target_path),
+                ".",
             ),
         )
+        self.assertEqual(execution.cwd, target_path.resolve())
         self.assertEqual(execution.timeout_seconds, 300.0)
         self.assertEqual(execution.env_overrides, {"TRIVY_NON_SSL": "true"})
 
@@ -111,6 +110,47 @@ class TrivyAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "supported allowlisted rule category"):
             adapter.build_execution()
 
+    def test_build_execution_requires_explicit_target_for_filesystem_mode(self) -> None:
+        adapter = TrivyAdapter(
+            app=build_app(),
+            settings=build_settings(),
+            output_path=Path("/tmp/run/raw/trivy/results.json"),
+        )
+
+        with patch.dict("os.environ", {}, clear=False):
+            with self.assertRaisesRegex(ValueError, "TOOLKIT_TRIVY_TARGET_PATH"):
+                adapter.build_execution()
+
+    def test_build_execution_supports_image_audit_mode(self) -> None:
+        adapter = TrivyAdapter(
+            app=build_app(),
+            settings=PentestToolSettings(
+                enabled=True,
+                safe_mode=True,
+                profile="image-audit",
+                allowlisted_rules=["vulnerabilities"],
+            ),
+            output_path=Path("/tmp/run/raw/trivy/results.json"),
+        )
+
+        with patch.dict("os.environ", {"TOOLKIT_TRIVY_IMAGE_REF": "demo/image:latest"}):
+            execution = adapter.build_execution()
+
+        self.assertEqual(
+            execution.command,
+            (
+                "trivy",
+                "image",
+                "--format",
+                "json",
+                "--output",
+                "/tmp/run/raw/trivy/results.json",
+                "--quiet",
+                "demo/image:latest",
+            ),
+        )
+        self.assertIsNone(execution.cwd)
+
     def test_parse_artifact_normalizes_fixture_findings(self) -> None:
         adapter = TrivyAdapter(
             app=build_app(),
@@ -133,17 +173,21 @@ class TrivyAdapterTests(unittest.TestCase):
         self.assertEqual(findings[1].severity, "medium")
 
     def test_build_fixture_result_preserves_artifact_and_findings(self) -> None:
-        adapter = TrivyAdapter(
-            app=build_app(),
-            settings=build_settings(),
-            output_path=FIXTURE_ROOT / "sample-results.json",
-        )
+        with TemporaryDirectory() as temp_dir_name:
+            target_path = Path(temp_dir_name) / "sample-repo"
+            target_path.mkdir()
+            adapter = TrivyAdapter(
+                app=build_app(),
+                settings=build_settings(),
+                output_path=FIXTURE_ROOT / "sample-results.json",
+                target_path=target_path,
+            )
 
-        result = adapter.build_fixture_result(
-            availability=AdapterAvailability(available=True, binary="trivy"),
-            started_at=datetime(2026, 3, 30, 1, 2, 3, tzinfo=UTC),
-            finished_at=datetime(2026, 3, 30, 1, 4, 5, tzinfo=UTC),
-        )
+            result = adapter.build_fixture_result(
+                availability=AdapterAvailability(available=True, binary="trivy"),
+                started_at=datetime(2026, 3, 30, 1, 2, 3, tzinfo=UTC),
+                finished_at=datetime(2026, 3, 30, 1, 4, 5, tzinfo=UTC),
+            )
 
         self.assertFalse(result.skipped)
         self.assertFalse(result.failed)

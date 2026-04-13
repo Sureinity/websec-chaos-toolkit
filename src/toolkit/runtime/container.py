@@ -127,6 +127,7 @@ class ContainerRuntime:
         # Mount cwd if specified and different from output dir.
         if request.cwd is not None and request.cwd != output_dir:
             parts.extend(["-v", f"{request.cwd}:{request.cwd}:z"])
+            parts.extend(["-w", str(request.cwd)])
 
         # Forward env overrides as container env vars.
         for key, value in request.env_overrides.items():

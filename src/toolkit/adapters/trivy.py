@@ -1,6 +1,7 @@
 """Safe Trivy adapter with fixture-driven normalization."""
 
 import json
+import os
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -31,7 +32,7 @@ class TrivyAdapter:
     app: AppConfig
     settings: PentestToolSettings
     output_path: Path
-    target_path: Path = field(default_factory=lambda: Path("."))
+    target_path: Path | None = None
 
     name: str = "trivy"
     binary: str = "trivy"
@@ -49,6 +50,30 @@ class TrivyAdapter:
                 "trivy adapter requires at least one supported allowlisted rule category."
             )
 
+        if self.settings.profile == "image-audit":
+            image_ref = os.environ.get("TOOLKIT_TRIVY_IMAGE_REF", "").strip()
+            if not image_ref:
+                raise ValueError(
+                    "trivy image-audit requires TOOLKIT_TRIVY_IMAGE_REF to be set."
+                )
+            return ToolExecution(
+                tool=self.name,
+                command=(
+                    self.binary,
+                    "image",
+                    "--format",
+                    "json",
+                    "--output",
+                    str(self.output_path),
+                    "--quiet",
+                    image_ref,
+                ),
+                timeout_seconds=300.0,
+                env_overrides={"TRIVY_NON_SSL": "true"},
+            )
+
+        resolved_target = _resolve_target_path(self.target_path)
+
         return ToolExecution(
             tool=self.name,
             command=(
@@ -59,12 +84,11 @@ class TrivyAdapter:
                 "--output",
                 str(self.output_path),
                 "--quiet",
-                "--skip-db-update",
-                "--skip-java-db-update",
                 "--scanners",
                 ",".join(scanners),
-                str(self.target_path),
+                ".",
             ),
+            cwd=resolved_target,
             timeout_seconds=300.0,
             env_overrides={"TRIVY_NON_SSL": "true"},
         )
@@ -242,3 +266,21 @@ def _build_misconfiguration_remediation(misconfiguration: dict[str, object]) -> 
 def _build_secret_remediation(secret: dict[str, object]) -> str:
     title = secret.get("Title", "the identified secret exposure")
     return f"Remove or rotate the secret material related to {title}."
+
+
+def _resolve_target_path(target_path: Path | None) -> Path:
+    candidate = target_path
+    if candidate is None:
+        configured = os.environ.get("TOOLKIT_TRIVY_TARGET_PATH", "").strip()
+        if configured:
+            candidate = Path(configured)
+
+    if candidate is None:
+        raise ValueError(
+            "trivy filesystem analysis requires TOOLKIT_TRIVY_TARGET_PATH or an explicit target_path."
+        )
+
+    resolved = candidate.resolve()
+    if not resolved.exists():
+        raise ValueError(f"trivy target path does not exist: {resolved}")
+    return resolved

@@ -196,6 +196,8 @@ class ContainerCommandBuildTests(unittest.TestCase):
             any("/app/src" in m for m in mount_args),
             f"cwd mount not found in {mount_args}",
         )
+        self.assertIn("-w", cmd)
+        self.assertEqual(cmd[cmd.index("-w") + 1], "/app/src")
 
 
 class ContainerExecutionTests(unittest.TestCase):
