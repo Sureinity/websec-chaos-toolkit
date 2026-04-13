@@ -92,12 +92,22 @@ The live pentest path preserves these operator-visible limits:
 
 - only the curated core v1 tool set runs by default: ZAP, Nuclei, Nmap
 - optional tools (Trivy, Semgrep) run only when explicitly enabled in the profile
+- remote web pentest remains distinct from source and artifact analysis
 - command construction is safe by default and allowlist-driven
 - disabled tools produce explicit skips rather than being run implicitly
 - destructive or exploit-heavy behavior is not part of the default profiles
 - findings are normalized before reporting so vendor-specific raw output does
   not leak into the stable report contract
 - core tool binaries must be pre-installed; the toolkit never downloads them
+
+Tool-to-target expectations:
+
+- `zap`, `nuclei`, and `nmap` are appropriate for a reachable running web
+  target
+- `trivy` and `semgrep` are appropriate for source tree, filesystem, image, or
+  artifact analysis
+- mixing those static-analysis tools into a remote-web profile without a real
+  local analysis target produces misleading operator expectations
 
 See also:
 
