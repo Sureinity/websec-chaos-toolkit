@@ -87,6 +87,10 @@ Each profile is expected to define a profile name and tool settings.
 
 Locked pentest profile rules:
 
+- profiles may declare `assessment_mode`:
+  - `remote_web` (default)
+  - `source_tree`
+  - `artifact_image`
 - enabled tools must define at least one allowlisted rule or template
 - safe mode remains enabled by default
 - the core v1 tool set is `zap`, `nuclei`, and `nmap`
@@ -94,6 +98,8 @@ Locked pentest profile rules:
   DAST-first default
 - optional adapters participate in pentest runs only when explicitly enabled in
   a profile
+- `tools.semgrep` only participates as enabled when the profile uses
+  `assessment_mode: source_tree`
 - missing optional adapter binaries skip cleanly by default in the current
   fixture-backed orchestration
 - `tools.trivy.allowlisted_rules` map to supported Trivy scanner categories:

@@ -14,6 +14,7 @@ from toolkit.config.errors import ConfigValidationCode, config_error
 EnvironmentName = Literal["local", "staging"]
 ModuleName = Literal["pentest", "chaos"]
 AuthMethod = Literal["none", "bearer_token", "cookie", "session", "form"]
+PentestAssessmentModeName = Literal["remote_web", "source_tree", "artifact_image"]
 FaultType = Literal[
     "latency",
     "bandwidth",
@@ -322,9 +323,15 @@ class PentestProfile(BaseModel):
 
     Core tool ordering must remain deterministic. Optional adapters appear in
     plans only when explicitly configured in a profile.
+
+    assessment_mode locks the intended target type:
+    - remote_web
+    - source_tree
+    - artifact_image
     """
 
     name: str
+    assessment_mode: PentestAssessmentModeName = "remote_web"
     schedule_labels: list[str] = Field(default_factory=list)
     tools: PentestToolsConfig
 

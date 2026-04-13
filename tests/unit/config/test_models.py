@@ -174,6 +174,7 @@ class ConfigModelValidationTests(unittest.TestCase):
             "profiles": [
                 {
                     "name": "optional-tool-profile",
+                    "assessment_mode": "source_tree",
                     "tools": {
                         "zap": {
                             "enabled": True,
@@ -201,6 +202,7 @@ class ConfigModelValidationTests(unittest.TestCase):
         registry = PentestProfileRegistry.model_validate(payload)
 
         self.assertEqual(len(registry.profiles), 1)
+        self.assertEqual(registry.profiles[0].assessment_mode, "source_tree")
         self.assertTrue(registry.profiles[0].tools.trivy.enabled)
         self.assertFalse(registry.profiles[0].tools.semgrep.enabled)
         self.assertIsNone(registry.profiles[0].tools.nmap)
