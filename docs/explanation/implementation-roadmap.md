@@ -604,3 +604,57 @@ Dependencies on earlier milestones
 - Milestone 8
 - Milestone 9
 - Milestone 10
+
+## Milestone 13: Target-Aligned Pentest Modes And Tool Separation
+
+Goal
+
+- Make live pentest execution reliable by aligning profiles to the actual
+  assessment target, fixing the remaining container-mode runtime blockers, and
+  separating remote web testing from source or artifact analysis.
+
+Deliverables
+
+- A remote-web pentest profile family for live target assessment
+- Fixed ZAP container runtime output handling
+- Fixed Trivy container first-run behavior
+- Separate profile and execution expectations for:
+  - remote webapp testing
+  - source tree analysis
+  - image or artifact analysis
+- Clear docs that explain which tools belong to which assessment mode
+
+Files/directories to create
+
+- `docs/explanation/pentest-target-model.md`
+- `docs/how-to/run-code-and-artifact-checks.md`
+- `tests/integration/test_pentest_profiles_target_modes.py`
+
+Acceptance criteria
+
+- A remote webapp pentest profile can complete successfully without requiring
+  Trivy or Semgrep to be active
+- ZAP container mode writes artifacts successfully without the current
+  `/zap/wrk` mount mismatch
+- Trivy can run successfully in container mode for a valid filesystem or image
+  target without failing on first-run DB behavior
+- Semgrep is no longer implied to assess a remote running web server unless a
+  source tree target is explicitly provided
+- Docs clearly distinguish remote web pentest, code scan, and artifact/image
+  scan workflows
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.integration.test_pentest_profiles_target_modes
+uv run toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline --runtime container
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 4
+- Milestone 8
+- Milestone 9
+- Milestone 11

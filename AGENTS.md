@@ -239,6 +239,8 @@ Planned / Future Expectations
   - ~~optional Trivy and Semgrep adapters for local code, artifact, or image checks~~ (implemented: fixture-backed, explicitly enabled, skip cleanly when unavailable)
   - ~~live chaos execution through a real Toxiproxy runtime~~ (implemented)
   - ~~containerized tool runtime for portable execution across generic Linux environments~~ (implemented: Docker container backend via `--runtime container`)
+  - target-aligned pentest modes and tool-role separation so remote web
+    pentest, code scanning, and artifact analysis are not conflated
 - Keep the detailed milestone sequence in
   `docs/explanation/implementation-roadmap.md` aligned with this order.
 - Keep allowed commit types to:
