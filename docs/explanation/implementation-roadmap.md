@@ -8,6 +8,7 @@ implemented without reopening the basic product shape.
 
 - The public CLI currently includes:
   - `toolkit audit <url> [--runtime host|container]`
+  - `toolkit edge-chaos <url> [--fault <name>]`
   - `toolkit validate --app <id> --env <env>`
   - `toolkit doctor`
   - `toolkit pentest run --app <id> --env <env> --profile <name>`

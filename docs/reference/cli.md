@@ -4,6 +4,7 @@ The bootstrap scaffold exposes the implemented public command tree:
 
 ```text
 toolkit audit <url> [--runtime host|container]
+toolkit edge-chaos <url> [--fault <name>]
 toolkit validate --app <id> --env <env>
 toolkit doctor
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
@@ -17,6 +18,10 @@ Current command behavior:
   available audit runtime (`container` preferred, `host` fallback), executes a
   safe remote-web audit, writes run artifacts under `outputs/<run-id>/`, and
   exits with `0`, `1`, or `2`
+- `toolkit edge-chaos` derives an ad hoc chaos target from the supplied URL,
+  starts a managed local Toxiproxy container, creates a local proxy, runs one
+  reversible edge-chaos experiment through that proxy, writes run artifacts
+  under `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
 - `toolkit validate` loads the repository YAML files from the current working
   directory, validates the selected `--app/--env` pair, and exits with `0` on
   success

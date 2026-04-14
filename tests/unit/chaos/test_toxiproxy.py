@@ -51,6 +51,64 @@ class ToxiproxyClientTests(unittest.TestCase):
         with self.assertRaises(ToxiproxyProxyNotFoundError):
             client.get_proxy("missing-proxy")
 
+    def test_create_proxy_posts_proxy_payload(self) -> None:
+        seen_requests: list[tuple[str, str, dict[str, object] | None]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            body = json.loads(request.content.decode("utf-8")) if request.content else None
+            seen_requests.append((request.method, request.url.path, body))
+            if request.method == "POST" and request.url.path == "/proxies":
+                return httpx.Response(
+                    status_code=200,
+                    json={
+                        "name": "edge-proxy",
+                        "listen": "127.0.0.1:18080",
+                        "upstream": "127.0.0.1:8000",
+                        "enabled": True,
+                        "toxics": [],
+                    },
+                    request=request,
+                )
+            return httpx.Response(status_code=500, request=request)
+
+        client = build_client(self, handler)
+
+        proxy = client.create_proxy(
+            proxy_name="edge-proxy",
+            listen="127.0.0.1:18080",
+            upstream="127.0.0.1:8000",
+        )
+
+        self.assertEqual(proxy.name, "edge-proxy")
+        self.assertEqual(
+            seen_requests[0],
+            (
+                "POST",
+                "/proxies",
+                {
+                    "name": "edge-proxy",
+                    "listen": "127.0.0.1:18080",
+                    "upstream": "127.0.0.1:8000",
+                    "enabled": True,
+                },
+            ),
+        )
+
+    def test_delete_proxy_deletes_existing_proxy(self) -> None:
+        seen_requests: list[tuple[str, str]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen_requests.append((request.method, request.url.path))
+            if request.method == "DELETE" and request.url.path == "/proxies/edge-proxy":
+                return httpx.Response(status_code=204, request=request)
+            return httpx.Response(status_code=500, request=request)
+
+        client = build_client(self, handler)
+
+        client.delete_proxy("edge-proxy")
+
+        self.assertEqual(seen_requests, [("DELETE", "/proxies/edge-proxy")])
+
     def test_require_proxy_rejects_disabled_proxy(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(

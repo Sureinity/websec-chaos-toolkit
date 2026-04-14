@@ -8,6 +8,7 @@ from toolkit import __version__
 from toolkit.commands.audit import register as register_audit
 from toolkit.commands.chaos import app as chaos_app
 from toolkit.commands.doctor import register as register_doctor
+from toolkit.commands.edge_chaos import register as register_edge_chaos
 from toolkit.commands.pentest import app as pentest_app
 from toolkit.commands.report import app as report_app
 from toolkit.commands.validate import register as register_validate
@@ -43,6 +44,7 @@ def main(
 register_audit(app)
 register_validate(app)
 register_doctor(app)
+register_edge_chaos(app)
 app.add_typer(pentest_app, name="pentest")
 app.add_typer(chaos_app, name="chaos")
 app.add_typer(report_app, name="report")
