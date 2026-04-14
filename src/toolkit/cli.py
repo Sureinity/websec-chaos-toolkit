@@ -6,6 +6,7 @@ import typer
 
 from toolkit import __version__
 from toolkit.commands.chaos import app as chaos_app
+from toolkit.commands.doctor import register as register_doctor
 from toolkit.commands.pentest import app as pentest_app
 from toolkit.commands.report import app as report_app
 from toolkit.commands.validate import register as register_validate
@@ -39,6 +40,7 @@ def main(
 
 
 register_validate(app)
+register_doctor(app)
 app.add_typer(pentest_app, name="pentest")
 app.add_typer(chaos_app, name="chaos")
 app.add_typer(report_app, name="report")
