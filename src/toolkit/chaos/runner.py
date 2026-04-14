@@ -39,6 +39,7 @@ from toolkit.chaos.locking import (
 )
 from toolkit.chaos.monitoring import (
     ExperimentAssessment,
+    MonitoringHttpClient,
     MonitoringObservation,
     capture_live_baseline,
     capture_steady_state_baseline,
@@ -276,7 +277,7 @@ def run_chaos_live_flow(
     profile: ChaosProfile,
     environ: Mapping[str, str] | None = None,
     auth_client: httpx.Client | None = None,
-    monitoring_client: httpx.Client | None = None,
+    monitoring_client: MonitoringHttpClient | None = None,
     when: datetime | None = None,
     toxiproxy_base_url: str = "http://127.0.0.1:8474",
 ) -> ChaosRunSummary:
@@ -355,9 +356,7 @@ def run_chaos_live_flow(
         experiment_assessment = evaluate_abort_thresholds(
             baseline=baseline,
             observations=experiment_observations,
-            consecutive_health_failures_threshold=(
-                plan.consecutive_health_failures
-            ),
+            consecutive_health_failures_threshold=(plan.consecutive_health_failures),
             max_error_rate_threshold=plan.max_error_rate,
         )
         findings = _build_findings(
@@ -407,9 +406,7 @@ def run_chaos_live_flow(
                 if error_detail is None:
                     error_detail = str(exc)
                 else:
-                    error_detail = (
-                        f"{error_detail}; rollback failed: {exc}"
-                    )
+                    error_detail = f"{error_detail}; rollback failed: {exc}"
 
         service.close()
 
@@ -429,9 +426,7 @@ def run_chaos_live_flow(
         )
         raw_artifact_paths.append(actions_artifact)
 
-        normalized_bundle_path = write_normalized_results(
-            context, findings
-        )
+        normalized_bundle_path = write_normalized_results(context, findings)
         report_path = write_markdown_summary(context.run_dir)
         write_run_manifest(
             context,

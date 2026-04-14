@@ -10,9 +10,9 @@ from toolkit.auth.errors import AuthRuntimeError
 from toolkit.chaos.contracts import ChaosRunStatus
 from toolkit.chaos.edge_runtime import (
     EDGE_CHAOS_SUPPORTED_FAULT_TYPES,
+    EdgeChaosMonitoringClient,
     EdgeChaosRuntimeError,
     ManagedEdgeChaosDockerRuntime,
-    build_edge_chaos_monitoring_app,
     build_edge_chaos_profile,
     build_edge_chaos_proxy_plan,
 )
@@ -44,16 +44,21 @@ def register(root_app: typer.Typer) -> None:
 
         project_root = Path.cwd()
         runtime = ManagedEdgeChaosDockerRuntime()
+        monitoring_client: EdgeChaosMonitoringClient | None = None
 
         try:
             plan = build_edge_chaos_proxy_plan(url, fault_type=fault)  # type: ignore[arg-type]
             prepared_proxy = runtime.prepare_proxy(plan)
-            app_config = build_edge_chaos_monitoring_app(plan, prepared_proxy)
             profile = build_edge_chaos_profile(plan)
+            monitoring_client = EdgeChaosMonitoringClient(
+                proxy_host=plan.proxy_host,
+                proxy_port=plan.proxy_port,
+            )
             summary = run_chaos_live_flow(
                 project_root=project_root,
-                app=app_config,
+                app=plan.app,
                 profile=profile,
+                monitoring_client=monitoring_client,
                 toxiproxy_base_url=prepared_proxy.toxiproxy_base_url,
             )
         except (
@@ -68,6 +73,8 @@ def register(root_app: typer.Typer) -> None:
             typer.echo(str(exc), err=True)
             raise typer.Exit(code=ExitCode.CONFIG_OR_RUNTIME_ERROR) from exc
         finally:
+            if monitoring_client is not None:
+                monitoring_client.close()
             try:
                 runtime.close()
             except EdgeChaosRuntimeError as exc:

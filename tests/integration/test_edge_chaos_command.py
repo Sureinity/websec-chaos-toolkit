@@ -78,9 +78,10 @@ class EdgeChaosCommandTests(unittest.TestCase):
         runtime.prepare_proxy.assert_called_once()
         runtime.close.assert_called_once()
         kwargs = run_flow.call_args.kwargs
-        self.assertEqual(str(kwargs["app"].base_url), "http://127.0.0.1:18080/")
+        self.assertEqual(str(kwargs["app"].base_url), "http://127.0.0.1:8000/")
         self.assertEqual(kwargs["profile"].target_service, "toolkit-edge-adhoc-127-0-0-1-8000")
         self.assertEqual(kwargs["toxiproxy_base_url"], "http://127.0.0.1:8474")
+        self.assertIsNotNone(kwargs["monitoring_client"])
 
     def test_edge_chaos_threshold_breach_exits_1(self) -> None:
         runtime = Mock()

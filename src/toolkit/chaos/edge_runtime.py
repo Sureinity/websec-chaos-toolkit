@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import subprocess
+import tempfile
 import time
 import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Protocol
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit, urlunsplit
 
 import httpx
 
@@ -380,6 +382,89 @@ def _origin_from_app(app: AppConfig) -> str:
     return f"{app.base_url.scheme}://{app.base_url.host}:{app.base_url.port}"
 
 
+class EdgeChaosMonitoringClient:
+    """HTTP client that preserves the target hostname while connecting to the proxy."""
+
+    def __init__(
+        self,
+        *,
+        proxy_host: str,
+        proxy_port: int,
+        timeout_seconds: float = 5.0,
+    ) -> None:
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
+        self.timeout_seconds = timeout_seconds
+
+    def close(self) -> None:
+        """Provide parity with httpx.Client for callers that close managed clients."""
+
+    def get(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, str] | None = None,
+    ) -> httpx.Response:
+        """Fetch one URL through the managed proxy while preserving Host and SNI."""
+
+        request_url = _url_with_params(url, params=params)
+        parsed = urlsplit(request_url)
+        request = httpx.Request("GET", request_url, headers=headers)
+
+        if parsed.hostname is None:
+            raise httpx.ConnectError(
+                "URL hostname is required for edge-chaos monitoring", request=request
+            )
+
+        connect_to_rule = (
+            f"{parsed.hostname}:{parsed.port or _default_port_for_scheme(parsed.scheme)}:"
+            f"{self.proxy_host}:{self.proxy_port}"
+        )
+        command: list[str] = [
+            "curl",
+            "--silent",
+            "--show-error",
+            "--location",
+            "--max-time",
+            str(int(self.timeout_seconds)),
+            "--output",
+        ]
+
+        with tempfile.TemporaryDirectory(prefix="toolkit-edge-chaos-") as temp_dir_name:
+            body_path = Path(temp_dir_name) / "response-body.txt"
+            command.extend(
+                [
+                    str(body_path),
+                    "--write-out",
+                    "%{http_code}",
+                    "--connect-to",
+                    connect_to_rule,
+                ]
+            )
+            for key, value in (headers or {}).items():
+                command.extend(["-H", f"{key}: {value}"])
+            command.append(request_url)
+
+            completed = subprocess.run(
+                tuple(command),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            if completed.returncode != 0:
+                detail = completed.stderr.strip() or completed.stdout.strip()
+                raise httpx.ConnectError(
+                    detail or "curl connect-to request failed", request=request
+                )
+
+            status_code = int((completed.stdout or "0").strip())
+            body = body_path.read_text(encoding="utf-8", errors="replace")
+
+        return httpx.Response(status_code=status_code, text=body, request=request)
+
+
 def _upstream_from_origin(origin: str) -> str:
     parsed = urlsplit(origin)
     if parsed.hostname is None or parsed.port is None:
@@ -401,3 +486,24 @@ def _run_docker_command(docker_path: Path, *args: str) -> None:
     raise EdgeChaosRuntimeError(
         f"docker {' '.join(args)} failed with exit code {completed.returncode}: {detail}"
     )
+
+
+def _default_port_for_scheme(scheme: str) -> int:
+    if scheme == "https":
+        return 443
+    return 80
+
+
+def _url_with_params(
+    url: str,
+    *,
+    params: Mapping[str, str] | None,
+) -> str:
+    if not params:
+        return url
+
+    parsed = urlsplit(url)
+    query = urlencode(params)
+    if parsed.query:
+        query = f"{parsed.query}&{query}"
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query, parsed.fragment))

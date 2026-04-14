@@ -2,12 +2,15 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import httpx
+
 from toolkit.chaos.edge_runtime import (
     EDGE_CHAOS_DEFAULT_PROXY_PORT,
     EDGE_CHAOS_PROXY_HOST,
     EDGE_CHAOS_PROXY_NAME_PREFIX,
     EDGE_CHAOS_RUNTIME_BACKEND,
     EDGE_CHAOS_SUPPORTED_FAULT_TYPES,
+    EdgeChaosMonitoringClient,
     EdgeChaosRuntimeError,
     ManagedEdgeChaosDockerRuntime,
     build_edge_chaos_monitoring_app,
@@ -103,6 +106,32 @@ class EdgeChaosRuntimeTests(unittest.TestCase):
         self.assertEqual(str(monitoring_app.base_url), "https://127.0.0.1:18080/")
         self.assertEqual(monitoring_app.target_allowlist, ["127.0.0.1"])
         self.assertEqual(monitoring_app.enabled_modules, ["chaos"])
+
+    def test_monitoring_client_uses_curl_connect_to_for_https(self) -> None:
+        client = EdgeChaosMonitoringClient(proxy_host="127.0.0.1", proxy_port=18080)
+
+        with patch("toolkit.chaos.edge_runtime.subprocess.run") as run_curl:
+            run_curl.return_value = Mock(returncode=0, stdout="200", stderr="")
+            with patch("toolkit.chaos.edge_runtime.Path.read_text", return_value="ok"):
+                response = client.get("https://zeraynce.com/")
+
+        command = run_curl.call_args.args[0]
+        self.assertIn("--connect-to", command)
+        connect_to_index = command.index("--connect-to")
+        self.assertEqual(
+            command[connect_to_index + 1],
+            "zeraynce.com:443:127.0.0.1:18080",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(str(response.request.url), "https://zeraynce.com/")
+
+    def test_monitoring_client_raises_connect_error_when_curl_fails(self) -> None:
+        client = EdgeChaosMonitoringClient(proxy_host="127.0.0.1", proxy_port=18080)
+
+        with patch("toolkit.chaos.edge_runtime.subprocess.run") as run_curl:
+            run_curl.return_value = Mock(returncode=35, stdout="", stderr="SSL connect error")
+            with self.assertRaises(httpx.ConnectError):
+                client.get("https://zeraynce.com/")
 
     def test_build_edge_chaos_profile_targets_prepared_proxy_name(self) -> None:
         plan = build_edge_chaos_proxy_plan("http://127.0.0.1:8000", fault_type="timeout")
