@@ -1,7 +1,12 @@
-# Get Started
+# Get Started With Managed Config
 
-This tutorial walks contributors through running the implemented toolkit
-workflows locally.
+This tutorial walks contributors through the managed, YAML-driven toolkit
+workflow.
+
+If you want the shortest path first, start with
+`docs/tutorials/quickstart-url-first.md`. This tutorial is the follow-up path
+for repeatable named targets, profile-driven runs, and the broader operator
+workflow.
 
 ## Two Operator Paths
 
@@ -15,13 +20,14 @@ The toolkit supports two workflows:
    `uv run toolkit ...`. This path is useful for inspecting the toolkit
    source and iterating on adapter behavior.
 
-This tutorial walks through the direct CLI path. Operators running the
-toolkit in CI or on shared infrastructure should prefer the Compose path.
+This tutorial walks through the config-driven direct CLI path. Operators
+running the toolkit in CI or on shared infrastructure should prefer the
+Compose path.
 
 ## Goal
 
 Create a local Python environment with `uv`, install the project dependencies,
-and run the example-driven validation, pentest, chaos, and report flows.
+and run the config-driven validation, pentest, chaos, and report flows.
 
 ## Example Pack
 
@@ -58,14 +64,19 @@ onboarding and offline testing.
 
 Status guide:
 
+- URL-first now:
+  - `toolkit audit <url>` for zero-config remote web auditing
+  - `toolkit doctor` for simplified runtime readiness checks
 - Live execution now:
   - pentest runs execute real scanner binaries (`--runtime host` or `--runtime container`)
   - chaos runs execute live Toxiproxy-backed experiments
 - Fixture-backed flows preserved for onboarding and offline testing
-- All four commands implemented: validate, pentest run, chaos run, report build
+- Config-driven commands implemented: validate, pentest run, chaos run, report build
 
 Next reading:
 
+- `docs/tutorials/quickstart-url-first.md` — shortest onboarding path
+- `docs/how-to/run-url-audit.md` — zero-config audit procedure
 - `docs/how-to/run-with-compose.md` — Compose-based operator workflow
 - `docs/explanation/compose-workflow-model.md` — service topology rationale
 - `docs/how-to/run-validation.md`

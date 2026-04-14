@@ -7,14 +7,21 @@ The documentation scaffold follows the Diataxis framework:
 - `reference/` for commands, config keys, outputs, and contracts
 - `explanation/` for architecture and rationale
 
+Preferred URL-first onboarding path:
+
+1. `docs/tutorials/quickstart-url-first.md`
+2. `docs/how-to/run-url-audit.md`
+3. `docs/reference/cli.md`
+4. `docs/reference/output-artifacts.md`
+
 Preferred Docker-first onboarding path:
 
-1. `docs/tutorials/get-started.md`
+1. `docs/tutorials/quickstart-url-first.md`
 2. `docs/how-to/run-with-compose.md` — Compose-based operator workflow
 3. `examples/configs/sample-webapp-compose/` — Compose-aware config pack
 4. `docs/explanation/compose-workflow-model.md` — service topology rationale
 
-Direct CLI onboarding path:
+Managed config onboarding path:
 
 1. `docs/tutorials/get-started.md`
 2. `examples/configs/sample-webapp/`
@@ -67,6 +74,7 @@ The chaos orchestration contract lives in
 
 Operator run guides live in:
 
+- `docs/how-to/run-url-audit.md`
 - `docs/how-to/run-with-compose.md`
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`

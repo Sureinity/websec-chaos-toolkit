@@ -1,0 +1,118 @@
+# Run A URL-First Audit
+
+Use this guide when you want to audit one reachable web target without
+preparing repository YAML config files.
+
+## Before You Start
+
+- install dependencies with `uv sync --extra dev`
+- ensure the target URL is reachable from the machine running the toolkit
+- prefer Docker for the simplest runtime path
+
+The simplified audit path currently supports:
+
+- remote web targets
+- unauthenticated access
+- one ad hoc URL at a time
+
+It does not yet support:
+
+- form login
+- bearer, cookie, or session injection
+- simplified edge-chaos execution
+
+## Check Runtime Readiness
+
+Run:
+
+```bash
+uv run toolkit doctor
+```
+
+Expected behavior:
+
+- `container` is recommended when Docker is available
+- `host` is usable when `zap-baseline.py`, `nuclei`, and `nmap` are present on
+  `PATH`
+- edge-chaos is expected to report as not ready until that runtime lands later
+
+## Run The Audit
+
+Auto-select the runtime:
+
+```bash
+uv run toolkit audit http://127.0.0.1:8000
+```
+
+Force host execution:
+
+```bash
+uv run toolkit audit https://target.internal --runtime host
+```
+
+Force container execution:
+
+```bash
+uv run toolkit audit https://target.internal --runtime container
+```
+
+## What The Command Does
+
+- validates the supplied URL through the ad hoc target builder
+- derives an internal app id, allowlist, and health endpoint from that URL
+- builds the built-in safe remote-web profile
+- runs ZAP, Nuclei, and Nmap through the selected runtime backend
+- writes outputs under `outputs/<run-id>/`
+
+## Successful Output
+
+On success, the command prints a summary similar to:
+
+```text
+Audit completed.
+Target: http://127.0.0.1:8000/
+Run: 20260414-010101-abcdef12
+Status: findings
+Runtime: container
+Findings: 3
+Actionable findings: 1
+Normalized bundle: /path/to/outputs/<run-id>/normalized/findings.json
+Report: /path/to/outputs/<run-id>/reports/executive-summary.md
+```
+
+## Failure Behavior
+
+The command exits with `2` when:
+
+- the supplied value is not a valid HTTP or HTTPS URL
+- no audit runtime is ready
+- the selected runtime is explicitly requested but unavailable
+- the live pentest execution fails at runtime
+
+Common remediation steps:
+
+- install Docker and rerun `uv run toolkit doctor`
+- or install `zap-baseline.py`, `nuclei`, and `nmap` on `PATH`
+- confirm the target URL is reachable from the operator host
+
+## When To Use The Managed Workflow Instead
+
+Use the YAML-driven path when you need:
+
+- repeatable named app definitions
+- auth injection or form login
+- multiple reusable pentest profiles
+- live chaos execution
+
+Managed workflow entrypoints:
+
+- `docs/how-to/run-validation.md`
+- `docs/how-to/run-pentest.md`
+- `docs/how-to/run-chaos.md`
+
+## See Also
+
+- `docs/tutorials/quickstart-url-first.md`
+- `docs/reference/cli.md`
+- `docs/reference/output-artifacts.md`
+- `docs/how-to/run-pentest.md`

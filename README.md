@@ -72,6 +72,27 @@ uv run pre-commit install
 uv run pytest
 ```
 
+## Quick Start (URL-First)
+
+For the shortest path, run the toolkit against one reachable URL without YAML
+config files:
+
+```bash
+uv run toolkit doctor
+uv run toolkit audit http://127.0.0.1:8000
+```
+
+Start here when you want:
+
+- zero-config remote web auditing
+- automatic runtime selection
+- one ad hoc target without named app/profile setup
+
+Read next:
+
+- `docs/tutorials/quickstart-url-first.md`
+- `docs/how-to/run-url-audit.md`
+
 ## Docker-First Operator Workflow (Preferred)
 
 The preferred portability path runs the toolkit, target app, and optional
@@ -94,7 +115,7 @@ docker compose --profile chaos up -d toolkit-runner sample-app toxiproxy
 
 See `docs/how-to/run-with-compose.md` for the complete workflow.
 
-## Example-Driven Start (Direct CLI)
+## Advanced Config-Driven Start
 
 For development on a host that already has the required binaries, the
 direct CLI path also works.
@@ -118,6 +139,7 @@ uv run toolkit report build --run-id <existing-run-id>
 
 Task-oriented guides:
 
+- `docs/how-to/run-url-audit.md` — zero-config audit from a URL
 - `docs/how-to/run-with-compose.md` — Compose-based operator workflow
 - `docs/how-to/run-pentest-with-docker.md` — Docker container runtime
 - `docs/how-to/run-validation.md`
