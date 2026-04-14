@@ -1,9 +1,11 @@
 # CLI Reference
 
-The bootstrap scaffold exposes the intended public command tree:
+The bootstrap scaffold exposes the implemented public command tree:
 
 ```text
+toolkit audit <url> [--runtime host|container]
 toolkit validate --app <id> --env <env>
+toolkit doctor
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
 toolkit chaos run --app <id> --env <env> --profile <name>
 toolkit report build --run-id <id>
@@ -11,9 +13,15 @@ toolkit report build --run-id <id>
 
 Current command behavior:
 
+- `toolkit audit` derives an ad hoc target from the supplied URL, selects an
+  available audit runtime (`container` preferred, `host` fallback), executes a
+  safe remote-web audit, writes run artifacts under `outputs/<run-id>/`, and
+  exits with `0`, `1`, or `2`
 - `toolkit validate` loads the repository YAML files from the current working
   directory, validates the selected `--app/--env` pair, and exits with `0` on
   success
+- `toolkit doctor` reports audit runtime readiness and the current simplified
+  edge-chaos readiness status
 - `toolkit pentest run` executes real scanner adapters (zap, nuclei, nmap)
   against a live target, writes run artifacts under `outputs/<run-id>/`, and
   exits with `0`, `1`, or `2` according to the pentest outcome contract;

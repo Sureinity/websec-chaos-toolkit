@@ -10,6 +10,7 @@ These instructions apply to this repository directory. If a deeper
 - The repository now contains a bootstrap Python package, packaging metadata,
   valid sample configuration files, basic tests, Diataxis documentation
   structure, and a scaffolded CLI surface.
+- `toolkit audit <url>` is now implemented for zero-config remote web audits.
 - `toolkit validate` is now implemented for config loading and validation.
 - `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
   against a live target. A fixture-backed flow is preserved for onboarding and
@@ -21,6 +22,8 @@ These instructions apply to this repository directory. If a deeper
   fixture-backed flow is preserved for onboarding and offline testing.
 - `toolkit report build` is now implemented for stored normalized result
   bundles.
+- `toolkit doctor` is now implemented for simplified audit runtime readiness
+  diagnostics.
 - Scanner adapters for ZAP, Nuclei, Nmap, Trivy, and Semgrep are implemented
   with a shared contract, process runner, and normalizers.
 - Optional external smoke tests exist behind the
@@ -107,14 +110,22 @@ These instructions apply to this repository directory. If a deeper
 ## Current CLI Behavior
 
 - The intended public interface is already wired:
+  - `toolkit audit <url> [--runtime host|container]`
   - `toolkit validate --app <id> --env <env>`
+  - `toolkit doctor`
   - `toolkit pentest run --app <id> --env <env> --profile <name>`
   - `toolkit chaos run --app <id> --env <env> --profile <name>`
   - `toolkit report build --run-id <id>`
 - Current behavior:
+  - `toolkit audit` derives an ad hoc target from a single URL, executes a
+    safe remote-web audit, writes raw artifacts, normalized findings, and a
+    Markdown summary under `outputs/<run-id>/`, and exits with `0`, `1`, or
+    `2`; auto-selects `container` then `host` runtime when possible
   - `toolkit validate` loads and validates repository YAML config from the
     current working directory and exits with `0` on success or `2` on
     validation/runtime failure
+  - `toolkit doctor` reports simplified audit runtime readiness and the
+    current edge-chaos readiness status
   - `toolkit pentest run` executes real scanner binaries against a live target,
     writes raw artifacts, normalized findings, and a Markdown summary under
     `outputs/<run-id>/`, and exits with `0`, `1`, or `2`; requires core
@@ -135,10 +146,10 @@ These instructions apply to this repository directory. If a deeper
   - `apps.yaml`
   - `pentest-profiles.yaml`
   - `chaos-profiles.yaml`
-- A later milestone may add simplified URL-first entrypoints for ad hoc runs:
-  - `toolkit audit <url>`
+- Keep the simplified URL-first path additive and preserve the YAML-driven
+  commands for advanced and repeatable workflows.
+- A later milestone may add:
   - `toolkit edge-chaos <url>`
-  - `toolkit doctor`
   - `toolkit code-audit <path> [--tool semgrep|trivy]`
 - If the simplified URL-first path is implemented later, keep it additive and
   preserve the YAML-driven commands for advanced and repeatable workflows.

@@ -1,14 +1,18 @@
 # Internal Security Toolkit
 
 This repository contains a Python-first internal security testing toolkit
-with four implemented commands and live execution against real targets.
+with URL-first and config-driven commands for live execution against real
+targets.
 
 Current state:
 
+- `toolkit audit` runs a zero-config safe web audit from a single URL and
+  auto-selects `container` or `host` runtime readiness
 - `toolkit validate` validates app/profile config against the locked schema
 - `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
   against a live target via host subprocess or Docker container backend; a
   fixture-backed flow is preserved for onboarding and offline testing
+- `toolkit doctor` reports environment readiness for the simplified audit path
 - `toolkit chaos run` executes live Toxiproxy-backed experiments against a
   live target; a fixture-backed flow is preserved for onboarding and offline
   testing
@@ -21,8 +25,10 @@ Current state:
 
 Implemented now:
 
+- `toolkit audit`
 - `toolkit validate`
 - `toolkit pentest run`
+- `toolkit doctor`
 - `toolkit chaos run`
 - `toolkit report build`
 
@@ -132,13 +138,18 @@ Reference and rationale:
 The public CLI surface is implemented and uses one entrypoint:
 
 ```text
+toolkit audit <url> [--runtime host|container]
 toolkit validate --app <id> --env <env>
+toolkit doctor
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
 toolkit chaos run --app <id> --env <env> --profile <name>
 toolkit report build --run-id <id>
 ```
 
+`toolkit audit` runs a zero-config remote web audit from a URL and writes run
+artifacts.
 `toolkit validate` now performs real configuration loading and validation.
+`toolkit doctor` reports simplified runtime readiness for the audit path.
 `toolkit pentest run` now executes real scanner binaries against a live target
 and writes run artifacts.
 `toolkit chaos run` now executes live Toxiproxy-backed experiments and writes
