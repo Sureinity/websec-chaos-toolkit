@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import typer
 
+from toolkit.chaos.edge_runtime import inspect_edge_chaos_runtime_readiness
 from toolkit.core.exits import ExitCode
 from toolkit.runtime.selector import (
     AuditRuntimeReadiness,
@@ -57,10 +58,11 @@ def register(root_app: typer.Typer) -> None:
 def inspect_edge_chaos_readiness() -> FeatureReadiness:
     """Return the current readiness state for the URL-first edge-chaos path."""
 
+    runtime = inspect_edge_chaos_runtime_readiness()
     return FeatureReadiness(
         name="edge-chaos",
-        ready=False,
-        detail=("Managed local edge-chaos runtime is not implemented yet."),
+        ready=runtime.ready,
+        detail=runtime.detail,
     )
 
 
