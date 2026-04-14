@@ -17,15 +17,7 @@ implemented without reopening the basic product shape.
   - `apps.yaml`
   - `pentest-profiles.yaml`
   - `chaos-profiles.yaml`
-
-- A later milestone may add simplified URL-first entrypoints such as:
-  - `toolkit audit <url>`
-  - `toolkit edge-chaos <url>`
-  - `toolkit doctor`
-  - `toolkit code-audit <path> [--tool semgrep|trivy]`
-
 - A later milestone may add:
-  - `toolkit edge-chaos <url>`
   - `toolkit code-audit <path> [--tool semgrep|trivy]`
 - Secrets are never stored directly in repository YAML. Config stores references
   such as environment variable names.

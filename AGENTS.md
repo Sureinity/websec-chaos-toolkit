@@ -149,10 +149,7 @@ These instructions apply to this repository directory. If a deeper
 - Keep the simplified URL-first path additive and preserve the YAML-driven
   commands for advanced and repeatable workflows.
 - A later milestone may add:
-  - `toolkit edge-chaos <url>`
   - `toolkit code-audit <path> [--tool semgrep|trivy]`
-- If the simplified URL-first path is implemented later, keep it additive and
-  preserve the YAML-driven commands for advanced and repeatable workflows.
 - Keep minimum config expectations:
   - `apps.yaml` should describe app id, environment, base URL, host targets,
     auth method, health endpoint, optional metrics endpoint or query, and
