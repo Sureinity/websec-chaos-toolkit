@@ -131,10 +131,16 @@ These instructions apply to this repository directory. If a deeper
 
 ## Future CLI Commands & Interfaces
 
-- Keep these YAML files as the intended user-facing configuration surface:
+- Keep these YAML files as the managed and advanced configuration surface:
   - `apps.yaml`
   - `pentest-profiles.yaml`
   - `chaos-profiles.yaml`
+- A later milestone may add simplified URL-first entrypoints for ad hoc runs:
+  - `toolkit audit <url>`
+  - `toolkit edge-chaos <url>`
+  - `toolkit doctor`
+- If the simplified URL-first path is implemented later, keep it additive and
+  preserve the YAML-driven commands for advanced and repeatable workflows.
 - Keep minimum config expectations:
   - `apps.yaml` should describe app id, environment, base URL, host targets,
     auth method, health endpoint, optional metrics endpoint or query, and
@@ -241,6 +247,8 @@ Planned / Future Expectations
   - ~~containerized tool runtime for portable execution across generic Linux environments~~ (implemented: Docker container backend via `--runtime container`)
   - target-aligned pentest modes and tool-role separation so remote web
     pentest, code scanning, and artifact analysis are not conflated
+  - URL-first operator UX with zero-config audit, readiness diagnostics, and a
+    simplified edge-chaos path for ad hoc assessments
 - Keep the detailed milestone sequence in
   `docs/explanation/implementation-roadmap.md` aligned with this order.
 - Keep allowed commit types to:

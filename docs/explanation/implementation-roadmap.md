@@ -6,15 +6,19 @@ implemented without reopening the basic product shape.
 
 ## Locked Decisions
 
-- The public CLI remains:
+- The public CLI currently includes:
   - `toolkit validate --app <id> --env <env>`
   - `toolkit pentest run --app <id> --env <env> --profile <name>`
   - `toolkit chaos run --app <id> --env <env> --profile <name>`
   - `toolkit report build --run-id <id>`
-- YAML remains the user-facing config surface:
+- YAML remains the managed and advanced config surface:
   - `apps.yaml`
   - `pentest-profiles.yaml`
   - `chaos-profiles.yaml`
+- A later milestone may add simplified URL-first entrypoints such as:
+  - `toolkit audit <url>`
+  - `toolkit edge-chaos <url>`
+  - `toolkit doctor`
 - Secrets are never stored directly in repository YAML. Config stores references
   such as environment variable names.
 - Use `uv` as the canonical Python package manager and tool runner for local
@@ -658,3 +662,88 @@ Dependencies on earlier milestones
 - Milestone 8
 - Milestone 9
 - Milestone 11
+
+## Milestone 14: URL-First Audit And Edge Chaos UX
+
+Goal
+
+- Make the toolkit approachable for simple operators by adding zero-config,
+  URL-first entrypoints for safe web auditing and simplified edge-chaos
+  testing, while preserving the current YAML-driven workflow for advanced use.
+
+Deliverables
+
+- Top-level simplified commands:
+  - `toolkit audit <url>`
+  - `toolkit edge-chaos <url>`
+  - `toolkit doctor`
+- Ephemeral target derivation from a single URL without requiring repository
+  YAML files
+- Built-in safe remote-web audit profile for URL-first runs
+- Automatic runtime selection for pentest execution:
+  - prefer container mode when Docker is available
+  - fall back to host mode when required binaries are present
+- Managed local proxy boundary for URL-first edge-chaos execution
+- Updated operator docs that present the URL-first path as the easiest
+  onboarding flow and keep the YAML path as the advanced mode
+
+Files/directories to create
+
+- `src/toolkit/commands/audit.py`
+- `src/toolkit/commands/doctor.py`
+- `src/toolkit/commands/edge_chaos.py`
+- `src/toolkit/targets/`
+- `src/toolkit/runtime/selector.py`
+- `src/toolkit/chaos/edge_runtime.py`
+- `tests/unit/targets/`
+- `tests/unit/runtime/test_selector.py`
+- `tests/integration/test_audit_command.py`
+- `tests/integration/test_doctor_command.py`
+- `tests/integration/test_edge_chaos_command.py`
+- `docs/tutorials/quickstart-url-first.md`
+- `docs/how-to/run-url-audit.md`
+- `docs/how-to/run-edge-chaos.md`
+- `docs/explanation/url-first-ux-model.md`
+
+Acceptance criteria
+
+- `toolkit audit <url>` can execute a safe remote-web assessment without
+  requiring `apps.yaml`, `pentest-profiles.yaml`, or `chaos-profiles.yaml`
+- URL-first audit runs write the same core artifact layout used by the current
+  pentest flow:
+  - `raw/`
+  - `normalized/findings.json`
+  - `reports/executive-summary.md`
+  - `manifest.json`
+- `toolkit doctor` reports whether audit and edge-chaos execution are ready and
+  gives actionable remediation when Docker, host binaries, or the simplified
+  proxy runtime are unavailable
+- `toolkit edge-chaos <url>` can execute one safe reversible edge fault against
+  a URL-derived target, monitor `GET /`, and always attempt rollback
+- The current YAML-driven commands remain supported and do not regress
+- Docs clearly distinguish:
+  - URL-first ad hoc usage
+  - advanced managed-target usage
+  - edge-chaos versus full proxy-attached chaos workflows
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.unit.targets tests.unit.runtime.test_selector tests.integration.test_audit_command tests.integration.test_doctor_command tests.integration.test_edge_chaos_command
+uv run toolkit doctor
+uv run toolkit audit http://127.0.0.1:8000
+uv run toolkit edge-chaos http://127.0.0.1:8000
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 2
+- Milestone 4
+- Milestone 5
+- Milestone 6
+- Milestone 9
+- Milestone 10
+- Milestone 11
+- Milestone 13
