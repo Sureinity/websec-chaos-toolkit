@@ -829,3 +829,7 @@ Dependencies on earlier milestones
 - Milestone 11
 - Milestone 13
 - Milestone 14
+
+Detailed checkpoint plan reference
+
+- `/home/ghlen/Coding/Infosoft/milestones/testing/15.md`
