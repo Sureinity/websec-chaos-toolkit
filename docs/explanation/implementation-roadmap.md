@@ -19,6 +19,7 @@ implemented without reopening the basic product shape.
   - `toolkit audit <url>`
   - `toolkit edge-chaos <url>`
   - `toolkit doctor`
+  - `toolkit code-audit <path> [--tool semgrep|trivy]`
 - Secrets are never stored directly in repository YAML. Config stores references
   such as environment variable names.
 - Use `uv` as the canonical Python package manager and tool runner for local
@@ -747,3 +748,84 @@ Dependencies on earlier milestones
 - Milestone 10
 - Milestone 11
 - Milestone 13
+
+## Milestone 15: URL-First Code Audit UX
+
+Goal
+
+- Make static analysis accessible to simple operators by adding a zero-config
+  codebase audit command that runs Semgrep and Trivy against a local source
+  tree without requiring repository YAML config or explicit pentest profiles.
+
+Deliverables
+
+- Top-level simplified command:
+  - `toolkit code-audit <path>`
+- Optional tool narrowing flag:
+  - `--tool semgrep`
+  - `--tool trivy`
+- Ephemeral source-tree target derivation from a filesystem path
+- Built-in safe code-audit profile that maps to `assessment_mode: source_tree`
+- Runtime selection and readiness diagnostics for Semgrep and Trivy execution
+- Artifact, normalization, and Markdown reporting parity with the existing
+  audit and pentest flows
+- Operator docs that clearly distinguish:
+  - live remote web audit
+  - codebase audit
+  - image or artifact analysis
+
+Files/directories to create
+
+- `src/toolkit/commands/code_audit.py`
+- `src/toolkit/codeaudit/`
+- `src/toolkit/targets/source_tree.py`
+- `tests/unit/codeaudit/`
+- `tests/unit/targets/test_source_tree.py`
+- `tests/integration/test_code_audit_command.py`
+- `docs/tutorials/quickstart-code-audit.md`
+- `docs/how-to/run-code-audit.md`
+- `docs/explanation/code-audit-model.md`
+
+Acceptance criteria
+
+- `toolkit code-audit <path>` runs without requiring `apps.yaml`,
+  `pentest-profiles.yaml`, or `chaos-profiles.yaml`
+- The default code-audit path runs both:
+  - `semgrep`
+  - `trivy`
+- `--tool semgrep` runs only Semgrep
+- `--tool trivy` runs only Trivy filesystem analysis
+- The built-in code-audit path never enables remote-web tools:
+  - `zap`
+  - `nuclei`
+  - `nmap`
+- The command writes the standard run artifact layout:
+  - `raw/`
+  - `normalized/findings.json`
+  - `reports/executive-summary.md`
+  - `manifest.json`
+- Docs clearly explain when to use:
+  - `toolkit audit <url>`
+  - `toolkit code-audit <path>`
+  - advanced profile-driven source tree or image workflows
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.unit.codeaudit tests.unit.targets.test_source_tree tests.integration.test_code_audit_command
+uv run toolkit code-audit .
+uv run toolkit code-audit . --tool semgrep
+uv run toolkit code-audit . --tool trivy
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 2
+- Milestone 4
+- Milestone 5
+- Milestone 8
+- Milestone 11
+- Milestone 13
+- Milestone 14

@@ -139,6 +139,7 @@ These instructions apply to this repository directory. If a deeper
   - `toolkit audit <url>`
   - `toolkit edge-chaos <url>`
   - `toolkit doctor`
+  - `toolkit code-audit <path> [--tool semgrep|trivy]`
 - If the simplified URL-first path is implemented later, keep it additive and
   preserve the YAML-driven commands for advanced and repeatable workflows.
 - Keep minimum config expectations:
@@ -249,6 +250,8 @@ Planned / Future Expectations
     pentest, code scanning, and artifact analysis are not conflated
   - URL-first operator UX with zero-config audit, readiness diagnostics, and a
     simplified edge-chaos path for ad hoc assessments
+  - URL-first codebase audit UX with built-in Semgrep and Trivy execution for
+    local source trees
 - Keep the detailed milestone sequence in
   `docs/explanation/implementation-roadmap.md` aligned with this order.
 - Keep allowed commit types to:
