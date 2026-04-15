@@ -26,7 +26,7 @@ _NON_ALNUM_PATTERN = re.compile(r"[^a-z0-9]+")
 def derive_source_tree_audit_app_id(path: str | Path) -> str:
     """Return a deterministic app id for a source-tree audit target."""
 
-    resolved_path = _resolve_source_tree_path(path)
+    resolved_path = resolve_source_tree_audit_path(path)
     slug_source = resolved_path.name.lower() or "source-tree"
     slug = _NON_ALNUM_PATTERN.sub("-", slug_source).strip("-") or "source-tree"
     short_hash = sha256(str(resolved_path).encode("utf-8")).hexdigest()[:8]
@@ -36,7 +36,7 @@ def derive_source_tree_audit_app_id(path: str | Path) -> str:
 def build_source_tree_audit_app(path: str | Path) -> AppConfig:
     """Build a validated AppConfig for a zero-config source-tree audit run."""
 
-    resolved_path = _resolve_source_tree_path(path)
+    resolved_path = resolve_source_tree_audit_path(path)
     return AppConfig(
         id=derive_source_tree_audit_app_id(resolved_path),
         environment=SOURCE_TREE_AUDIT_DEFAULT_ENVIRONMENT,
@@ -72,7 +72,9 @@ def build_source_tree_audit_profile() -> PentestProfile:
     )
 
 
-def _resolve_source_tree_path(path: str | Path) -> Path:
+def resolve_source_tree_audit_path(path: str | Path) -> Path:
+    """Resolve and validate a source-tree path for ad hoc code-audit runs."""
+
     resolved = Path(path).expanduser().resolve()
     if not resolved.exists():
         raise ValueError(f"source tree path does not exist: {resolved}")

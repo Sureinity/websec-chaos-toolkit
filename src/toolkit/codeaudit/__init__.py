@@ -9,13 +9,29 @@ from toolkit.codeaudit.contracts import (
     CodeAuditToolName,
     code_audit_supports_tool,
 )
+from toolkit.codeaudit.selection import (
+    CODE_AUDIT_TOOL_BINARIES,
+    CodeAuditReadiness,
+    CodeAuditSelectionError,
+    CodeAuditToolReadiness,
+    inspect_code_audit_readiness,
+    inspect_code_audit_tooling,
+    select_code_audit_tools,
+)
 
 __all__ = [
     "CODE_AUDIT_ALLOWED_TOOLS",
     "CODE_AUDIT_CONTRACT",
     "CODE_AUDIT_DEFAULT_TOOLS",
     "CODE_AUDIT_EXCLUDED_TOOLS",
+    "CODE_AUDIT_TOOL_BINARIES",
     "CodeAuditContract",
+    "CodeAuditReadiness",
+    "CodeAuditSelectionError",
     "CodeAuditToolName",
+    "CodeAuditToolReadiness",
     "code_audit_supports_tool",
+    "inspect_code_audit_readiness",
+    "inspect_code_audit_tooling",
+    "select_code_audit_tools",
 ]

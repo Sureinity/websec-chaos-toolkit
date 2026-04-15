@@ -18,6 +18,7 @@ from toolkit.targets.source_tree import (
     build_source_tree_audit_app,
     build_source_tree_audit_profile,
     derive_source_tree_audit_app_id,
+    resolve_source_tree_audit_path,
 )
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "build_url_audit_profile",
     "derive_source_tree_audit_app_id",
     "derive_url_audit_app_id",
+    "resolve_source_tree_audit_path",
 ]
