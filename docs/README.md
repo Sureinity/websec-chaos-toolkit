@@ -56,6 +56,9 @@ The live chaos execution model is explained in
 The container runtime abstraction is explained in
 `docs/explanation/container-runtime-model.md`.
 
+The planned code-audit command model is explained in
+`docs/explanation/code-audit-model.md`.
+
 The Compose-based operator workflow and service topology are explained in
 `docs/explanation/compose-workflow-model.md`.
 
