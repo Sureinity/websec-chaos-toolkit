@@ -58,6 +58,10 @@ class CodeAuditCommandTests(unittest.TestCase):
         self.assertTrue(kwargs["profile"].tools.semgrep.enabled)
         self.assertTrue(kwargs["profile"].tools.trivy.enabled)
         self.assertIsNone(kwargs["profile"].tools.zap)
+        self.assertEqual(
+            kwargs["target_paths"],
+            {"semgrep": source_tree.resolve(), "trivy": source_tree.resolve()},
+        )
 
     def test_code_audit_can_narrow_to_semgrep_only(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -78,8 +82,10 @@ class CodeAuditCommandTests(unittest.TestCase):
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         kwargs = run_flow.call_args.kwargs
+        self.assertEqual(kwargs["profile"].name, "adhoc-safe-code-audit-semgrep")
         self.assertTrue(kwargs["profile"].tools.semgrep.enabled)
         self.assertFalse(kwargs["profile"].tools.trivy.enabled)
+        self.assertEqual(kwargs["target_paths"], {"semgrep": source_tree.resolve()})
 
     def test_code_audit_can_narrow_to_trivy_only(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -100,8 +106,10 @@ class CodeAuditCommandTests(unittest.TestCase):
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         kwargs = run_flow.call_args.kwargs
+        self.assertEqual(kwargs["profile"].name, "adhoc-safe-code-audit-trivy")
         self.assertFalse(kwargs["profile"].tools.semgrep.enabled)
         self.assertTrue(kwargs["profile"].tools.trivy.enabled)
+        self.assertEqual(kwargs["target_paths"], {"trivy": source_tree.resolve()})
 
     def test_code_audit_rejects_invalid_tool(self) -> None:
         with TemporaryDirectory() as tmp:

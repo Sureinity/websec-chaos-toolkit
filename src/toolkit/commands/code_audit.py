@@ -35,12 +35,17 @@ def register(root_app: typer.Typer) -> None:
         project_root = Path.cwd()
 
         try:
-            app_config = build_source_tree_audit_app(path)
+            resolved_path = path.expanduser().resolve()
+            app_config = build_source_tree_audit_app(resolved_path)
             code_audit_profile = _profile_for_selected_tools(tool)
+            target_paths = {
+                selected_tool: resolved_path for selected_tool in select_code_audit_tools(tool)
+            }
             summary = run_pentest_live_flow(
                 project_root=project_root,
                 app=app_config,
                 profile=code_audit_profile,
+                target_paths=target_paths,
             )
         except (
             AuthRuntimeError,
@@ -55,7 +60,7 @@ def register(root_app: typer.Typer) -> None:
             raise typer.Exit(code=ExitCode.CONFIG_OR_RUNTIME_ERROR) from exc
 
         typer.echo("Code audit completed.")
-        typer.echo(f"Target path: {path.expanduser().resolve()}")
+        typer.echo(f"Target path: {resolved_path}")
         typer.echo(f"Run: {summary.run_id}")
         typer.echo(f"Status: {summary.status}")
         typer.echo(f"Findings: {summary.findings_count}")
@@ -68,18 +73,23 @@ def register(root_app: typer.Typer) -> None:
 def _profile_for_selected_tools(preferred_tool: str | None):
     """Return the built-in source-tree profile narrowed to the selected tool set."""
 
-    selected_tools = set(select_code_audit_tools(preferred_tool))
+    selected_tools = tuple(select_code_audit_tools(preferred_tool))
+    selected_tool_set = set(selected_tools)
     profile = build_source_tree_audit_profile()
     tools = profile.tools
 
-    if "semgrep" not in selected_tools and tools.semgrep is not None:
+    if "semgrep" not in selected_tool_set and tools.semgrep is not None:
         tools = tools.model_copy(
             update={"semgrep": tools.semgrep.model_copy(update={"enabled": False})}
         )
 
-    if "trivy" not in selected_tools and tools.trivy is not None:
+    if "trivy" not in selected_tool_set and tools.trivy is not None:
         tools = tools.model_copy(
             update={"trivy": tools.trivy.model_copy(update={"enabled": False})}
         )
 
-    return profile.model_copy(update={"tools": tools})
+    profile_name = profile.name
+    if len(selected_tools) == 1:
+        profile_name = f"{profile_name}-{selected_tools[0]}"
+
+    return profile.model_copy(update={"name": profile_name, "tools": tools})
