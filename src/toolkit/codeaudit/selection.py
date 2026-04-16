@@ -53,6 +53,19 @@ class CodeAuditReadiness:
             return self.tools_ready and self.path_ready
         return self.tools_ready
 
+    def failure_details(self) -> tuple[str, ...]:
+        """Return human-readable readiness failures for the selected path and tools."""
+
+        details: list[str] = []
+        if self.path_checked and not self.path_ready and self.path_detail is not None:
+            details.append(f"path: {self.path_detail}")
+        details.extend(
+            (f"{status.tool} ({status.binary}): " f"{status.availability.reason or 'unavailable'}")
+            for status in self.tool_statuses
+            if not status.availability.available
+        )
+        return tuple(details)
+
 
 def select_code_audit_tools(
     preferred_tool: str | None = None,

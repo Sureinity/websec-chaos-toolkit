@@ -6,7 +6,9 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
+from toolkit.adapters.base import AdapterAvailability
 from toolkit.cli import app
+from toolkit.codeaudit.selection import CodeAuditReadiness, CodeAuditToolReadiness
 from toolkit.core.exits import ExitCode
 from toolkit.pentest.contracts import PentestRunStatus, PentestRunSummary
 
@@ -29,6 +31,23 @@ def _summary(tmp_dir: Path, *, exit_code: ExitCode) -> PentestRunSummary:
     )
 
 
+def _code_tool_status(
+    *,
+    tool: str,
+    available: bool,
+    reason: str | None = None,
+) -> CodeAuditToolReadiness:
+    return CodeAuditToolReadiness(
+        tool=tool,  # type: ignore[arg-type]
+        binary=tool,
+        availability=AdapterAvailability(
+            available=available,
+            reason=reason,
+            binary=f"/usr/bin/{tool}" if available else tool,
+        ),
+    )
+
+
 class CodeAuditCommandTests(unittest.TestCase):
     def test_code_audit_runs_without_yaml_and_uses_built_in_profile(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -41,12 +60,25 @@ class CodeAuditCommandTests(unittest.TestCase):
                 "toolkit.commands.code_audit.run_pentest_live_flow",
                 return_value=_summary(project_root, exit_code=ExitCode.FINDINGS_OR_FAILURE),
             ) as run_flow:
-                with chdir(project_root):
-                    result = RUNNER.invoke(
-                        app,
-                        ["code-audit", str(source_tree)],
-                        catch_exceptions=False,
-                    )
+                with patch(
+                    "toolkit.commands.code_audit.inspect_code_audit_readiness",
+                    return_value=CodeAuditReadiness(
+                        selected_tools=("semgrep", "trivy"),
+                        tool_statuses=(
+                            _code_tool_status(tool="semgrep", available=True),
+                            _code_tool_status(tool="trivy", available=True),
+                        ),
+                        path_checked=True,
+                        resolved_path=source_tree.resolve(),
+                        path_detail=str(source_tree.resolve()),
+                    ),
+                ):
+                    with chdir(project_root):
+                        result = RUNNER.invoke(
+                            app,
+                            ["code-audit", str(source_tree)],
+                            catch_exceptions=False,
+                        )
 
         self.assertEqual(result.exit_code, ExitCode.FINDINGS_OR_FAILURE)
         self.assertIn("Code audit completed.", result.stdout)
@@ -73,12 +105,22 @@ class CodeAuditCommandTests(unittest.TestCase):
                 "toolkit.commands.code_audit.run_pentest_live_flow",
                 return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
             ) as run_flow:
-                with chdir(project_root):
-                    result = RUNNER.invoke(
-                        app,
-                        ["code-audit", str(source_tree), "--tool", "semgrep"],
-                        catch_exceptions=False,
-                    )
+                with patch(
+                    "toolkit.commands.code_audit.inspect_code_audit_readiness",
+                    return_value=CodeAuditReadiness(
+                        selected_tools=("semgrep",),
+                        tool_statuses=(_code_tool_status(tool="semgrep", available=True),),
+                        path_checked=True,
+                        resolved_path=source_tree.resolve(),
+                        path_detail=str(source_tree.resolve()),
+                    ),
+                ):
+                    with chdir(project_root):
+                        result = RUNNER.invoke(
+                            app,
+                            ["code-audit", str(source_tree), "--tool", "semgrep"],
+                            catch_exceptions=False,
+                        )
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         kwargs = run_flow.call_args.kwargs
@@ -97,12 +139,22 @@ class CodeAuditCommandTests(unittest.TestCase):
                 "toolkit.commands.code_audit.run_pentest_live_flow",
                 return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
             ) as run_flow:
-                with chdir(project_root):
-                    result = RUNNER.invoke(
-                        app,
-                        ["code-audit", str(source_tree), "--tool", "trivy"],
-                        catch_exceptions=False,
-                    )
+                with patch(
+                    "toolkit.commands.code_audit.inspect_code_audit_readiness",
+                    return_value=CodeAuditReadiness(
+                        selected_tools=("trivy",),
+                        tool_statuses=(_code_tool_status(tool="trivy", available=True),),
+                        path_checked=True,
+                        resolved_path=source_tree.resolve(),
+                        path_detail=str(source_tree.resolve()),
+                    ),
+                ):
+                    with chdir(project_root):
+                        result = RUNNER.invoke(
+                            app,
+                            ["code-audit", str(source_tree), "--tool", "trivy"],
+                            catch_exceptions=False,
+                        )
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         kwargs = run_flow.call_args.kwargs
@@ -127,6 +179,111 @@ class CodeAuditCommandTests(unittest.TestCase):
         self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
         self.assertIn("Code audit failed.", result.stderr)
         self.assertIn("Unsupported code-audit tool", result.stderr)
+
+    def test_code_audit_fails_closed_when_default_tools_are_unavailable(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            source_tree = project_root / "repo"
+            source_tree.mkdir()
+
+            with patch(
+                "toolkit.commands.code_audit.inspect_code_audit_readiness",
+                return_value=CodeAuditReadiness(
+                    selected_tools=("semgrep", "trivy"),
+                    tool_statuses=(
+                        _code_tool_status(
+                            tool="semgrep",
+                            available=False,
+                            reason="semgrep binary was not found on PATH",
+                        ),
+                        _code_tool_status(
+                            tool="trivy",
+                            available=False,
+                            reason="trivy binary was not found on PATH",
+                        ),
+                    ),
+                    path_checked=True,
+                    resolved_path=source_tree.resolve(),
+                    path_detail=str(source_tree.resolve()),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["code-audit", str(source_tree)],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertIn("Code audit failed.", result.stderr)
+        self.assertIn("semgrep", result.stderr)
+        self.assertIn("trivy", result.stderr)
+
+    def test_code_audit_fails_when_requested_semgrep_is_unavailable(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            source_tree = project_root / "repo"
+            source_tree.mkdir()
+
+            with patch(
+                "toolkit.commands.code_audit.inspect_code_audit_readiness",
+                return_value=CodeAuditReadiness(
+                    selected_tools=("semgrep",),
+                    tool_statuses=(
+                        _code_tool_status(
+                            tool="semgrep",
+                            available=False,
+                            reason="semgrep binary was not found on PATH",
+                        ),
+                    ),
+                    path_checked=True,
+                    resolved_path=source_tree.resolve(),
+                    path_detail=str(source_tree.resolve()),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["code-audit", str(source_tree), "--tool", "semgrep"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertIn("Code audit failed.", result.stderr)
+        self.assertIn("semgrep", result.stderr)
+
+    def test_code_audit_fails_when_requested_trivy_is_unavailable(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            source_tree = project_root / "repo"
+            source_tree.mkdir()
+
+            with patch(
+                "toolkit.commands.code_audit.inspect_code_audit_readiness",
+                return_value=CodeAuditReadiness(
+                    selected_tools=("trivy",),
+                    tool_statuses=(
+                        _code_tool_status(
+                            tool="trivy",
+                            available=False,
+                            reason="trivy binary was not found on PATH",
+                        ),
+                    ),
+                    path_checked=True,
+                    resolved_path=source_tree.resolve(),
+                    path_detail=str(source_tree.resolve()),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["code-audit", str(source_tree), "--tool", "trivy"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertIn("Code audit failed.", result.stderr)
+        self.assertIn("trivy", result.stderr)
 
     def test_code_audit_rejects_missing_path(self) -> None:
         with TemporaryDirectory() as tmp:

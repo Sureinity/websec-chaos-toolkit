@@ -7,7 +7,11 @@ import typer
 from pydantic import ValidationError
 
 from toolkit.auth.errors import AuthRuntimeError
-from toolkit.codeaudit.selection import CodeAuditSelectionError, select_code_audit_tools
+from toolkit.codeaudit.selection import (
+    CodeAuditSelectionError,
+    inspect_code_audit_readiness,
+    select_code_audit_tools,
+)
 from toolkit.core.exits import ExitCode
 from toolkit.pentest.runner import run_pentest_live_flow
 from toolkit.targets import build_source_tree_audit_app, build_source_tree_audit_profile
@@ -36,6 +40,11 @@ def register(root_app: typer.Typer) -> None:
 
         try:
             resolved_path = path.expanduser().resolve()
+            readiness = inspect_code_audit_readiness(resolved_path, preferred_tool=tool)
+            if not readiness.ready:
+                raise RuntimeError(
+                    "Code audit tools are not ready: " + "; ".join(readiness.failure_details())
+                )
             app_config = build_source_tree_audit_app(resolved_path)
             code_audit_profile = _profile_for_selected_tools(tool)
             target_paths = {
@@ -52,6 +61,7 @@ def register(root_app: typer.Typer) -> None:
             CodeAuditSelectionError,
             FileExistsError,
             FileNotFoundError,
+            RuntimeError,
             ValidationError,
             ValueError,
         ) as exc:
