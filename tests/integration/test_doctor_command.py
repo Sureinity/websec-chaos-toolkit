@@ -6,7 +6,11 @@ from typer.testing import CliRunner
 
 from toolkit.adapters.base import AdapterAvailability
 from toolkit.cli import app
-from toolkit.codeaudit.selection import CodeAuditReadiness, CodeAuditToolReadiness
+from toolkit.codeaudit.selection import (
+    CodeAuditRuntimeReadiness,
+    CodeAuditRuntimeReport,
+    CodeAuditToolReadiness,
+)
 from toolkit.commands.doctor import FeatureReadiness
 from toolkit.core.exits import ExitCode
 from toolkit.runtime.contracts import RuntimeMode
@@ -93,18 +97,30 @@ class DoctorCommandTests(unittest.TestCase):
                 ),
             ):
                 with patch(
-                    "toolkit.commands.doctor.inspect_code_audit_tooling",
-                    return_value=CodeAuditReadiness(
-                        selected_tools=("semgrep", "trivy"),
-                        tool_statuses=(
-                            _code_tool_status(tool="semgrep", available=True),
-                            _code_tool_status(
-                                tool="trivy",
-                                available=False,
-                                reason="trivy binary was not found on PATH",
+                    "toolkit.commands.doctor.inspect_code_audit_runtime_report",
+                    return_value=CodeAuditRuntimeReport(
+                        host=CodeAuditRuntimeReadiness(
+                            mode=RuntimeMode.HOST,
+                            selected_tools=("semgrep", "trivy"),
+                            tool_statuses=(
+                                _code_tool_status(tool="semgrep", available=True),
+                                _code_tool_status(
+                                    tool="trivy",
+                                    available=False,
+                                    reason="trivy binary was not found on PATH",
+                                ),
                             ),
+                            path_checked=False,
                         ),
-                        path_checked=False,
+                        container=CodeAuditRuntimeReadiness(
+                            mode=RuntimeMode.CONTAINER,
+                            selected_tools=("semgrep", "trivy"),
+                            tool_statuses=(
+                                _code_tool_status(tool="semgrep", available=True),
+                                _code_tool_status(tool="trivy", available=True),
+                            ),
+                            path_checked=False,
+                        ),
                     ),
                 ):
                     result = RUNNER.invoke(
@@ -119,8 +135,10 @@ class DoctorCommandTests(unittest.TestCase):
         self.assertIn("Audit runtime (host): not ready", result.stdout)
         self.assertIn("Recommended audit runtime: container", result.stdout)
         self.assertIn("Edge chaos: not ready", result.stdout)
-        self.assertIn("Code audit tools: not ready", result.stdout)
+        self.assertIn("Code audit runtime (host): not ready", result.stdout)
+        self.assertIn("Code audit runtime (container): ready", result.stdout)
         self.assertIn("selected tools: semgrep, trivy", result.stdout)
+        self.assertIn("Recommended code-audit runtime: container", result.stdout)
 
     def test_doctor_handles_no_available_audit_runtime(self) -> None:
         report = AuditRuntimeReport(
@@ -177,22 +195,42 @@ class DoctorCommandTests(unittest.TestCase):
             return_value=report,
         ):
             with patch(
-                "toolkit.commands.doctor.inspect_code_audit_tooling",
-                return_value=CodeAuditReadiness(
-                    selected_tools=("semgrep", "trivy"),
-                    tool_statuses=(
-                        _code_tool_status(
-                            tool="semgrep",
-                            available=False,
-                            reason="semgrep binary was not found on PATH",
+                "toolkit.commands.doctor.inspect_code_audit_runtime_report",
+                return_value=CodeAuditRuntimeReport(
+                    host=CodeAuditRuntimeReadiness(
+                        mode=RuntimeMode.HOST,
+                        selected_tools=("semgrep", "trivy"),
+                        tool_statuses=(
+                            _code_tool_status(
+                                tool="semgrep",
+                                available=False,
+                                reason="semgrep binary was not found on PATH",
+                            ),
+                            _code_tool_status(
+                                tool="trivy",
+                                available=False,
+                                reason="trivy binary was not found on PATH",
+                            ),
                         ),
-                        _code_tool_status(
-                            tool="trivy",
-                            available=False,
-                            reason="trivy binary was not found on PATH",
-                        ),
+                        path_checked=False,
                     ),
-                    path_checked=False,
+                    container=CodeAuditRuntimeReadiness(
+                        mode=RuntimeMode.CONTAINER,
+                        selected_tools=("semgrep", "trivy"),
+                        tool_statuses=(
+                            _code_tool_status(
+                                tool="semgrep",
+                                available=False,
+                                reason="docker binary was not found on PATH",
+                            ),
+                            _code_tool_status(
+                                tool="trivy",
+                                available=False,
+                                reason="docker binary was not found on PATH",
+                            ),
+                        ),
+                        path_checked=False,
+                    ),
                 ),
             ):
                 result = RUNNER.invoke(
@@ -203,6 +241,7 @@ class DoctorCommandTests(unittest.TestCase):
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         self.assertIn("Recommended audit runtime: unavailable", result.stdout)
+        self.assertIn("Recommended code-audit runtime: unavailable", result.stdout)
 
     def test_doctor_reports_code_path_readiness_when_requested(self) -> None:
         report = AuditRuntimeReport(
@@ -215,13 +254,24 @@ class DoctorCommandTests(unittest.TestCase):
             return_value=report,
         ):
             with patch(
-                "toolkit.commands.doctor.inspect_code_audit_readiness",
-                return_value=CodeAuditReadiness(
-                    selected_tools=("semgrep",),
-                    tool_statuses=(_code_tool_status(tool="semgrep", available=True),),
-                    path_checked=True,
-                    resolved_path=Path("/workspace/repo"),
-                    path_detail="/workspace/repo",
+                "toolkit.commands.doctor.inspect_code_audit_runtime_report",
+                return_value=CodeAuditRuntimeReport(
+                    host=CodeAuditRuntimeReadiness(
+                        mode=RuntimeMode.HOST,
+                        selected_tools=("semgrep",),
+                        tool_statuses=(_code_tool_status(tool="semgrep", available=True),),
+                        path_checked=True,
+                        resolved_path=Path("/workspace/repo"),
+                        path_detail="/workspace/repo",
+                    ),
+                    container=CodeAuditRuntimeReadiness(
+                        mode=RuntimeMode.CONTAINER,
+                        selected_tools=("semgrep",),
+                        tool_statuses=(_code_tool_status(tool="semgrep", available=True),),
+                        path_checked=True,
+                        resolved_path=Path("/workspace/repo"),
+                        path_detail="/workspace/repo",
+                    ),
                 ),
             ):
                 result = RUNNER.invoke(
@@ -231,7 +281,8 @@ class DoctorCommandTests(unittest.TestCase):
                 )
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
-        self.assertIn("Code audit path: ready", result.stdout)
+        self.assertIn("Code audit runtime (host): ready", result.stdout)
+        self.assertIn("Code audit runtime (container): ready", result.stdout)
         self.assertIn("selected tools: semgrep", result.stdout)
         self.assertIn("/workspace/repo", result.stdout)
 

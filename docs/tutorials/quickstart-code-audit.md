@@ -20,6 +20,7 @@ The current code-audit path is:
 - source-tree only
 - one filesystem path per run
 - Semgrep and Trivy by default
+- host runtime first, then container when Docker is available
 
 Use the profile-driven workflow when you need image or artifact analysis beyond
 the simple source-tree path.
@@ -55,6 +56,12 @@ uv run toolkit code-audit .
 ```bash
 uv run toolkit code-audit . --tool semgrep
 uv run toolkit code-audit . --tool trivy
+```
+
+6. Force container execution when you want portability:
+
+```bash
+uv run toolkit code-audit . --tool trivy --runtime container
 ```
 
 ## What The Command Does

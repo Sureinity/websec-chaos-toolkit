@@ -14,6 +14,8 @@ The simplified code-audit path supports:
 - `semgrep`
 - `trivy`
 - one local path per run
+- host runtime
+- container runtime
 
 It does not support:
 
@@ -41,6 +43,11 @@ uv run toolkit doctor --code-path . --code-tool semgrep
 uv run toolkit doctor --code-path . --code-tool trivy
 ```
 
+The doctor output now reports both:
+
+- `Code audit runtime (host)`
+- `Code audit runtime (container)`
+
 ## Run The Audit
 
 Default dual-tool run:
@@ -61,6 +68,18 @@ Trivy only:
 uv run toolkit code-audit . --tool trivy
 ```
 
+Force host execution:
+
+```bash
+uv run toolkit code-audit . --tool semgrep --runtime host
+```
+
+Force container execution:
+
+```bash
+uv run toolkit code-audit . --tool trivy --runtime container
+```
+
 ## What The Command Does
 
 - validates the path as a source-tree target
@@ -69,6 +88,10 @@ uv run toolkit code-audit . --tool trivy
 - passes the selected path to:
   - `semgrep`
   - `trivy`
+- chooses runtime by:
+  - host when the selected tools are available locally
+  - container when host tools are missing and Docker is available
+  - explicit `--runtime` override when requested
 - writes outputs under `outputs/<run-id>/`
 
 ## Successful Output
@@ -93,7 +116,7 @@ The command exits with `2` when:
 - the supplied path does not exist
 - the supplied path is not a directory
 - the selected tool is unsupported
-- the selected tool is unavailable on the operator host
+- the selected tool is unavailable in the selected runtime
 - Semgrep or Trivy fails at runtime
 
 ## When To Use The Advanced Workflow Instead

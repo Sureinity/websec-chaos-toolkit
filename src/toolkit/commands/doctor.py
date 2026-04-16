@@ -10,9 +10,8 @@ import typer
 
 from toolkit.chaos.edge_runtime import inspect_edge_chaos_runtime_readiness
 from toolkit.codeaudit.selection import (
-    CodeAuditReadiness,
-    inspect_code_audit_readiness,
-    inspect_code_audit_tooling,
+    CodeAuditRuntimeReadiness,
+    inspect_code_audit_runtime_report,
 )
 from toolkit.core.exits import ExitCode
 from toolkit.runtime.selector import (
@@ -55,10 +54,9 @@ def register(root_app: typer.Typer) -> None:
         try:
             audit_report = inspect_audit_readiness()
             edge_chaos = inspect_edge_chaos_readiness()
-            code_audit = (
-                inspect_code_audit_readiness(code_path, preferred_tool=code_tool)
-                if code_path is not None
-                else inspect_code_audit_tooling(preferred_tool=code_tool)
+            code_audit_report = inspect_code_audit_runtime_report(
+                preferred_tool=code_tool,
+                path=code_path,
             )
         except RuntimeError as exc:
             typer.echo("Toolkit readiness check failed.", err=True)
@@ -81,7 +79,14 @@ def register(root_app: typer.Typer) -> None:
         typer.echo(f"Edge chaos: {'ready' if edge_chaos.ready else 'not ready'}")
         typer.echo(f"  - {edge_chaos.detail}")
         typer.echo("")
-        _emit_code_audit_readiness(code_audit)
+        _emit_code_audit_readiness(code_audit_report.host)
+        _emit_code_audit_readiness(code_audit_report.container)
+        typer.echo("")
+        recommended_mode = code_audit_report.recommended_mode
+        if recommended_mode is None:
+            typer.echo("Recommended code-audit runtime: unavailable")
+        else:
+            typer.echo(f"Recommended code-audit runtime: {recommended_mode.value}")
 
 
 def inspect_edge_chaos_readiness() -> FeatureReadiness:
@@ -107,9 +112,11 @@ def _emit_runtime_readiness(readiness: AuditRuntimeReadiness) -> None:
         typer.echo(f"  - {status.tool}: " f"{status.availability.reason or 'unavailable'}")
 
 
-def _emit_code_audit_readiness(readiness: CodeAuditReadiness) -> None:
-    label = "Code audit path" if readiness.path_checked else "Code audit tools"
-    typer.echo(f"{label}: {'ready' if readiness.ready else 'not ready'}")
+def _emit_code_audit_readiness(readiness: CodeAuditRuntimeReadiness) -> None:
+    typer.echo(
+        f"Code audit runtime ({readiness.mode.value}): "
+        f"{'ready' if readiness.ready else 'not ready'}"
+    )
     typer.echo(f"  - selected tools: {', '.join(readiness.selected_tools)}")
     for status in readiness.tool_statuses:
         if status.availability.available:
@@ -118,12 +125,10 @@ def _emit_code_audit_readiness(readiness: CodeAuditReadiness) -> None:
             continue
         typer.echo(f"  - {status.tool}: " f"{status.availability.reason or 'unavailable'}")
 
-    if not readiness.path_checked:
+    if readiness.path_checked:
+        if readiness.path_ready and readiness.resolved_path is not None:
+            typer.echo(f"  - path: ready ({readiness.resolved_path})")
+        else:
+            typer.echo(f"  - path: {readiness.path_detail or 'unavailable'}")
+    else:
         typer.echo("  - path: not checked")
-        return
-
-    if readiness.path_ready and readiness.resolved_path is not None:
-        typer.echo(f"  - path: ready ({readiness.resolved_path})")
-        return
-
-    typer.echo(f"  - path: {readiness.path_detail or 'unavailable'}")

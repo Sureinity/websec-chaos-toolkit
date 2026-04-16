@@ -5,7 +5,9 @@ The bootstrap scaffold exposes the implemented public command tree:
 ```text
 toolkit audit <url> [--runtime host|container]
 toolkit edge-chaos <url> [--fault <name>]
-toolkit code-audit <path> [--tool semgrep|trivy]
+toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
+toolkit edge-chaos <url> [--fault <name>]
+toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
 toolkit validate --app <id> --env <env>
 toolkit doctor
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
@@ -24,9 +26,13 @@ Current command behavior:
   reversible edge-chaos experiment through that proxy, writes run artifacts
   under `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
 - `toolkit code-audit` derives an ad hoc source-tree target from the supplied
-  path, runs Semgrep and/or Trivy with the built-in `source_tree` profile,
-  writes run artifacts under `outputs/<run-id>/`, and exits with `0`, `1`, or
-  `2`
+  path, runs Semgrep and/or Trivy with the built-in `source_tree` profile, and
+  selects runtime as follows:
+  - `--runtime host`
+  - `--runtime container`
+  - host first, then container, when omitted
+  It writes run artifacts under `outputs/<run-id>/`, and exits with `0`, `1`,
+  or `2`
 - `toolkit validate` loads the repository YAML files from the current working
   directory, validates the selected `--app/--env` pair, and exits with `0` on
   success

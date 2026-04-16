@@ -44,9 +44,7 @@ class ContainerRuntimeAvailabilityTests(unittest.TestCase):
         self.assertIn("no container image", result.reason)
 
     def test_image_override_takes_precedence(self) -> None:
-        runtime = ContainerRuntime(
-            image_overrides={"nmap": "my-registry/nmap:v1"}
-        )
+        runtime = ContainerRuntime(image_overrides={"nmap": "my-registry/nmap:v1"})
         with patch(
             "toolkit.runtime.container.find_binary",
             return_value=Path("/usr/bin/docker"),
@@ -77,9 +75,7 @@ class ContainerCommandBuildTests(unittest.TestCase):
             output_path=Path("/tmp/outputs/nmap/results.xml"),
         )
 
-        cmd = runtime._build_docker_command(
-            request, image="instrumentisto/nmap:latest"
-        )
+        cmd = runtime._build_docker_command(request, image="instrumentisto/nmap:latest")
 
         self.assertEqual(cmd[0], "docker")
         self.assertEqual(cmd[1], "run")
@@ -101,9 +97,7 @@ class ContainerCommandBuildTests(unittest.TestCase):
             output_path=Path("/tmp/outputs/nmap/results.xml"),
         )
 
-        cmd = runtime._build_docker_command(
-            request, image="instrumentisto/nmap:latest"
-        )
+        cmd = runtime._build_docker_command(request, image="instrumentisto/nmap:latest")
 
         idx = cmd.index("-v")
         mount = cmd[idx + 1]
@@ -126,9 +120,7 @@ class ContainerCommandBuildTests(unittest.TestCase):
             output_path=Path("/tmp/outputs/zap/results.json"),
         )
 
-        cmd = runtime._build_docker_command(
-            request, image="ghcr.io/zaproxy/zaproxy:stable"
-        )
+        cmd = runtime._build_docker_command(request, image="ghcr.io/zaproxy/zaproxy:stable")
 
         mount_args = [cmd[i + 1] for i in range(len(cmd)) if cmd[i] == "-v"]
         self.assertIn("/tmp/outputs/zap:/zap/wrk:z", mount_args)
@@ -149,9 +141,7 @@ class ContainerCommandBuildTests(unittest.TestCase):
             output_path=Path("/tmp/outputs/zap/results.json"),
         )
 
-        cmd = runtime._build_docker_command(
-            request, image="ghcr.io/zaproxy/zaproxy:stable"
-        )
+        cmd = runtime._build_docker_command(request, image="ghcr.io/zaproxy/zaproxy:stable")
 
         image_idx = cmd.index("ghcr.io/zaproxy/zaproxy:stable")
         tool_args = cmd[image_idx + 1 :]
@@ -168,9 +158,7 @@ class ContainerCommandBuildTests(unittest.TestCase):
             env_overrides={"NUCLEI_DISABLE_UPDATE_CHECK": "true"},
         )
 
-        cmd = runtime._build_docker_command(
-            request, image="projectdiscovery/nuclei:latest"
-        )
+        cmd = runtime._build_docker_command(request, image="projectdiscovery/nuclei:latest")
 
         idx = cmd.index("-e")
         env_val = cmd[idx + 1]
@@ -185,19 +173,33 @@ class ContainerCommandBuildTests(unittest.TestCase):
             cwd=Path("/app/src"),
         )
 
-        cmd = runtime._build_docker_command(
-            request, image="aquasec/trivy:latest"
-        )
+        cmd = runtime._build_docker_command(request, image="aquasec/trivy:latest")
 
-        mount_args = [
-            cmd[i + 1] for i in range(len(cmd)) if cmd[i] == "-v"
-        ]
+        mount_args = [cmd[i + 1] for i in range(len(cmd)) if cmd[i] == "-v"]
         self.assertTrue(
             any("/app/src" in m for m in mount_args),
             f"cwd mount not found in {mount_args}",
         )
         self.assertIn("-w", cmd)
         self.assertEqual(cmd[cmd.index("-w") + 1], "/app/src")
+
+    def test_mounts_cwd_for_semgrep_source_tree_execution(self) -> None:
+        runtime = ContainerRuntime()
+        request = RuntimeRequest(
+            tool="semgrep",
+            command=("semgrep", "scan", "--json-output=/tmp/outputs/semgrep/results.json", "."),
+            output_path=Path("/tmp/outputs/semgrep/results.json"),
+            cwd=Path("/workspace/repo"),
+        )
+
+        cmd = runtime._build_docker_command(request, image="semgrep/semgrep:latest")
+
+        mount_args = [cmd[i + 1] for i in range(len(cmd)) if cmd[i] == "-v"]
+        self.assertTrue(
+            any("/workspace/repo" in mount for mount in mount_args),
+            f"cwd mount not found in {mount_args}",
+        )
+        self.assertEqual(cmd[cmd.index("-w") + 1], "/workspace/repo")
 
 
 class ContainerExecutionTests(unittest.TestCase):

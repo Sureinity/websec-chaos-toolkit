@@ -34,7 +34,7 @@ Those belong to other workflows:
 The implemented command contract is:
 
 ```text
-toolkit code-audit <path> [--tool semgrep|trivy]
+toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
 ```
 
 Target rules:
@@ -58,6 +58,12 @@ Optional narrowing:
 
 - `--tool semgrep`
 - `--tool trivy`
+
+Runtime behavior:
+
+- `--runtime host`
+- `--runtime container`
+- host first, then container, when omitted
 
 Excluded from this command:
 
@@ -97,6 +103,7 @@ This command keeps the operator path simple:
 
 - one path
 - two tools
+- simple runtime selection
 - no YAML
 - no profile selection
 

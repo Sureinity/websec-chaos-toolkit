@@ -9,11 +9,12 @@ from pydantic import ValidationError
 from toolkit.auth.errors import AuthRuntimeError
 from toolkit.codeaudit.selection import (
     CodeAuditSelectionError,
-    inspect_code_audit_readiness,
+    select_code_audit_runtime,
     select_code_audit_tools,
 )
 from toolkit.core.exits import ExitCode
 from toolkit.pentest.runner import run_pentest_live_flow
+from toolkit.runtime.contracts import RuntimeMode
 from toolkit.targets import build_source_tree_audit_app, build_source_tree_audit_profile
 
 
@@ -33,6 +34,13 @@ def register(root_app: typer.Typer) -> None:
                 help="Optional code-audit tool to run: semgrep or trivy.",
             ),
         ] = None,
+        runtime: Annotated[
+            RuntimeMode | None,
+            typer.Option(
+                "--runtime",
+                help="Execution backend: host or container. Auto-select when omitted.",
+            ),
+        ] = None,
     ) -> None:
         """Run a zero-config source-tree audit with Semgrep and/or Trivy."""
 
@@ -40,11 +48,11 @@ def register(root_app: typer.Typer) -> None:
 
         try:
             resolved_path = path.expanduser().resolve()
-            readiness = inspect_code_audit_readiness(resolved_path, preferred_tool=tool)
-            if not readiness.ready:
-                raise RuntimeError(
-                    "Code audit tools are not ready: " + "; ".join(readiness.failure_details())
-                )
+            selection = select_code_audit_runtime(
+                resolved_path,
+                preferred_tool=tool,
+                preferred_mode=runtime,
+            )
             app_config = build_source_tree_audit_app(resolved_path)
             code_audit_profile = _profile_for_selected_tools(tool)
             target_paths = {
@@ -54,6 +62,7 @@ def register(root_app: typer.Typer) -> None:
                 project_root=project_root,
                 app=app_config,
                 profile=code_audit_profile,
+                runtime=selection.backend,
                 target_paths=target_paths,
             )
         except (
@@ -61,7 +70,6 @@ def register(root_app: typer.Typer) -> None:
             CodeAuditSelectionError,
             FileExistsError,
             FileNotFoundError,
-            RuntimeError,
             ValidationError,
             ValueError,
         ) as exc:
@@ -73,6 +81,7 @@ def register(root_app: typer.Typer) -> None:
         typer.echo(f"Target path: {resolved_path}")
         typer.echo(f"Run: {summary.run_id}")
         typer.echo(f"Status: {summary.status}")
+        typer.echo(f"Runtime: {selection.mode}")
         typer.echo(f"Findings: {summary.findings_count}")
         typer.echo(f"Actionable findings: {summary.actionable_findings_count}")
         typer.echo(f"Normalized bundle: {summary.normalized_bundle_path}")
