@@ -10,6 +10,9 @@ Current state:
   auto-selects `container` or `host` runtime readiness
 - `toolkit edge-chaos` runs a managed local edge-chaos experiment from a
   single URL
+- `toolkit code-audit` runs a zero-config source-tree audit from a local path
+  and can narrow to `semgrep` or `trivy`; auto-selects `host` first and then
+  `container` when Docker is available
 - `toolkit validate` validates app/profile config against the locked schema
 - `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
   against a live target via host subprocess or Docker container backend; a
@@ -29,6 +32,7 @@ Implemented now:
 
 - `toolkit audit`
 - `toolkit edge-chaos`
+- `toolkit code-audit`
 - `toolkit validate`
 - `toolkit pentest run`
 - `toolkit doctor`
@@ -99,6 +103,28 @@ Read next:
 - `docs/how-to/run-url-audit.md`
 - `docs/how-to/run-edge-chaos.md`
 
+## Quick Start (Code Audit)
+
+For the simplest source-tree path, run:
+
+```bash
+uv run toolkit doctor --code-path .
+uv run toolkit code-audit .
+uv run toolkit code-audit . --tool trivy --runtime container
+```
+
+Use this when you want:
+
+- local codebase scanning
+- Semgrep and Trivy without profile YAML
+- one source-tree path per run
+- host-or-container execution without editing config files
+
+Read next:
+
+- `docs/tutorials/quickstart-code-audit.md`
+- `docs/how-to/run-code-audit.md`
+
 ## Docker-First Operator Workflow (Preferred)
 
 The preferred portability path runs the toolkit, target app, and optional
@@ -147,6 +173,7 @@ Task-oriented guides:
 
 - `docs/how-to/run-url-audit.md` — zero-config audit from a URL
 - `docs/how-to/run-edge-chaos.md` — managed local edge-chaos from a URL
+- `docs/how-to/run-code-audit.md` — zero-config audit from a source tree
 - `docs/how-to/run-with-compose.md` — Compose-based operator workflow
 - `docs/how-to/run-pentest-with-docker.md` — Docker container runtime
 - `docs/how-to/run-validation.md`
@@ -169,6 +196,9 @@ The public CLI surface is implemented and uses one entrypoint:
 ```text
 toolkit audit <url> [--runtime host|container]
 toolkit edge-chaos <url> [--fault <name>]
+toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
+toolkit edge-chaos <url> [--fault <name>]
+toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
 toolkit validate --app <id> --env <env>
 toolkit doctor
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
@@ -180,6 +210,9 @@ toolkit report build --run-id <id>
 artifacts.
 `toolkit edge-chaos` runs one managed local edge-chaos experiment from a URL
 and writes run artifacts.
+`toolkit code-audit` runs a zero-config source-tree audit from a path and
+writes run artifacts; it prefers host execution when selected tools are
+installed and falls back to container execution when Docker is available.
 `toolkit validate` now performs real configuration loading and validation.
 `toolkit doctor` reports simplified runtime readiness for the audit path.
 `toolkit pentest run` now executes real scanner binaries against a live target

@@ -51,6 +51,7 @@ class SemgrepAdapter:
                 "semgrep adapter refuses to build commands when safe_mode is disabled."
             )
 
+        resolved_target = _resolve_target_path(self.target_path)
         command = [
             self.binary,
             "scan",
@@ -59,11 +60,12 @@ class SemgrepAdapter:
         ]
         for config in self.settings.allowlisted_rules:
             command.extend(["--config", config])
-        command.append(str(self.target_path))
+        command.append(".")
 
         return ToolExecution(
             tool=self.name,
             command=tuple(command),
+            cwd=resolved_target,
             timeout_seconds=300.0,
         )
 
@@ -175,3 +177,12 @@ def _build_remediation_summary(result: dict[str, object], extra: object) -> str:
 
     check_id = result.get("check_id", "the identified semgrep finding")
     return f"Review and remediate {check_id}."
+
+
+def _resolve_target_path(target_path: Path) -> Path:
+    resolved = target_path.resolve()
+    if not resolved.exists():
+        raise ValueError(f"semgrep target path does not exist: {resolved}")
+    if not resolved.is_dir():
+        raise ValueError(f"semgrep target path must be a directory: {resolved}")
+    return resolved

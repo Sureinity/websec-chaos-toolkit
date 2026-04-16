@@ -8,6 +8,12 @@ This is the correct operator path for tools such as:
 - `trivy`
 - `semgrep`
 
+Status note:
+
+- `toolkit code-audit <path>` is now implemented as the simpler source-tree path
+- this guide remains the advanced profile-driven workflow for source-tree,
+  image, and artifact analysis beyond the simple path
+
 Do not use this workflow as a substitute for a live remote-web pentest.
 
 ## When To Use This Guide
@@ -27,6 +33,7 @@ Do not use this guide for:
 For those cases, use:
 
 - `docs/how-to/run-live-pentest.md`
+- `docs/how-to/run-code-audit.md` for the zero-config source-tree path
 
 ## Tool Roles
 

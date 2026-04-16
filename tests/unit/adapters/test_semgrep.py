@@ -78,9 +78,10 @@ class SemgrepAdapterTests(unittest.TestCase):
                 "p/default",
                 "--config",
                 "p/secrets",
-                str(target_path),
+                ".",
             ),
         )
+        self.assertEqual(execution.cwd, target_path.resolve())
         self.assertEqual(execution.timeout_seconds, 300.0)
 
     def test_build_execution_blocks_when_safe_mode_is_disabled(self) -> None:

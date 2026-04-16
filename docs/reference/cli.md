@@ -5,6 +5,9 @@ The bootstrap scaffold exposes the implemented public command tree:
 ```text
 toolkit audit <url> [--runtime host|container]
 toolkit edge-chaos <url> [--fault <name>]
+toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
+toolkit edge-chaos <url> [--fault <name>]
+toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
 toolkit validate --app <id> --env <env>
 toolkit doctor
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
@@ -22,6 +25,14 @@ Current command behavior:
   starts a managed local Toxiproxy container, creates a local proxy, runs one
   reversible edge-chaos experiment through that proxy, writes run artifacts
   under `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
+- `toolkit code-audit` derives an ad hoc source-tree target from the supplied
+  path, runs Semgrep and/or Trivy with the built-in `source_tree` profile, and
+  selects runtime as follows:
+  - `--runtime host`
+  - `--runtime container`
+  - host first, then container, when omitted
+  It writes run artifacts under `outputs/<run-id>/`, and exits with `0`, `1`,
+  or `2`
 - `toolkit validate` loads the repository YAML files from the current working
   directory, validates the selected `--app/--env` pair, and exits with `0` on
   success
@@ -69,6 +80,7 @@ See `docs/how-to/run-with-compose.md` for the full workflow.
 
 For task-oriented operator procedures, see:
 
+- `docs/how-to/run-code-audit.md`
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`
 - `docs/how-to/run-chaos.md`
