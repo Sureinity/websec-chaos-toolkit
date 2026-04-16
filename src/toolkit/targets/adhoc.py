@@ -39,19 +39,13 @@ def derive_url_audit_app_id(url: str | HttpUrl) -> str:
 def build_url_audit_app(url: str | HttpUrl) -> AppConfig:
     """Build a validated AppConfig for a zero-config URL audit run."""
 
-    resolved_url = _resolve_http_url(url)
-    host = resolved_url.host
+    return _build_url_app(url, enabled_modules=["pentest"])
 
-    return AppConfig(
-        id=derive_url_audit_app_id(resolved_url),
-        environment=URL_AUDIT_DEFAULT_ENVIRONMENT,
-        base_url=resolved_url,
-        host_targets=[host],
-        target_allowlist=[host],
-        auth=AuthConfig(method="none"),
-        health_endpoint=URL_AUDIT_DEFAULT_HEALTH_ENDPOINT,
-        enabled_modules=["pentest"],
-    )
+
+def build_url_edge_chaos_app(url: str | HttpUrl) -> AppConfig:
+    """Build a validated AppConfig for a future URL-first edge-chaos run."""
+
+    return _build_url_app(url, enabled_modules=["chaos"])
 
 
 def build_url_audit_profile() -> PentestProfile:
@@ -85,3 +79,19 @@ def build_url_audit_profile() -> PentestProfile:
 
 def _resolve_http_url(url: str | HttpUrl) -> HttpUrl:
     return _HTTP_URL_ADAPTER.validate_python(str(url))
+
+
+def _build_url_app(url: str | HttpUrl, *, enabled_modules: list[str]) -> AppConfig:
+    resolved_url = _resolve_http_url(url)
+    host = resolved_url.host
+
+    return AppConfig(
+        id=derive_url_audit_app_id(resolved_url),
+        environment=URL_AUDIT_DEFAULT_ENVIRONMENT,
+        base_url=resolved_url,
+        host_targets=[host],
+        target_allowlist=[host],
+        auth=AuthConfig(method="none"),
+        health_endpoint=URL_AUDIT_DEFAULT_HEALTH_ENDPOINT,
+        enabled_modules=enabled_modules,
+    )

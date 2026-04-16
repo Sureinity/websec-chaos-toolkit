@@ -58,7 +58,10 @@ class UnsupportedToxiproxyFaultError(RuntimeError):
     detail: str
 
     def __str__(self) -> str:
-        return f"Chaos fault {self.fault_type!r} is not supported by the Toxiproxy wrapper: {self.detail}"
+        return (
+            f"Chaos fault {self.fault_type!r} is not supported by the "
+            f"Toxiproxy wrapper: {self.detail}"
+        )
 
 
 @dataclass(slots=True, frozen=True)
@@ -151,6 +154,57 @@ class ToxiproxyClient:
             operation=f"get proxy {proxy_name!r}",
         )
         return _parse_proxy_payload(proxy_name, payload)
+
+    def create_proxy(
+        self,
+        *,
+        proxy_name: str,
+        listen: str,
+        upstream: str,
+        enabled: bool = True,
+    ) -> ToxiproxyProxy:
+        """Create one proxy through the Toxiproxy HTTP API."""
+
+        response = self._request(
+            "POST",
+            "/proxies",
+            operation=f"create proxy {proxy_name!r}",
+            json_body={
+                "name": proxy_name,
+                "listen": listen,
+                "upstream": upstream,
+                "enabled": enabled,
+            },
+        )
+        if response.is_error:
+            raise ToxiproxyRequestError(
+                operation=f"create proxy {proxy_name!r}",
+                detail=f"HTTP {response.status_code}",
+            )
+        payload = self._parse_json_response(
+            response,
+            operation=f"create proxy {proxy_name!r}",
+        )
+        return _parse_proxy_payload(proxy_name, payload)
+
+    def delete_proxy(self, proxy_name: str) -> None:
+        """Delete one proxy through the Toxiproxy HTTP API."""
+
+        response = self._request(
+            "DELETE",
+            f"/proxies/{proxy_name}",
+            operation=f"delete proxy {proxy_name!r}",
+        )
+        if response.status_code == httpx.codes.NOT_FOUND:
+            raise ToxiproxyProxyNotFoundError(proxy_name=proxy_name)
+        if response.status_code not in (
+            httpx.codes.OK,
+            httpx.codes.NO_CONTENT,
+        ):
+            raise ToxiproxyRequestError(
+                operation=f"delete proxy {proxy_name!r}",
+                detail=f"HTTP {response.status_code}",
+            )
 
     def require_proxy(self, proxy_name: str, *, expect_enabled: bool = True) -> ToxiproxyProxy:
         """Return a proxy and enforce the expected enabled state."""

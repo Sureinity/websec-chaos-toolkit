@@ -8,6 +8,8 @@ Current state:
 
 - `toolkit audit` runs a zero-config safe web audit from a single URL and
   auto-selects `container` or `host` runtime readiness
+- `toolkit edge-chaos` runs a managed local edge-chaos experiment from a
+  single URL
 - `toolkit validate` validates app/profile config against the locked schema
 - `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
   against a live target via host subprocess or Docker container backend; a
@@ -26,6 +28,7 @@ Current state:
 Implemented now:
 
 - `toolkit audit`
+- `toolkit edge-chaos`
 - `toolkit validate`
 - `toolkit pentest run`
 - `toolkit doctor`
@@ -80,6 +83,7 @@ config files:
 ```bash
 uv run toolkit doctor
 uv run toolkit audit http://127.0.0.1:8000
+uv run toolkit edge-chaos http://127.0.0.1:8000
 ```
 
 Start here when you want:
@@ -87,11 +91,13 @@ Start here when you want:
 - zero-config remote web auditing
 - automatic runtime selection
 - one ad hoc target without named app/profile setup
+- managed local edge-chaos testing
 
 Read next:
 
 - `docs/tutorials/quickstart-url-first.md`
 - `docs/how-to/run-url-audit.md`
+- `docs/how-to/run-edge-chaos.md`
 
 ## Docker-First Operator Workflow (Preferred)
 
@@ -140,6 +146,7 @@ uv run toolkit report build --run-id <existing-run-id>
 Task-oriented guides:
 
 - `docs/how-to/run-url-audit.md` — zero-config audit from a URL
+- `docs/how-to/run-edge-chaos.md` — managed local edge-chaos from a URL
 - `docs/how-to/run-with-compose.md` — Compose-based operator workflow
 - `docs/how-to/run-pentest-with-docker.md` — Docker container runtime
 - `docs/how-to/run-validation.md`
@@ -161,6 +168,7 @@ The public CLI surface is implemented and uses one entrypoint:
 
 ```text
 toolkit audit <url> [--runtime host|container]
+toolkit edge-chaos <url> [--fault <name>]
 toolkit validate --app <id> --env <env>
 toolkit doctor
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
@@ -170,6 +178,8 @@ toolkit report build --run-id <id>
 
 `toolkit audit` runs a zero-config remote web audit from a URL and writes run
 artifacts.
+`toolkit edge-chaos` runs one managed local edge-chaos experiment from a URL
+and writes run artifacts.
 `toolkit validate` now performs real configuration loading and validation.
 `toolkit doctor` reports simplified runtime readiness for the audit path.
 `toolkit pentest run` now executes real scanner binaries against a live target

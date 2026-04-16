@@ -7,6 +7,7 @@ from toolkit.targets.adhoc import (
     URL_AUDIT_PROFILE_NAME,
     build_url_audit_app,
     build_url_audit_profile,
+    build_url_edge_chaos_app,
     derive_url_audit_app_id,
 )
 
@@ -42,6 +43,14 @@ class AdHocTargetBuilderTests(unittest.TestCase):
         self.assertEqual(app.base_url.path, "/app")
         self.assertEqual(app.base_url.query, "view=full")
         self.assertEqual(app.id, "adhoc-example-internal-443")
+
+    def test_build_url_edge_chaos_app_enables_chaos_only(self) -> None:
+        app = build_url_edge_chaos_app("http://127.0.0.1:8000")
+
+        self.assertEqual(app.id, "adhoc-127-0-0-1-8000")
+        self.assertEqual(app.enabled_modules, ["chaos"])
+        self.assertEqual(app.health_endpoint, URL_AUDIT_DEFAULT_HEALTH_ENDPOINT)
+        self.assertEqual(app.base_url.host, "127.0.0.1")
 
     def test_build_url_audit_profile_matches_safe_remote_web_contract(self) -> None:
         profile = build_url_audit_profile()

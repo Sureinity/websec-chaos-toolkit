@@ -11,6 +11,7 @@ Preferred URL-first onboarding path:
 
 1. `docs/tutorials/quickstart-url-first.md`
 2. `docs/how-to/run-url-audit.md`
+3. `docs/how-to/run-edge-chaos.md`
 3. `docs/reference/cli.md`
 4. `docs/reference/output-artifacts.md`
 
@@ -75,6 +76,7 @@ The chaos orchestration contract lives in
 Operator run guides live in:
 
 - `docs/how-to/run-url-audit.md`
+- `docs/how-to/run-edge-chaos.md`
 - `docs/how-to/run-with-compose.md`
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`

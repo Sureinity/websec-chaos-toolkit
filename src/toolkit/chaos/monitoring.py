@@ -21,13 +21,25 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 import httpx
 
 from toolkit.config.models import AppConfig, MetricsConfig
 
 MonitoringEvidenceKind = Literal["health", "metrics"]
+
+
+class MonitoringHttpClient(Protocol):
+    """Minimal sync HTTP client contract used by chaos monitoring."""
+
+    def get(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, str] | None = None,
+    ) -> httpx.Response: ...
 
 
 class ExperimentWindowStatus(StrEnum):
@@ -145,7 +157,7 @@ class ExperimentAssessment:
 def collect_monitoring_observation(
     app: AppConfig,
     *,
-    client: httpx.Client | None = None,
+    client: MonitoringHttpClient | None = None,
     headers: Mapping[str, str] | None = None,
     cookies: Mapping[str, str] | None = None,
     when: datetime | None = None,
@@ -218,7 +230,7 @@ def capture_live_baseline(
     app: AppConfig,
     duration_seconds: int,
     interval_seconds: float = 5.0,
-    client: httpx.Client | None = None,
+    client: MonitoringHttpClient | None = None,
     headers: Mapping[str, str] | None = None,
     cookies: Mapping[str, str] | None = None,
 ) -> SteadyStateBaseline:
@@ -248,7 +260,7 @@ def collect_live_experiment_observations(
     app: AppConfig,
     duration_seconds: int,
     interval_seconds: float = 5.0,
-    client: httpx.Client | None = None,
+    client: MonitoringHttpClient | None = None,
     headers: Mapping[str, str] | None = None,
     cookies: Mapping[str, str] | None = None,
 ) -> tuple[MonitoringObservation, ...]:
@@ -268,7 +280,7 @@ def _poll_observations(
     app: AppConfig,
     duration_seconds: int,
     interval_seconds: float,
-    client: httpx.Client | None,
+    client: MonitoringHttpClient | None,
     headers: Mapping[str, str] | None,
     cookies: Mapping[str, str] | None,
 ) -> tuple[MonitoringObservation, ...]:
@@ -420,7 +432,7 @@ def monitoring_observations_to_payload(
 def _collect_monitoring_observation(
     app: AppConfig,
     *,
-    client: httpx.Client,
+    client: MonitoringHttpClient,
     headers: Mapping[str, str] | None,
     cookies: Mapping[str, str] | None,
     observed_at: datetime,
