@@ -177,7 +177,7 @@ def build_edge_chaos_proxy_plan(
         app=app,
         fault_type=fault_type,
         proxy_name=f"{EDGE_CHAOS_PROXY_NAME_PREFIX}-{app.id}",
-        requested_url=str(app.base_url),
+        requested_url=_probe_url_from_app(app),
         upstream_origin=upstream_origin,
         proxy_origin=proxy_origin,
         healthcheck_url=f"{proxy_origin}{app.health_endpoint}",
@@ -380,6 +380,10 @@ def wait_for_toxiproxy_api(
 
 def _origin_from_app(app: AppConfig) -> str:
     return f"{app.base_url.scheme}://{app.base_url.host}:{app.base_url.port}"
+
+
+def _probe_url_from_app(app: AppConfig) -> str:
+    return f"{str(app.base_url).rstrip('/')}{app.health_endpoint}"
 
 
 class EdgeChaosMonitoringClient:

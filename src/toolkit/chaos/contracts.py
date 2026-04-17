@@ -148,6 +148,7 @@ class ChaosRunSummary:
     experiment_plan: ChaosExperimentPlan
     baseline_captured: bool
     rollback_attempted: bool
+    recovery_verified: bool | None = None
     findings_count: int = 0
     aborted: bool = False
     abort_reason: str | None = None

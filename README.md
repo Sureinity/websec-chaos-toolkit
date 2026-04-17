@@ -197,8 +197,6 @@ The public CLI surface is implemented and uses one entrypoint:
 toolkit audit <url> [--runtime host|container]
 toolkit edge-chaos <url> [--fault <name>]
 toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
-toolkit edge-chaos <url> [--fault <name>]
-toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
 toolkit validate --app <id> --env <env>
 toolkit doctor
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
@@ -209,7 +207,8 @@ toolkit report build --run-id <id>
 `toolkit audit` runs a zero-config remote web audit from a URL and writes run
 artifacts.
 `toolkit edge-chaos` runs one managed local edge-chaos experiment from a URL
-and writes run artifacts.
+and writes run artifacts with probe, fault, rollback, and recovery summary
+fields.
 `toolkit code-audit` runs a zero-config source-tree audit from a path and
 writes run artifacts; it prefers host execution when selected tools are
 installed and falls back to container execution when Docker is available.

@@ -86,6 +86,8 @@ class ChaosFaultController(Protocol):
 
 ObservationLoader = Callable[[Path], tuple[MonitoringObservation, ...]]
 
+RECOVERY_VERIFICATION_DURATION_SECONDS = 1
+
 
 def run_chaos_fixture_flow(
     *,
@@ -126,6 +128,7 @@ def run_chaos_fixture_flow(
     raw_artifact_paths: list[Path] = []
     baseline_captured = False
     rollback_attempted = False
+    recovery_verified: bool | None = None
     findings: list[NormalizedResult] = []
     status = ChaosRunStatus.FAILED
     exit_code = ExitCode.CONFIG_OR_RUNTIME_ERROR
@@ -261,6 +264,7 @@ def run_chaos_fixture_flow(
         findings_count=len(findings),
         baseline_captured=baseline_captured,
         rollback_attempted=rollback_attempted,
+        recovery_verified=recovery_verified,
         aborted=aborted,
         abort_reason=abort_reason,
         error_detail=error_detail,
@@ -304,6 +308,7 @@ def run_chaos_live_flow(
     raw_artifact_paths: list[Path] = []
     baseline_captured = False
     rollback_attempted = False
+    recovery_verified: bool | None = None
     findings: list[NormalizedResult] = []
     status = ChaosRunStatus.FAILED
     exit_code = ExitCode.CONFIG_OR_RUNTIME_ERROR
@@ -314,6 +319,7 @@ def run_chaos_live_flow(
     lock: ChaosRunLock | None = None
     experiment_assessment: ExperimentAssessment | None = None
     lock_key: str | None = None
+    recovery_verification_error: str | None = None
 
     try:
         lock = acquire_chaos_lock(
@@ -407,6 +413,24 @@ def run_chaos_live_flow(
                     error_detail = str(exc)
                 else:
                     error_detail = f"{error_detail}; rollback failed: {exc}"
+            else:
+                try:
+                    recovery_observations = collect_live_experiment_observations(
+                        app=app,
+                        duration_seconds=RECOVERY_VERIFICATION_DURATION_SECONDS,
+                        client=monitoring_client,
+                    )
+                    recovery_path = _write_json_artifact(
+                        context.raw_dir / "chaos" / "post-rollback-observations.json",
+                        monitoring_observations_to_payload(recovery_observations),
+                    )
+                    raw_artifact_paths.append(recovery_path)
+                    recovery_verified = all(
+                        observation.health.healthy for observation in recovery_observations
+                    )
+                except Exception as exc:
+                    recovery_verified = False
+                    recovery_verification_error = str(exc)
 
         service.close()
 
@@ -419,6 +443,8 @@ def run_chaos_live_flow(
                 plan=plan,
                 lock_key=lock_key,
                 rollback_attempted=rollback_attempted,
+                recovery_verified=recovery_verified,
+                recovery_verification_error=recovery_verification_error,
                 rollback_failed=rollback_error is not None,
                 controller_operations=service.operations,
                 error_detail=error_detail,
@@ -447,6 +473,7 @@ def run_chaos_live_flow(
         findings_count=len(findings),
         baseline_captured=baseline_captured,
         rollback_attempted=rollback_attempted,
+        recovery_verified=recovery_verified,
         aborted=aborted,
         abort_reason=abort_reason,
         error_detail=error_detail,
@@ -509,6 +536,8 @@ def _build_action_payload(
     plan: ChaosExperimentPlan,
     lock_key: str | None,
     rollback_attempted: bool,
+    recovery_verified: bool | None,
+    recovery_verification_error: str | None,
     rollback_failed: bool,
     controller_operations: Sequence[dict[str, object]],
     error_detail: str | None,
@@ -521,6 +550,8 @@ def _build_action_payload(
         "fault_type": plan.fault_type,
         "lock_key": lock_key,
         "rollback_attempted": rollback_attempted,
+        "recovery_verified": recovery_verified,
+        "recovery_verification_error": recovery_verification_error,
         "rollback_failed": rollback_failed,
         "error_detail": error_detail,
         "controller_operations": list(controller_operations),

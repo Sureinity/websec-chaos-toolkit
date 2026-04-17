@@ -36,6 +36,8 @@ class EdgeChaosRuntimeTests(unittest.TestCase):
             f"{EDGE_CHAOS_PROXY_NAME_PREFIX}-adhoc-127-0-0-1-8000",
         )
         self.assertEqual(plan.requested_url, "http://127.0.0.1:8000/app?view=full")
+        self.assertEqual(str(plan.app.base_url), "http://127.0.0.1:8000/")
+        self.assertEqual(plan.app.health_endpoint, "/app?view=full")
         self.assertEqual(plan.upstream_origin, "http://127.0.0.1:8000")
         self.assertEqual(
             plan.proxy_origin,
@@ -43,7 +45,7 @@ class EdgeChaosRuntimeTests(unittest.TestCase):
         )
         self.assertEqual(
             plan.healthcheck_url,
-            f"http://{EDGE_CHAOS_PROXY_HOST}:{EDGE_CHAOS_DEFAULT_PROXY_PORT}/",
+            f"http://{EDGE_CHAOS_PROXY_HOST}:{EDGE_CHAOS_DEFAULT_PROXY_PORT}/app?view=full",
         )
 
     def test_build_edge_chaos_proxy_plan_rejects_unknown_faults(self) -> None:

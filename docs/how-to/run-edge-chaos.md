@@ -52,10 +52,25 @@ Supported faults:
 - derives an ad hoc chaos target from the supplied URL
 - starts a managed Toxiproxy container on the operator host
 - creates one local proxy that forwards to the requested upstream
-- captures a baseline through the proxy using `GET /`
+- captures a baseline through the proxy using the requested URL path and query
 - injects one reversible fault
 - monitors the target through the proxy during the experiment window
-- rolls back the fault, removes the proxy, and stops the managed container
+- rolls back the fault, verifies recovery with a post-rollback probe, removes
+  the proxy, and stops the managed container
+
+## Summary Output
+
+The command prints an operator-focused summary that includes:
+
+- target URL and probe URL
+- upstream origin and proxy URL
+- runtime backend and probe mode
+- fault type and default fault attributes
+- baseline and experiment windows
+- abort threshold
+- status, result summary, and resilience finding count
+- baseline, rollback, and recovery verification state
+- normalized bundle and report paths
 
 ## Exit Codes
 

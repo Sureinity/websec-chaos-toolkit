@@ -6,8 +6,6 @@ The bootstrap scaffold exposes the implemented public command tree:
 toolkit audit <url> [--runtime host|container]
 toolkit edge-chaos <url> [--fault <name>]
 toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
-toolkit edge-chaos <url> [--fault <name>]
-toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
 toolkit validate --app <id> --env <env>
 toolkit doctor
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
@@ -22,9 +20,11 @@ Current command behavior:
   safe remote-web audit, writes run artifacts under `outputs/<run-id>/`, and
   exits with `0`, `1`, or `2`
 - `toolkit edge-chaos` derives an ad hoc chaos target from the supplied URL,
-  starts a managed local Toxiproxy container, creates a local proxy, runs one
-  reversible edge-chaos experiment through that proxy, writes run artifacts
-  under `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
+  starts a managed local Toxiproxy container, creates a local proxy, probes
+  the requested URL path through that proxy, runs one reversible edge-chaos
+  experiment, reports runtime, fault, rollback, and recovery summary fields,
+  writes run artifacts under `outputs/<run-id>/`, and exits with `0`, `1`,
+  or `2`
 - `toolkit code-audit` derives an ad hoc source-tree target from the supplied
   path, runs Semgrep and/or Trivy with the built-in `source_tree` profile, and
   selects runtime as follows:

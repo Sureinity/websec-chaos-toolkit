@@ -117,8 +117,6 @@ These instructions apply to this repository directory. If a deeper
   - `toolkit audit <url> [--runtime host|container]`
   - `toolkit edge-chaos <url> [--fault <name>]`
   - `toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]`
-  - `toolkit edge-chaos <url> [--fault <name>]`
-  - `toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]`
   - `toolkit validate --app <id> --env <env>`
   - `toolkit doctor`
   - `toolkit pentest run --app <id> --env <env> --profile <name>`
@@ -131,8 +129,10 @@ These instructions apply to this repository directory. If a deeper
     `2`; auto-selects `container` then `host` runtime when possible
   - `toolkit edge-chaos` derives an ad hoc chaos target from a single URL,
     starts a managed local Toxiproxy container, creates one local proxy,
-    monitors `GET /` through that proxy, injects one reversible fault, writes
-    raw artifacts, normalized findings, and a Markdown summary under
+    probes the requested URL path through that proxy, injects one reversible
+    fault, verifies rollback recovery, and writes raw artifacts, normalized
+    findings, and a Markdown summary under `outputs/<run-id>/`, and exits with
+    `0`, `1`, or `2`
   - `toolkit code-audit` derives an ad hoc source-tree target from one local
     path, runs Semgrep and/or Trivy using the built-in `source_tree` profile,
     selects host or container runtime for the selected tools, writes raw

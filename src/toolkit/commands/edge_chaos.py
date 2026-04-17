@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from toolkit.auth.errors import AuthRuntimeError
 from toolkit.chaos.contracts import ChaosRunStatus
 from toolkit.chaos.edge_runtime import (
+    EDGE_CHAOS_RUNTIME_BACKEND,
     EDGE_CHAOS_SUPPORTED_FAULT_TYPES,
     EdgeChaosMonitoringClient,
     EdgeChaosRuntimeError,
@@ -16,7 +17,9 @@ from toolkit.chaos.edge_runtime import (
     build_edge_chaos_profile,
     build_edge_chaos_proxy_plan,
 )
+from toolkit.chaos.monitoring import health_check_url
 from toolkit.chaos.runner import run_chaos_live_flow
+from toolkit.chaos.service import default_fault_attributes
 from toolkit.core.exits import ExitCode
 
 
@@ -89,16 +92,87 @@ def register(root_app: typer.Typer) -> None:
         else:
             typer.echo("Edge chaos completed.")
 
-        typer.echo(f"Target: {plan.requested_url}")
-        typer.echo(f"Fault: {plan.fault_type}")
-        typer.echo(f"Proxy: {prepared_proxy.proxy_origin}")
         typer.echo(f"Run: {summary.run_id}")
+        typer.echo(f"Target URL: {plan.requested_url}")
+        typer.echo(f"Probe URL: {health_check_url(plan.app)}")
+        typer.echo(f"Upstream origin: {plan.upstream_origin}")
+        typer.echo(f"Proxy URL: {prepared_proxy.proxy_origin}")
+        typer.echo(f"Runtime: {EDGE_CHAOS_RUNTIME_BACKEND}")
+        typer.echo(f"Probe mode: {_probe_mode(plan.app.metrics is not None)}")
+        typer.echo(f"Fault: {plan.fault_type}")
+        typer.echo(f"Fault attributes: {_format_fault_attributes(plan.fault_type)}")
+        typer.echo(f"Baseline window: {summary.experiment_plan.baseline_duration_seconds}s")
+        typer.echo(f"Experiment window: {summary.experiment_plan.experiment_duration_seconds}s")
+        typer.echo(
+            "Abort threshold: "
+            f"{summary.experiment_plan.consecutive_health_failures} consecutive health failures"
+        )
         typer.echo(f"Status: {summary.status}")
-        typer.echo(f"Findings: {summary.findings_count}")
-        typer.echo(f"Baseline captured: {summary.baseline_captured}")
-        typer.echo(f"Rollback attempted: {summary.rollback_attempted}")
+        typer.echo(f"Result: {_result_summary(summary.status, summary.recovery_verified)}")
+        typer.echo(f"Resilience findings: {summary.findings_count}")
+        typer.echo(f"Baseline captured: {_format_state(summary.baseline_captured)}")
+        typer.echo(f"Rollback attempted: {_format_state(summary.rollback_attempted)}")
+        typer.echo(f"Recovery verified: {_format_state(summary.recovery_verified)}")
         if summary.abort_reason is not None:
             typer.echo(f"Abort reason: {summary.abort_reason}")
         typer.echo(f"Normalized bundle: {summary.normalized_bundle_path}")
         typer.echo(f"Report: {summary.report_path}")
         raise typer.Exit(code=summary.exit_code)
+
+
+def _format_fault_attributes(fault_type: str) -> str:
+    attributes = default_fault_attributes(fault_type)  # type: ignore[arg-type]
+    if not attributes:
+        return "none"
+
+    formatted: list[str] = []
+    for key, value in attributes.items():
+        if key == "latency_ms":
+            formatted.append(f"latency={value}ms")
+        elif key == "jitter_ms":
+            formatted.append(f"jitter={value}ms")
+        elif key == "timeout_ms":
+            formatted.append(f"timeout={value}ms")
+        elif key == "rate_kbps":
+            formatted.append(f"rate={value}kbps")
+        elif key == "rate_percent":
+            formatted.append(f"rate={value}%")
+        else:
+            formatted.append(f"{key}={value}")
+    return ", ".join(formatted)
+
+
+def _probe_mode(has_metrics: bool) -> str:
+    if has_metrics:
+        return "health-and-metrics"
+    return "health-only"
+
+
+def _format_state(value: bool | None) -> str:
+    if value is None:
+        return "not checked"
+    if value:
+        return "yes"
+    return "no"
+
+
+def _result_summary(status: ChaosRunStatus, recovery_verified: bool | None) -> str:
+    if status == ChaosRunStatus.FAILED:
+        return "experiment failed before completion"
+    if status == ChaosRunStatus.RESILIENCE_FAILURE:
+        if recovery_verified is False:
+            return (
+                "resilience threshold breached during experiment and "
+                "recovery could not be verified"
+            )
+        if recovery_verified is True:
+            return (
+                "resilience threshold breached during experiment and "
+                "service recovered after rollback"
+            )
+        return "resilience threshold breached during experiment"
+    if recovery_verified is False:
+        return "no resilience threshold breach observed, but recovery could not be verified"
+    if recovery_verified is True:
+        return "no resilience threshold breach observed and service recovered after rollback"
+    return "no resilience threshold breach observed"

@@ -49,6 +49,7 @@ class EdgeChaosCommandTests(unittest.TestCase):
             experiment_plan=_plan(),
             baseline_captured=True,
             rollback_attempted=True,
+            recovery_verified=True,
             normalized_bundle_path=Path("/tmp/outputs/run-1/normalized/findings.json"),
             report_path=Path("/tmp/outputs/run-1/reports/executive-summary.md"),
         )
@@ -72,9 +73,27 @@ class EdgeChaosCommandTests(unittest.TestCase):
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         self.assertIn("Edge chaos completed.", result.stdout)
-        self.assertIn("Target: http://127.0.0.1:8000/", result.stdout)
+        self.assertIn("Run: run-1", result.stdout)
+        self.assertIn("Target URL: http://127.0.0.1:8000/", result.stdout)
+        self.assertIn("Probe URL: http://127.0.0.1:8000/", result.stdout)
+        self.assertIn("Upstream origin: http://127.0.0.1:8000", result.stdout)
+        self.assertIn("Proxy URL: http://127.0.0.1:18080", result.stdout)
+        self.assertIn("Runtime: container", result.stdout)
+        self.assertIn("Probe mode: health-only", result.stdout)
         self.assertIn("Fault: latency", result.stdout)
-        self.assertIn("Proxy: http://127.0.0.1:18080", result.stdout)
+        self.assertIn("Fault attributes: latency=250ms, jitter=25ms", result.stdout)
+        self.assertIn("Baseline window: 5s", result.stdout)
+        self.assertIn("Experiment window: 10s", result.stdout)
+        self.assertIn("Abort threshold: 2 consecutive health failures", result.stdout)
+        self.assertIn(
+            "Result: no resilience threshold breach observed "
+            "and service recovered after rollback",
+            result.stdout,
+        )
+        self.assertIn("Resilience findings: 0", result.stdout)
+        self.assertIn("Baseline captured: yes", result.stdout)
+        self.assertIn("Rollback attempted: yes", result.stdout)
+        self.assertIn("Recovery verified: yes", result.stdout)
         runtime.prepare_proxy.assert_called_once()
         runtime.close.assert_called_once()
         kwargs = run_flow.call_args.kwargs
@@ -98,6 +117,7 @@ class EdgeChaosCommandTests(unittest.TestCase):
             experiment_plan=_plan(),
             baseline_captured=True,
             rollback_attempted=True,
+            recovery_verified=False,
             findings_count=1,
             aborted=True,
             abort_reason="consecutive health failures exceeded threshold",
@@ -122,6 +142,13 @@ class EdgeChaosCommandTests(unittest.TestCase):
 
         self.assertEqual(result.exit_code, ExitCode.FINDINGS_OR_FAILURE)
         self.assertIn("Status: resilience_failure", result.stdout)
+        self.assertIn(
+            "Result: resilience threshold breached during experiment "
+            "and recovery could not be verified",
+            result.stdout,
+        )
+        self.assertIn("Resilience findings: 1", result.stdout)
+        self.assertIn("Recovery verified: no", result.stdout)
         self.assertIn("Abort reason:", result.stdout)
 
     def test_edge_chaos_reports_runtime_failures(self) -> None:

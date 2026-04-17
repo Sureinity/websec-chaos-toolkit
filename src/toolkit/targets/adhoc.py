@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import HttpUrl, TypeAdapter
 
@@ -43,9 +44,32 @@ def build_url_audit_app(url: str | HttpUrl) -> AppConfig:
 
 
 def build_url_edge_chaos_app(url: str | HttpUrl) -> AppConfig:
-    """Build a validated AppConfig for a future URL-first edge-chaos run."""
+    """Build a validated AppConfig for a URL-first edge-chaos run.
 
-    return _build_url_app(url, enabled_modules=["chaos"])
+    Edge-chaos monitors the requested path through a managed proxy, so the app
+    base URL is normalized to the upstream origin while health_endpoint stores
+    the request path and query to probe.
+    """
+
+    resolved_url = _resolve_http_url(url)
+    parsed = urlsplit(str(resolved_url))
+    host = resolved_url.host
+    origin = urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
+
+    health_endpoint = parsed.path or "/"
+    if parsed.query:
+        health_endpoint = f"{health_endpoint}?{parsed.query}"
+
+    return AppConfig(
+        id=derive_url_audit_app_id(resolved_url),
+        environment=URL_AUDIT_DEFAULT_ENVIRONMENT,
+        base_url=origin,
+        host_targets=[host],
+        target_allowlist=[host],
+        auth=AuthConfig(method="none"),
+        health_endpoint=health_endpoint,
+        enabled_modules=["chaos"],
+    )
 
 
 def build_url_audit_profile() -> PentestProfile:
