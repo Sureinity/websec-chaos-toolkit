@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 from toolkit.audit.auth import AuditAuthMode
 from toolkit.audit.discovery import KatanaDiscoveryResult
 from toolkit.audit.fingerprint import AuditFingerprintError, HttpxFingerprint
+from toolkit.auth.session import AuthSession
 from toolkit.cli import app
 from toolkit.core.exits import ExitCode
 from toolkit.pentest.contracts import PentestRunStatus, PentestRunSummary
@@ -71,6 +72,20 @@ def _discovery(tmp_dir: Path) -> KatanaDiscoveryResult:
     )
 
 
+def _auth_session(method: str = "none") -> AuthSession:
+    if method == "api_login":
+        return AuthSession(
+            method="api_login",
+            headers={"Authorization": "Bearer token"},
+            provenance={
+                "source": "api_login",
+                "login_url": "http://127.0.0.1:8000/api/login",
+                "auth_result": "bearer_json",
+            },
+        )
+    return AuthSession(method="none", provenance={"source": "none"})
+
+
 class AuditCommandTests(unittest.TestCase):
     def test_audit_succeeds_without_yaml_using_auto_selected_runtime(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -86,7 +101,7 @@ class AuditCommandTests(unittest.TestCase):
                 ),
                 patch(
                     "toolkit.commands.audit.resolve_auth_session",
-                    return_value=unittest.mock.Mock(headers={}, cookies={}),
+                    return_value=_auth_session(),
                 ),
                 patch(
                     "toolkit.commands.audit.run_katana_discovery",
@@ -119,7 +134,7 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["profile"].name, "adhoc-safe-web-baseline")
         self.assertEqual(kwargs["profile"].assessment_mode, "remote_web")
         self.assertIn("context", kwargs)
-        self.assertEqual(len(kwargs["extra_raw_artifact_paths"]), 3)
+        self.assertEqual(len(kwargs["extra_raw_artifact_paths"]), 4)
         self.assertEqual(kwargs["extra_raw_artifact_paths"][0].name, "fingerprint.json")
         self.assertEqual(kwargs["target_urls"]["zap"][1], "http://127.0.0.1:8000/admin")
         self.assertEqual(kwargs["target_urls"]["nuclei"][1], "http://127.0.0.1:8000/admin")
@@ -191,7 +206,7 @@ class AuditCommandTests(unittest.TestCase):
                 ),
                 patch(
                     "toolkit.commands.audit.resolve_auth_session",
-                    return_value=unittest.mock.Mock(headers={}, cookies={}),
+                    return_value=_auth_session("api_login"),
                 ),
                 patch(
                     "toolkit.commands.audit.run_katana_discovery",
@@ -236,6 +251,10 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["app"].auth.login_url.host, "127.0.0.1")
         self.assertEqual(kwargs["app"].auth.login_content_type, "json")
         self.assertEqual(kwargs["app"].auth.auth_result, "bearer_json")
+        self.assertIn("Auth mode: api_login", result.stdout)
+        self.assertIn("Auth source: api_login", result.stdout)
+        self.assertIn("Fingerprint final URL: http://127.0.0.1:8000/", result.stdout)
+        self.assertIn("Discovery routes: 2", result.stdout)
 
     def test_audit_honors_explicit_runtime_selection(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -251,7 +270,7 @@ class AuditCommandTests(unittest.TestCase):
                 ),
                 patch(
                     "toolkit.commands.audit.resolve_auth_session",
-                    return_value=unittest.mock.Mock(headers={}, cookies={}),
+                    return_value=_auth_session(),
                 ),
                 patch(
                     "toolkit.commands.audit.run_katana_discovery",

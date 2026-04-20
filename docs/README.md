@@ -10,10 +10,11 @@ The documentation scaffold follows the Diataxis framework:
 Preferred URL-first onboarding path:
 
 1. `docs/tutorials/quickstart-url-first.md`
-2. `docs/how-to/run-url-audit.md`
-3. `docs/how-to/run-edge-chaos.md`
-3. `docs/reference/cli.md`
-4. `docs/reference/output-artifacts.md`
+2. `docs/tutorials/quickstart-authenticated-audit.md`
+3. `docs/how-to/run-url-audit.md`
+4. `docs/how-to/run-authenticated-url-audit.md`
+5. `docs/reference/cli.md`
+6. `docs/reference/output-artifacts.md`
 
 Preferred code-audit onboarding path:
 
@@ -65,6 +66,9 @@ The container runtime abstraction is explained in
 The code-audit command model is explained in
 `docs/explanation/code-audit-model.md`.
 
+The URL-first audit model is explained in
+`docs/explanation/url-audit-model.md`.
+
 The Compose-based operator workflow and service topology are explained in
 `docs/explanation/compose-workflow-model.md`.
 
@@ -87,8 +91,7 @@ Operator run guides live in:
 - `docs/how-to/run-url-audit.md`
 - `docs/how-to/run-edge-chaos.md`
 - `docs/how-to/run-code-audit.md`
-- `docs/how-to/run-edge-chaos.md`
-- `docs/how-to/run-code-audit.md`
+- `docs/how-to/run-authenticated-url-audit.md`
 - `docs/how-to/run-with-compose.md`
 - `docs/how-to/run-validation.md`
 - `docs/how-to/run-pentest.md`

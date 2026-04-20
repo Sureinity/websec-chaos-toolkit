@@ -3,7 +3,7 @@
 from collections import defaultdict
 from pathlib import Path
 
-from toolkit.audit.fingerprint import load_httpx_fingerprint
+from toolkit.audit import load_audit_auth_context, load_discovered_routes, load_httpx_fingerprint
 from toolkit.results.io import read_normalized_results_from_path
 from toolkit.results.models import NormalizedResult
 
@@ -100,46 +100,101 @@ def build_markdown_summary_from_run_dir(run_dir: Path) -> str:
 
     results = read_normalized_results_from_path(normalized_results_bundle_path(run_dir))
     summary = build_markdown_summary(run_id=run_dir.name, results=results)
-    fingerprint = load_httpx_fingerprint(run_dir)
-    if fingerprint is None:
-        return summary
-
     lines = summary.splitlines()
-    insertion = [
-        "## Target Fingerprint",
-        "",
-        f"- Requested URL: {fingerprint.requested_url}",
-        f"- Final URL: {fingerprint.final_url}",
-        f"- Reachable: {'yes' if fingerprint.reachable else 'no'}",
-        (
-            "- Status code: "
-            + (str(fingerprint.status_code) if fingerprint.status_code is not None else "n/a")
-        ),
-        f"- Title: {fingerprint.title or 'n/a'}",
-        f"- Server: {fingerprint.server or 'n/a'}",
-        (
-            "- Technology hints: "
-            + (", ".join(fingerprint.technology_hints) if fingerprint.technology_hints else "n/a")
-        ),
-    ]
-    if fingerprint.redirect_chain:
-        insertion.append(
-            "- Redirect chain: "
-            + " -> ".join(f"{item.url} ({item.status_code})" for item in fingerprint.redirect_chain)
-        )
-    if fingerprint.tls is not None:
-        insertion.extend(
+    insertion_blocks: list[list[str]] = []
+
+    fingerprint = load_httpx_fingerprint(run_dir)
+    if fingerprint is not None:
+        block = [
+            "## Target Fingerprint",
+            "",
+            f"- Requested URL: {fingerprint.requested_url}",
+            f"- Final URL: {fingerprint.final_url}",
+            f"- Reachable: {'yes' if fingerprint.reachable else 'no'}",
+            (
+                "- Status code: "
+                + (str(fingerprint.status_code) if fingerprint.status_code is not None else "n/a")
+            ),
+            f"- Title: {fingerprint.title or 'n/a'}",
+            f"- Server: {fingerprint.server or 'n/a'}",
+            (
+                "- Technology hints: "
+                + (
+                    ", ".join(fingerprint.technology_hints)
+                    if fingerprint.technology_hints
+                    else "n/a"
+                )
+            ),
+        ]
+        if fingerprint.redirect_chain:
+            block.append(
+                "- Redirect chain: "
+                + " -> ".join(
+                    f"{item.url} ({item.status_code})" for item in fingerprint.redirect_chain
+                )
+            )
+        if fingerprint.tls is not None:
+            block.extend(
+                [
+                    f"- TLS enabled: {'yes' if fingerprint.tls.enabled else 'no'}",
+                    f"- HTTP version: {fingerprint.tls.http_version or 'n/a'}",
+                    (
+                        "- Strict-Transport-Security: "
+                        + (fingerprint.tls.strict_transport_security or "n/a")
+                    ),
+                ]
+            )
+        block.append("")
+        insertion_blocks.append(block)
+
+    discovered_routes = load_discovered_routes(run_dir)
+    if discovered_routes:
+        insertion_blocks.append(
             [
-                f"- TLS enabled: {'yes' if fingerprint.tls.enabled else 'no'}",
-                f"- HTTP version: {fingerprint.tls.http_version or 'n/a'}",
-                (
-                    "- Strict-Transport-Security: "
-                    + (fingerprint.tls.strict_transport_security or "n/a")
-                ),
+                "## Discovery Coverage",
+                "",
+                f"- Seed URL: {discovered_routes[0]}",
+                f"- Routes in scope: {len(discovered_routes)}",
+                "- Sample routes: " + ", ".join(discovered_routes[:5]),
+                "",
             ]
         )
-    insertion.append("")
-    return "\n".join(lines[:3] + insertion + lines[3:])
+
+    auth_context = load_audit_auth_context(run_dir)
+    if auth_context is not None:
+        provenance = auth_context.get("provenance", {})
+        block = [
+            "## Auth Context",
+            "",
+            f"- Auth mode: {auth_context.get('auth_mode', 'none')}",
+            f"- Authenticated: {'yes' if auth_context.get('is_authenticated') else 'no'}",
+        ]
+        if isinstance(provenance, dict):
+            block.append(f"- Auth source: {provenance.get('source', 'n/a')}")
+            for key in (
+                "login_url",
+                "login_content_type",
+                "auth_result",
+                "auth_result_path",
+                "session_header",
+                "token_env_var",
+                "cookie_name",
+                "cookie_value_env_var",
+                "username_env_var",
+                "password_env_var",
+            ):
+                if key in provenance:
+                    block.append(f"- {key}: {provenance[key]}")
+        block.append("")
+        insertion_blocks.append(block)
+
+    if not insertion_blocks:
+        return summary
+
+    flattened: list[str] = []
+    for block in insertion_blocks:
+        flattened.extend(block)
+    return "\n".join(lines[:3] + flattened + lines[3:])
 
 
 def write_markdown_summary(run_dir: Path) -> Path:

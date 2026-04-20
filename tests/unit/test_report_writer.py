@@ -236,6 +236,29 @@ class ReportBuilderTests(unittest.TestCase):
                 + "\n",
                 encoding="utf-8",
             )
+            (context.raw_dir / "katana").mkdir(parents=True, exist_ok=True)
+            (context.raw_dir / "katana" / "discovered-routes.txt").write_text(
+                "https://target.internal/\nhttps://target.internal/dashboard\n",
+                encoding="utf-8",
+            )
+            (context.raw_dir / "audit").mkdir(parents=True, exist_ok=True)
+            (context.raw_dir / "audit" / "auth-context.json").write_text(
+                json.dumps(
+                    {
+                        "auth_mode": "api_login",
+                        "is_authenticated": True,
+                        "provenance": {
+                            "source": "api_login",
+                            "login_url": "https://target.internal/api/login",
+                            "auth_result": "bearer_json",
+                        },
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
             write_normalized_results(context, [])
 
             summary = build_markdown_summary_from_run_dir(context.run_dir)
@@ -243,3 +266,7 @@ class ReportBuilderTests(unittest.TestCase):
         self.assertIn("## Target Fingerprint", summary)
         self.assertIn("Requested URL: https://target.internal/", summary)
         self.assertIn("Technology hints: server: nginx", summary)
+        self.assertIn("## Discovery Coverage", summary)
+        self.assertIn("Routes in scope: 2", summary)
+        self.assertIn("## Auth Context", summary)
+        self.assertIn("Auth mode: api_login", summary)

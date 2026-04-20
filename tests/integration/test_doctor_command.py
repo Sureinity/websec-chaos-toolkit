@@ -64,6 +64,8 @@ class DoctorCommandTests(unittest.TestCase):
             container=AuditRuntimeReadiness(
                 mode=RuntimeMode.CONTAINER,
                 tool_statuses=(
+                    _tool_status(tool="httpx", binary="python:httpx", available=True),
+                    _tool_status(tool="katana", binary="katana", available=True),
                     _tool_status(tool="zap", binary="zap-baseline.py", available=True),
                     _tool_status(tool="nuclei", binary="nuclei", available=True),
                     _tool_status(tool="nmap", binary="nmap", available=True),
@@ -72,6 +74,8 @@ class DoctorCommandTests(unittest.TestCase):
             host=AuditRuntimeReadiness(
                 mode=RuntimeMode.HOST,
                 tool_statuses=(
+                    _tool_status(tool="httpx", binary="python:httpx", available=True),
+                    _tool_status(tool="katana", binary="katana", available=True),
                     _tool_status(
                         tool="zap",
                         binary="zap-baseline.py",
@@ -145,6 +149,13 @@ class DoctorCommandTests(unittest.TestCase):
             container=AuditRuntimeReadiness(
                 mode=RuntimeMode.CONTAINER,
                 tool_statuses=(
+                    _tool_status(tool="httpx", binary="python:httpx", available=True),
+                    _tool_status(
+                        tool="katana",
+                        binary="katana",
+                        available=False,
+                        reason="docker binary was not found on PATH",
+                    ),
                     _tool_status(
                         tool="zap",
                         binary="zap-baseline.py",
@@ -168,6 +179,13 @@ class DoctorCommandTests(unittest.TestCase):
             host=AuditRuntimeReadiness(
                 mode=RuntimeMode.HOST,
                 tool_statuses=(
+                    _tool_status(tool="httpx", binary="python:httpx", available=True),
+                    _tool_status(
+                        tool="katana",
+                        binary="katana",
+                        available=False,
+                        reason="katana binary was not found on PATH",
+                    ),
                     _tool_status(
                         tool="zap",
                         binary="zap-baseline.py",

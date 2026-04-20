@@ -10,6 +10,7 @@ from toolkit.audit.auth import (
 from toolkit.audit.discovery import (
     AuditDiscoveryError,
     KatanaDiscoveryResult,
+    load_discovered_routes,
     run_katana_discovery,
 )
 from toolkit.audit.fingerprint import (
@@ -19,6 +20,7 @@ from toolkit.audit.fingerprint import (
     load_httpx_fingerprint,
     write_httpx_fingerprint,
 )
+from toolkit.audit.metadata import load_audit_auth_context, write_audit_auth_context
 
 __all__ = [
     "AuditDiscoveryError",
@@ -31,7 +33,10 @@ __all__ = [
     "KatanaDiscoveryResult",
     "build_url_audit_auth_config",
     "capture_httpx_fingerprint",
+    "load_audit_auth_context",
+    "load_discovered_routes",
     "load_httpx_fingerprint",
     "run_katana_discovery",
+    "write_audit_auth_context",
     "write_httpx_fingerprint",
 ]

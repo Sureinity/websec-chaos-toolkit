@@ -16,6 +16,7 @@ from toolkit.audit import (
     build_url_audit_auth_config,
     capture_httpx_fingerprint,
     run_katana_discovery,
+    write_audit_auth_context,
     write_httpx_fingerprint,
 )
 from toolkit.auth.bootstrap import resolve_auth_session
@@ -151,6 +152,7 @@ def register(root_app: typer.Typer) -> None:
             fingerprint_path = write_httpx_fingerprint(context.raw_dir, fingerprint)
             selection = select_audit_runtime(preferred_mode=runtime)
             auth_session = resolve_auth_session(app_config)
+            auth_context_path = write_audit_auth_context(context.raw_dir, auth_session)
             discovery = run_katana_discovery(
                 seed_url=str(app_config.base_url),
                 raw_dir=context.raw_dir,
@@ -166,6 +168,7 @@ def register(root_app: typer.Typer) -> None:
                 context=context,
                 extra_raw_artifact_paths=(
                     fingerprint_path,
+                    auth_context_path,
                     discovery.raw_output_path,
                     discovery.route_manifest_path,
                 ),
@@ -195,6 +198,12 @@ def register(root_app: typer.Typer) -> None:
         typer.echo(f"Run: {summary.run_id}")
         typer.echo(f"Status: {summary.status}")
         typer.echo(f"Runtime: {selection.mode}")
+        typer.echo(f"Auth mode: {auth_session.method}")
+        typer.echo(f"Auth source: {auth_session.provenance.get('source', 'n/a')}")
+        typer.echo(f"Fingerprint final URL: {fingerprint.final_url}")
+        typer.echo(f"Fingerprint title: {fingerprint.title or 'n/a'}")
+        typer.echo(f"Fingerprint server: {fingerprint.server or 'n/a'}")
+        typer.echo(f"Discovery routes: {len(discovery.routes)}")
         typer.echo(f"Findings: {summary.findings_count}")
         typer.echo(f"Actionable findings: {summary.actionable_findings_count}")
         typer.echo(f"Normalized bundle: {summary.normalized_bundle_path}")

@@ -7,7 +7,9 @@ targets.
 Current state:
 
 - `toolkit audit` runs a zero-config safe web audit from a single URL and
-  auto-selects `container` or `host` runtime readiness
+  auto-selects `container` or `host` runtime readiness, supports optional
+  auth modes, fingerprints the target with `httpx`, and discovers routes with
+  `katana`
 - `toolkit edge-chaos` runs a managed local edge-chaos experiment from a
   single URL
 - `toolkit code-audit` runs a zero-config source-tree audit from a local path
@@ -100,6 +102,7 @@ Start here when you want:
 Read next:
 
 - `docs/tutorials/quickstart-url-first.md`
+- `docs/tutorials/quickstart-authenticated-audit.md`
 - `docs/how-to/run-url-audit.md`
 - `docs/how-to/run-edge-chaos.md`
 
@@ -172,6 +175,7 @@ uv run toolkit report build --run-id <existing-run-id>
 Task-oriented guides:
 
 - `docs/how-to/run-url-audit.md` — zero-config audit from a URL
+- `docs/how-to/run-authenticated-url-audit.md` — authenticated URL audit
 - `docs/how-to/run-edge-chaos.md` — managed local edge-chaos from a URL
 - `docs/how-to/run-code-audit.md` — zero-config audit from a source tree
 - `docs/how-to/run-with-compose.md` — Compose-based operator workflow
@@ -194,7 +198,7 @@ Reference and rationale:
 The public CLI surface is implemented and uses one entrypoint:
 
 ```text
-toolkit audit <url> [--runtime host|container]
+toolkit audit <url> [--runtime host|container] [--auth-mode <mode>] [mode-specific auth flags]
 toolkit edge-chaos <url> [--fault <name>]
 toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
 toolkit validate --app <id> --env <env>
@@ -204,8 +208,9 @@ toolkit chaos run --app <id> --env <env> --profile <name>
 toolkit report build --run-id <id>
 ```
 
-`toolkit audit` runs a zero-config remote web audit from a URL and writes run
-artifacts.
+`toolkit audit` runs a zero-config remote web audit from a URL, optionally
+authenticates, fingerprints the target, discovers same-origin routes, and
+writes run artifacts.
 `toolkit edge-chaos` runs one managed local edge-chaos experiment from a URL
 and writes run artifacts with probe, fault, rollback, and recovery summary
 fields.

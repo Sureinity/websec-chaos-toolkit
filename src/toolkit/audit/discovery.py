@@ -125,6 +125,17 @@ def _load_same_origin_routes(output_path: Path, *, seed_url: str) -> list[str]:
     return [seed_url, *sorted(route for route in same_origin if route != seed_url)]
 
 
+def load_discovered_routes(run_dir: Path) -> tuple[str, ...]:
+    """Load the deterministic discovered-route manifest when present."""
+
+    path = run_dir / "raw" / "katana" / "discovered-routes.txt"
+    if not path.is_file():
+        return ()
+    return tuple(
+        line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    )
+
+
 def _extract_discovered_url(payload: dict[str, object]) -> str | None:
     request = payload.get("request")
     if isinstance(request, dict):
