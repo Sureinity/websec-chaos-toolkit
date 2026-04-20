@@ -13,6 +13,7 @@ from toolkit.adapters.base import (
     build_success_result,
 )
 from toolkit.adapters.process import check_binary_available
+from toolkit.auth.session import AuthSession
 from toolkit.config.models import AppConfig, PentestToolSettings
 from toolkit.results.models import NormalizedResult
 from toolkit.results.normalizers import build_normalized_result
@@ -47,6 +48,8 @@ class ZapAdapter:
     app: AppConfig
     settings: PentestToolSettings
     output_path: Path
+    target_url: str | None = None
+    auth_session: AuthSession | None = None
 
     name: str = "zap"
     binary: str = "zap-baseline.py"
@@ -58,17 +61,22 @@ class ZapAdapter:
         if not self.settings.safe_mode:
             raise ValueError("zap adapter refuses to build commands when safe_mode is disabled.")
 
+        command = [
+            self.binary,
+            "-t",
+            self.target_url or str(self.app.base_url),
+            "-J",
+            str(self.output_path),
+            "-m",
+            "1",
+        ]
+        zap_options = _build_replacer_options(self.auth_session)
+        if zap_options:
+            command.extend(["-z", " ".join(zap_options)])
+
         return ToolExecution(
             tool=self.name,
-            command=(
-                self.binary,
-                "-t",
-                str(self.app.base_url),
-                "-J",
-                str(self.output_path),
-                "-m",
-                "1",
-            ),
+            command=tuple(command),
             timeout_seconds=600.0,
         )
 
@@ -170,3 +178,28 @@ def _build_evidence(alert: dict[str, object]) -> list[str]:
 def _build_remediation_summary(alert: dict[str, object]) -> str:
     name = alert.get("name", "the identified issue")
     return f"Review and remediate {name}."
+
+
+def _build_replacer_options(auth_session: AuthSession | None) -> tuple[str, ...]:
+    if auth_session is None:
+        return ()
+
+    header_values = dict(auth_session.headers)
+    if auth_session.cookies:
+        cookie_header = "; ".join(f"{name}={value}" for name, value in auth_session.cookies.items())
+        header_values["Cookie"] = cookie_header
+
+    options: list[str] = []
+    for index, (header, value) in enumerate(header_values.items()):
+        prefix = f"replacer.full_list({index})"
+        options.extend(
+            [
+                f"-config {prefix}.description=toolkit-auth-{index}",
+                f"-config {prefix}.enabled=true",
+                f"-config {prefix}.matchtype=REQ_HEADER",
+                f"-config {prefix}.matchstr={header}",
+                f"-config {prefix}.regex=false",
+                f"-config {prefix}.replacement={value}",
+            ]
+        )
+    return tuple(options)

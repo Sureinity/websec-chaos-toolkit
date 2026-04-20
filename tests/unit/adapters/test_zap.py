@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from toolkit.adapters.base import AdapterAvailability
 from toolkit.adapters.zap import ZapAdapter
+from toolkit.auth.session import AuthSession
 from toolkit.config.models import AppConfig, AuthConfig, PentestToolSettings
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "fixtures" / "zap"
@@ -74,6 +75,26 @@ class ZapAdapterTests(unittest.TestCase):
             ),
         )
         self.assertEqual(execution.timeout_seconds, 600.0)
+
+    def test_build_execution_supports_explicit_target_and_auth_headers(self) -> None:
+        adapter = ZapAdapter(
+            app=build_app(),
+            settings=build_settings(),
+            output_path=Path("/tmp/run/raw/zap/results.json"),
+            target_url="http://localhost:8000/admin",
+            auth_session=AuthSession(
+                method="api_login",
+                headers={"Authorization": "Bearer token"},
+                cookies={"sessionid": "cookie-value"},
+            ),
+        )
+
+        execution = adapter.build_execution()
+
+        self.assertEqual(execution.command[2], "http://localhost:8000/admin")
+        self.assertIn("-z", execution.command)
+        self.assertIn("matchstr=Authorization", execution.command[-1])
+        self.assertIn("matchstr=Cookie", execution.command[-1])
 
     def test_build_execution_blocks_when_safe_mode_is_disabled(self) -> None:
         adapter = ZapAdapter(

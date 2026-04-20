@@ -13,6 +13,7 @@ from toolkit.adapters.base import (
     build_success_result,
 )
 from toolkit.adapters.process import check_binary_available
+from toolkit.auth.session import AuthSession
 from toolkit.config.models import AppConfig, PentestToolSettings
 from toolkit.results.models import NormalizedResult
 from toolkit.results.normalizers import build_normalized_result
@@ -25,6 +26,8 @@ class NucleiAdapter:
     app: AppConfig
     settings: PentestToolSettings
     output_path: Path
+    target_urls: tuple[str, ...] | None = None
+    auth_session: AuthSession | None = None
 
     name: str = "nuclei"
     binary: str = "nuclei"
@@ -38,19 +41,29 @@ class NucleiAdapter:
 
         command = [
             self.binary,
-            "-target",
-            str(self.app.base_url),
             "-jsonl",
             "-silent",
             "-o",
             str(self.output_path),
         ]
+        targets = self.target_urls or (str(self.app.base_url),)
+        if len(targets) == 1:
+            command.extend(["-target", targets[0]])
+        else:
+            targets_path = self.output_path.parent / "targets.txt"
+            targets_path.parent.mkdir(parents=True, exist_ok=True)
+            targets_path.write_text("\n".join(targets) + "\n", encoding="utf-8")
+            command.extend(["-l", str(targets_path)])
+
+        for header in _auth_headers(self.auth_session):
+            command.extend(["-H", header])
         for template in self.settings.allowlisted_rules:
             command.extend(["-t", template])
 
         return ToolExecution(
             tool=self.name,
             command=tuple(command),
+            cwd=self.output_path.parent,
             timeout_seconds=300.0,
             env_overrides={"NUCLEI_DISABLE_UPDATE_CHECK": "true"},
         )
@@ -145,3 +158,14 @@ def _category_from_template(template_id: str) -> str:
     if len(parts) == 2 and parts[0]:
         return parts[0]
     return "general"
+
+
+def _auth_headers(auth_session: AuthSession | None) -> tuple[str, ...]:
+    if auth_session is None:
+        return ()
+
+    headers = [f"{name}: {value}" for name, value in auth_session.headers.items()]
+    if auth_session.cookies:
+        cookie_header = "; ".join(f"{name}={value}" for name, value in auth_session.cookies.items())
+        headers.append(f"Cookie: {cookie_header}")
+    return tuple(headers)

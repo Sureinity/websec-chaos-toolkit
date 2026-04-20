@@ -11,11 +11,14 @@ from toolkit.audit import (
     ApiLoginContentType,
     AuditAuthMode,
     AuditAuthValidationError,
+    AuditDiscoveryError,
     AuditFingerprintError,
     build_url_audit_auth_config,
     capture_httpx_fingerprint,
+    run_katana_discovery,
     write_httpx_fingerprint,
 )
+from toolkit.auth.bootstrap import resolve_auth_session
 from toolkit.auth.errors import AuthRuntimeError
 from toolkit.core.exits import ExitCode
 from toolkit.core.run_context import RunRequest, prepare_run_context, utc_now
@@ -147,6 +150,13 @@ def register(root_app: typer.Typer) -> None:
             fingerprint = capture_httpx_fingerprint(str(app_config.base_url))
             fingerprint_path = write_httpx_fingerprint(context.raw_dir, fingerprint)
             selection = select_audit_runtime(preferred_mode=runtime)
+            auth_session = resolve_auth_session(app_config)
+            discovery = run_katana_discovery(
+                seed_url=str(app_config.base_url),
+                raw_dir=context.raw_dir,
+                runtime=selection.backend,
+                auth_session=auth_session,
+            )
             summary = run_pentest_live_flow(
                 project_root=project_root,
                 app=app_config,
@@ -154,9 +164,19 @@ def register(root_app: typer.Typer) -> None:
                 when=resolved_when,
                 runtime=selection.backend,
                 context=context,
-                extra_raw_artifact_paths=(fingerprint_path,),
+                extra_raw_artifact_paths=(
+                    fingerprint_path,
+                    discovery.raw_output_path,
+                    discovery.route_manifest_path,
+                ),
+                auth_session=auth_session,
+                target_urls={
+                    "zap": discovery.routes,
+                    "nuclei": discovery.routes,
+                },
             )
         except (
+            AuditDiscoveryError,
             AuditFingerprintError,
             AuditAuthValidationError,
             AuthRuntimeError,

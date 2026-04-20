@@ -7,6 +7,11 @@ from toolkit.audit.auth import (
     AuditAuthValidationError,
     build_url_audit_auth_config,
 )
+from toolkit.audit.discovery import (
+    AuditDiscoveryError,
+    KatanaDiscoveryResult,
+    run_katana_discovery,
+)
 from toolkit.audit.fingerprint import (
     AuditFingerprintError,
     HttpxFingerprint,
@@ -16,14 +21,17 @@ from toolkit.audit.fingerprint import (
 )
 
 __all__ = [
+    "AuditDiscoveryError",
     "AuditFingerprintError",
     "ApiLoginAuthResult",
     "ApiLoginContentType",
     "AuditAuthMode",
     "AuditAuthValidationError",
     "HttpxFingerprint",
+    "KatanaDiscoveryResult",
     "build_url_audit_auth_config",
     "capture_httpx_fingerprint",
     "load_httpx_fingerprint",
+    "run_katana_discovery",
     "write_httpx_fingerprint",
 ]

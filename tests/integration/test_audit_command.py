@@ -7,6 +7,7 @@ from unittest.mock import patch
 from typer.testing import CliRunner
 
 from toolkit.audit.auth import AuditAuthMode
+from toolkit.audit.discovery import KatanaDiscoveryResult
 from toolkit.audit.fingerprint import AuditFingerprintError, HttpxFingerprint
 from toolkit.cli import app
 from toolkit.core.exits import ExitCode
@@ -60,28 +61,48 @@ def _fingerprint() -> HttpxFingerprint:
     )
 
 
+def _discovery(tmp_dir: Path) -> KatanaDiscoveryResult:
+    raw_output_path = tmp_dir / "outputs" / "run" / "raw" / "katana" / "results.jsonl"
+    route_manifest_path = tmp_dir / "outputs" / "run" / "raw" / "katana" / "discovered-routes.txt"
+    return KatanaDiscoveryResult(
+        raw_output_path=raw_output_path,
+        route_manifest_path=route_manifest_path,
+        routes=("http://127.0.0.1:8000/", "http://127.0.0.1:8000/admin"),
+    )
+
+
 class AuditCommandTests(unittest.TestCase):
     def test_audit_succeeds_without_yaml_using_auto_selected_runtime(self) -> None:
         with TemporaryDirectory() as tmp:
             project_root = Path(tmp)
-            with patch(
-                "toolkit.commands.audit.select_audit_runtime",
-                return_value=_selection(RuntimeMode.CONTAINER),
-            ) as select_runtime:
-                with patch(
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ) as select_runtime,
+                patch(
                     "toolkit.commands.audit.capture_httpx_fingerprint",
                     return_value=_fingerprint(),
-                ):
-                    with patch(
-                        "toolkit.commands.audit.run_pentest_live_flow",
-                        return_value=_summary(project_root, exit_code=ExitCode.FINDINGS_OR_FAILURE),
-                    ) as run_flow:
-                        with chdir(project_root):
-                            result = RUNNER.invoke(
-                                app,
-                                ["audit", "http://127.0.0.1:8000"],
-                                catch_exceptions=False,
-                            )
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=unittest.mock.Mock(headers={}, cookies={}),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.FINDINGS_OR_FAILURE),
+                ) as run_flow,
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000"],
+                        catch_exceptions=False,
+                    )
 
         self.assertEqual(result.exit_code, ExitCode.FINDINGS_OR_FAILURE)
         self.assertIn("Audit completed.", result.stdout)
@@ -98,8 +119,10 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["profile"].name, "adhoc-safe-web-baseline")
         self.assertEqual(kwargs["profile"].assessment_mode, "remote_web")
         self.assertIn("context", kwargs)
-        self.assertEqual(len(kwargs["extra_raw_artifact_paths"]), 1)
+        self.assertEqual(len(kwargs["extra_raw_artifact_paths"]), 3)
         self.assertEqual(kwargs["extra_raw_artifact_paths"][0].name, "fingerprint.json")
+        self.assertEqual(kwargs["target_urls"]["zap"][1], "http://127.0.0.1:8000/admin")
+        self.assertEqual(kwargs["target_urls"]["nuclei"][1], "http://127.0.0.1:8000/admin")
 
     def test_audit_rejects_missing_required_auth_flags(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -157,45 +180,55 @@ class AuditCommandTests(unittest.TestCase):
     def test_audit_passes_api_login_auth_config_without_downgrading(self) -> None:
         with TemporaryDirectory() as tmp:
             project_root = Path(tmp)
-            with patch(
-                "toolkit.commands.audit.select_audit_runtime",
-                return_value=_selection(RuntimeMode.HOST),
-            ):
-                with patch(
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.HOST),
+                ),
+                patch(
                     "toolkit.commands.audit.capture_httpx_fingerprint",
                     return_value=_fingerprint(),
-                ):
-                    with patch(
-                        "toolkit.commands.audit.run_pentest_live_flow",
-                        return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
-                    ) as run_flow:
-                        with chdir(project_root):
-                            result = RUNNER.invoke(
-                                app,
-                                [
-                                    "audit",
-                                    "http://127.0.0.1:8000",
-                                    "--auth-mode",
-                                    "api_login",
-                                    "--login-url",
-                                    "http://127.0.0.1:8000/api/login",
-                                    "--username-env-var",
-                                    "TOOLKIT_AUDIT_USERNAME",
-                                    "--password-env-var",
-                                    "TOOLKIT_AUDIT_PASSWORD",
-                                    "--login-content-type",
-                                    "json",
-                                    "--login-username-field",
-                                    "username",
-                                    "--login-password-field",
-                                    "password",
-                                    "--auth-result",
-                                    "bearer_json",
-                                    "--auth-result-path",
-                                    "token",
-                                ],
-                                catch_exceptions=False,
-                            )
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=unittest.mock.Mock(headers={}, cookies={}),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ) as run_flow,
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        [
+                            "audit",
+                            "http://127.0.0.1:8000",
+                            "--auth-mode",
+                            "api_login",
+                            "--login-url",
+                            "http://127.0.0.1:8000/api/login",
+                            "--username-env-var",
+                            "TOOLKIT_AUDIT_USERNAME",
+                            "--password-env-var",
+                            "TOOLKIT_AUDIT_PASSWORD",
+                            "--login-content-type",
+                            "json",
+                            "--login-username-field",
+                            "username",
+                            "--login-password-field",
+                            "password",
+                            "--auth-result",
+                            "bearer_json",
+                            "--auth-result-path",
+                            "token",
+                        ],
+                        catch_exceptions=False,
+                    )
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         kwargs = run_flow.call_args.kwargs
@@ -207,24 +240,34 @@ class AuditCommandTests(unittest.TestCase):
     def test_audit_honors_explicit_runtime_selection(self) -> None:
         with TemporaryDirectory() as tmp:
             project_root = Path(tmp)
-            with patch(
-                "toolkit.commands.audit.select_audit_runtime",
-                return_value=_selection(RuntimeMode.HOST),
-            ) as select_runtime:
-                with patch(
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.HOST),
+                ) as select_runtime,
+                patch(
                     "toolkit.commands.audit.capture_httpx_fingerprint",
                     return_value=_fingerprint(),
-                ):
-                    with patch(
-                        "toolkit.commands.audit.run_pentest_live_flow",
-                        return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
-                    ):
-                        with chdir(project_root):
-                            result = RUNNER.invoke(
-                                app,
-                                ["audit", "https://example.internal", "--runtime", "host"],
-                                catch_exceptions=False,
-                            )
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=unittest.mock.Mock(headers={}, cookies={}),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "https://example.internal", "--runtime", "host"],
+                        catch_exceptions=False,
+                    )
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         self.assertIn("Runtime: host", result.stdout)
@@ -269,15 +312,19 @@ class AuditCommandTests(unittest.TestCase):
                 return_value=_fingerprint(),
             ):
                 with patch(
-                    "toolkit.commands.audit.select_audit_runtime",
-                    side_effect=RuntimeSelectionError("No audit runtime is ready."),
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
                 ):
-                    with chdir(project_root):
-                        result = RUNNER.invoke(
-                            app,
-                            ["audit", "http://127.0.0.1:8000"],
-                            catch_exceptions=False,
-                        )
+                    with patch(
+                        "toolkit.commands.audit.select_audit_runtime",
+                        side_effect=RuntimeSelectionError("No audit runtime is ready."),
+                    ):
+                        with chdir(project_root):
+                            result = RUNNER.invoke(
+                                app,
+                                ["audit", "http://127.0.0.1:8000"],
+                                catch_exceptions=False,
+                            )
 
         self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
         self.assertIn("Audit failed.", result.stderr)

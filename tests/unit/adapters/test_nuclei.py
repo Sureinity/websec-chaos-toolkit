@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from toolkit.adapters.base import AdapterAvailability
 from toolkit.adapters.nuclei import NucleiAdapter
+from toolkit.auth.session import AuthSession
 from toolkit.config.models import AppConfig, AuthConfig, PentestToolSettings
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "fixtures" / "nuclei"
@@ -69,23 +70,47 @@ class NucleiAdapterTests(unittest.TestCase):
             execution.command,
             (
                 "nuclei",
-                "-target",
-                "http://localhost:8000/",
                 "-jsonl",
                 "-silent",
                 "-o",
                 str(output_path),
+                "-target",
+                "http://localhost:8000/",
                 "-t",
                 "http/exposures",
                 "-t",
                 "network/exposure",
             ),
         )
+        self.assertEqual(execution.cwd, output_path.parent)
         self.assertEqual(execution.timeout_seconds, 300.0)
         self.assertEqual(
             execution.env_overrides,
             {"NUCLEI_DISABLE_UPDATE_CHECK": "true"},
         )
+
+    def test_build_execution_supports_route_lists_and_auth_headers(self) -> None:
+        with TemporaryDirectory() as temp_dir_name:
+            output_path = Path(temp_dir_name) / "results.jsonl"
+            adapter = NucleiAdapter(
+                app=build_app(),
+                settings=build_settings(),
+                output_path=output_path,
+                target_urls=("http://localhost:8000/", "http://localhost:8000/admin"),
+                auth_session=AuthSession(
+                    method="api_login",
+                    headers={"Authorization": "Bearer token"},
+                    cookies={"sessionid": "cookie-value"},
+                ),
+            )
+
+            execution = adapter.build_execution()
+
+        self.assertIn("-l", execution.command)
+        self.assertIn("-H", execution.command)
+        self.assertIn("Authorization: Bearer token", execution.command)
+        self.assertIn("Cookie: sessionid=cookie-value", execution.command)
+        self.assertEqual(execution.cwd, output_path.parent)
 
     def test_build_execution_blocks_when_safe_mode_is_disabled(self) -> None:
         adapter = NucleiAdapter(

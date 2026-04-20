@@ -59,6 +59,7 @@ class RuntimeMode(StrEnum):
 CONTAINER_TOOL_IMAGES: dict[str, str] = {
     "zap": "ghcr.io/zaproxy/zaproxy:stable",
     "nuclei": "projectdiscovery/nuclei:latest",
+    "katana": "projectdiscovery/katana:latest",
     "nmap": "instrumentisto/nmap:latest",
     "trivy": "aquasec/trivy:0.69.3",
     "semgrep": "semgrep/semgrep:latest",

@@ -58,9 +58,7 @@ class ContainerRuntime:
                 command=request.command,
                 returncode=1,
                 stdout="",
-                stderr=(
-                    f"no container image configured for tool: {request.tool}"
-                ),
+                stderr=(f"no container image configured for tool: {request.tool}"),
             )
 
         docker_command = self._build_docker_command(request, image=image)
@@ -119,14 +117,19 @@ class ContainerRuntime:
         # The :z suffix relabels the mount for SELinux-enabled hosts
         # (Fedora, RHEL, CentOS) so the container user can write.
         output_dir = request.output_path.parent
-        parts.extend([
-            "-v",
-            f"{output_dir}:{container_output_dir}:z",
-        ])
+        parts.extend(
+            [
+                "-v",
+                f"{output_dir}:{container_output_dir}:z",
+            ]
+        )
 
-        # Mount cwd if specified and different from output dir.
-        if request.cwd is not None and request.cwd != output_dir:
-            parts.extend(["-v", f"{request.cwd}:{request.cwd}:z"])
+        # Mount cwd when specified. If it differs from the output dir it needs
+        # a dedicated mount; if it matches, the output-dir mount already covers
+        # it but we still set -w so relative file arguments resolve correctly.
+        if request.cwd is not None:
+            if request.cwd != output_dir:
+                parts.extend(["-v", f"{request.cwd}:{request.cwd}:z"])
             parts.extend(["-w", str(request.cwd)])
 
         # Forward env overrides as container env vars.

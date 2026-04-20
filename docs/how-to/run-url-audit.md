@@ -69,6 +69,10 @@ uv run toolkit audit https://target.internal --runtime container
 - validates the supplied URL through the ad hoc target builder
 - derives an internal app id, allowlist, and health endpoint from that URL
 - captures an `httpx` preflight fingerprint before deeper scanner execution
+- discovers same-origin routes with `katana`
+- feeds the seed URL plus discovered routes into ZAP and Nuclei
+- keeps Nmap limited to conservative host and service context
+- captures an `httpx` preflight fingerprint before deeper scanner execution
 - builds the built-in safe remote-web profile
 - runs ZAP, Nuclei, and Nmap through the selected runtime backend
 - writes outputs under `outputs/<run-id>/`

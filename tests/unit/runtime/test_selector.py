@@ -29,8 +29,9 @@ class AuditRuntimeSelectorTests(unittest.TestCase):
 
         self.assertTrue(readiness.ready)
         self.assertEqual(readiness.missing_tools, ())
-        self.assertEqual(readiness.tool_statuses[0].binary, "zap-baseline.py")
-        self.assertEqual(readiness.tool_statuses[0].availability.binary, "/usr/bin/zap-baseline.py")
+        self.assertEqual(readiness.tool_statuses[0].binary, "katana")
+        self.assertEqual(readiness.tool_statuses[0].availability.binary, "/usr/bin/katana")
+        self.assertEqual(readiness.tool_statuses[1].binary, "zap-baseline.py")
 
     def test_inspect_audit_readiness_reports_container_and_host(self) -> None:
         with patch(

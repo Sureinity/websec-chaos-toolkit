@@ -88,6 +88,7 @@ class RuntimeSelectionError(RuntimeError):
 
 
 AUDIT_RUNTIME_TOOLS: tuple[AuditRuntimeTool, ...] = (
+    AuditRuntimeTool(tool="katana", binary="katana"),
     AuditRuntimeTool(tool="zap", binary="zap-baseline.py"),
     AuditRuntimeTool(tool="nuclei", binary="nuclei"),
     AuditRuntimeTool(tool="nmap", binary="nmap"),
