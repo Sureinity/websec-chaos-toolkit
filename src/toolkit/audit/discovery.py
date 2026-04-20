@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -10,6 +11,8 @@ from urllib.parse import urlsplit
 from toolkit.auth.session import AuthSession
 from toolkit.runtime.base import RuntimeBackend
 from toolkit.runtime.models import RuntimeRequest
+
+_DISCOVERED_URL_PATTERN = re.compile(r'"(?:endpoint|url)":"((?:\\.|[^"\\])*)"')
 
 
 @dataclass(slots=True, frozen=True)
@@ -115,8 +118,7 @@ def _load_same_origin_routes(output_path: Path, *, seed_url: str) -> list[str]:
         stripped = line.strip()
         if not stripped:
             continue
-        payload = json.loads(stripped)
-        candidate = _extract_discovered_url(payload)
+        candidate = _extract_discovered_url_from_line(stripped)
         if candidate is None:
             continue
         parsed = urlsplit(candidate)
@@ -149,3 +151,19 @@ def _extract_discovered_url(payload: dict[str, object]) -> str | None:
     if isinstance(value, str) and value.strip():
         return value.strip()
     return None
+
+
+def _extract_discovered_url_from_line(line: str) -> str | None:
+    try:
+        payload = json.loads(line)
+    except json.JSONDecodeError:
+        match = _DISCOVERED_URL_PATTERN.search(line)
+        if match is None:
+            return None
+        try:
+            return json.loads(f'"{match.group(1)}"')
+        except json.JSONDecodeError:
+            return None
+    if not isinstance(payload, dict):
+        return None
+    return _extract_discovered_url(payload)
