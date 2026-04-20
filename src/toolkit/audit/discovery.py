@@ -41,6 +41,7 @@ def run_katana_discovery(
         )
 
     output_path = raw_dir / "katana" / "results.jsonl"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     request = RuntimeRequest(
         tool="katana",
         command=_build_katana_command(
