@@ -18,7 +18,8 @@ Current command behavior:
 - `toolkit audit` derives an ad hoc target from the supplied URL, selects an
   available audit runtime (`container` preferred, `host` fallback), accepts
   optional auth-mode flags, validates one auth mode per run fail-closed,
-  executes a safe remote-web audit, writes run artifacts under
+  captures an `httpx` preflight fingerprint, executes a safe remote-web audit,
+  writes run artifacts under
   `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
 - `toolkit edge-chaos` derives an ad hoc chaos target from the supplied URL,
   starts a managed local Toxiproxy container, creates a local proxy, probes

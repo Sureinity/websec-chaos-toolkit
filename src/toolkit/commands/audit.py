@@ -11,10 +11,14 @@ from toolkit.audit import (
     ApiLoginContentType,
     AuditAuthMode,
     AuditAuthValidationError,
+    AuditFingerprintError,
     build_url_audit_auth_config,
+    capture_httpx_fingerprint,
+    write_httpx_fingerprint,
 )
 from toolkit.auth.errors import AuthRuntimeError
 from toolkit.core.exits import ExitCode
+from toolkit.core.run_context import RunRequest, prepare_run_context, utc_now
 from toolkit.pentest.runner import run_pentest_live_flow
 from toolkit.runtime.contracts import RuntimeMode
 from toolkit.runtime.selector import RuntimeSelectionError, select_audit_runtime
@@ -129,14 +133,31 @@ def register(root_app: typer.Typer) -> None:
             )
             app_config = build_url_audit_app_with_auth(url, auth=auth_config)
             audit_profile = build_url_audit_profile()
+            resolved_when = utc_now()
+            context = prepare_run_context(
+                project_root,
+                RunRequest(
+                    app_id=app_config.id,
+                    environment=app_config.environment,
+                    profile=audit_profile.name,
+                    modules=("pentest",),
+                ),
+                when=resolved_when,
+            )
+            fingerprint = capture_httpx_fingerprint(str(app_config.base_url))
+            fingerprint_path = write_httpx_fingerprint(context.raw_dir, fingerprint)
             selection = select_audit_runtime(preferred_mode=runtime)
             summary = run_pentest_live_flow(
                 project_root=project_root,
                 app=app_config,
                 profile=audit_profile,
+                when=resolved_when,
                 runtime=selection.backend,
+                context=context,
+                extra_raw_artifact_paths=(fingerprint_path,),
             )
         except (
+            AuditFingerprintError,
             AuditAuthValidationError,
             AuthRuntimeError,
             FileExistsError,

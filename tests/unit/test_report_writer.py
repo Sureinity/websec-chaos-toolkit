@@ -1,3 +1,4 @@
+import json
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
@@ -195,3 +196,50 @@ class ReportBuilderTests(unittest.TestCase):
         self.assertIn("## sample-app", rebuilt_summary)
         self.assertIn("### high (1)", rebuilt_summary)
         self.assertIn("### medium (1)", rebuilt_summary)
+
+    def test_report_builder_includes_target_fingerprint_section_when_present(self) -> None:
+        request = RunRequest(
+            app_id="sample-app",
+            environment="local",
+            profile="safe-baseline",
+            modules=("pentest",),
+        )
+
+        with TemporaryDirectory() as temp_dir_name:
+            project_root = Path(temp_dir_name)
+            context = prepare_run_context(
+                project_root,
+                request,
+                run_id="20260328-020304-deadbeef",
+            )
+            (context.raw_dir / "httpx").mkdir(parents=True, exist_ok=True)
+            (context.raw_dir / "httpx" / "fingerprint.json").write_text(
+                json.dumps(
+                    {
+                        "requested_url": "https://target.internal/",
+                        "final_url": "https://target.internal/dashboard",
+                        "reachable": True,
+                        "status_code": 200,
+                        "redirect_chain": [{"url": "https://target.internal/", "status_code": 302}],
+                        "title": "Dashboard",
+                        "server": "nginx",
+                        "technology_hints": ["server: nginx"],
+                        "tls": {
+                            "enabled": True,
+                            "http_version": "HTTP/1.1",
+                            "strict_transport_security": "max-age=31536000",
+                        },
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            write_normalized_results(context, [])
+
+            summary = build_markdown_summary_from_run_dir(context.run_dir)
+
+        self.assertIn("## Target Fingerprint", summary)
+        self.assertIn("Requested URL: https://target.internal/", summary)
+        self.assertIn("Technology hints: server: nginx", summary)

@@ -3,6 +3,7 @@
 from collections import defaultdict
 from pathlib import Path
 
+from toolkit.audit.fingerprint import load_httpx_fingerprint
 from toolkit.results.io import read_normalized_results_from_path
 from toolkit.results.models import NormalizedResult
 
@@ -98,7 +99,47 @@ def build_markdown_summary_from_run_dir(run_dir: Path) -> str:
     """Load normalized results from disk and render the Markdown summary."""
 
     results = read_normalized_results_from_path(normalized_results_bundle_path(run_dir))
-    return build_markdown_summary(run_id=run_dir.name, results=results)
+    summary = build_markdown_summary(run_id=run_dir.name, results=results)
+    fingerprint = load_httpx_fingerprint(run_dir)
+    if fingerprint is None:
+        return summary
+
+    lines = summary.splitlines()
+    insertion = [
+        "## Target Fingerprint",
+        "",
+        f"- Requested URL: {fingerprint.requested_url}",
+        f"- Final URL: {fingerprint.final_url}",
+        f"- Reachable: {'yes' if fingerprint.reachable else 'no'}",
+        (
+            "- Status code: "
+            + (str(fingerprint.status_code) if fingerprint.status_code is not None else "n/a")
+        ),
+        f"- Title: {fingerprint.title or 'n/a'}",
+        f"- Server: {fingerprint.server or 'n/a'}",
+        (
+            "- Technology hints: "
+            + (", ".join(fingerprint.technology_hints) if fingerprint.technology_hints else "n/a")
+        ),
+    ]
+    if fingerprint.redirect_chain:
+        insertion.append(
+            "- Redirect chain: "
+            + " -> ".join(f"{item.url} ({item.status_code})" for item in fingerprint.redirect_chain)
+        )
+    if fingerprint.tls is not None:
+        insertion.extend(
+            [
+                f"- TLS enabled: {'yes' if fingerprint.tls.enabled else 'no'}",
+                f"- HTTP version: {fingerprint.tls.http_version or 'n/a'}",
+                (
+                    "- Strict-Transport-Security: "
+                    + (fingerprint.tls.strict_transport_security or "n/a")
+                ),
+            ]
+        )
+    insertion.append("")
+    return "\n".join(lines[:3] + insertion + lines[3:])
 
 
 def write_markdown_summary(run_dir: Path) -> Path:
