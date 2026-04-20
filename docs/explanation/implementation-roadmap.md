@@ -841,6 +841,9 @@ Goal
 - Expand `toolkit audit <url>` from a seed-URL, unauthenticated audit into a
   safer authenticated and discovery-driven assessment flow that can reach real
   operator-relevant application surfaces while preserving the zero-config UX.
+  Treat standard username/password form login as the primary documented auth
+  path for typical web applications, while keeping bearer, cookie, and session
+  modes available as secondary expert paths.
 
 Deliverables
 
@@ -854,6 +857,14 @@ Deliverables
   - `--login-url`
   - `--username-env-var`
   - `--password-env-var`
+- Form-first operator guidance for standard web apps that:
+  - use a basic username/password login page
+  - return reusable authenticated cookies after login
+  - require the login route to be enabled and reachable during the run
+- Explicit fail-closed auth behavior for URL-first form login when:
+  - the login route is disabled
+  - the login route is unreachable
+  - the response returns no reusable session cookies
 - `httpx`-backed preflight fingerprinting for the supplied URL
 - `katana`-backed route discovery for links, JS-referenced endpoints,
   sitemaps, and robots content
@@ -886,8 +897,17 @@ Files/directories to create
 Acceptance criteria
 
 - `toolkit audit <url>` continues to work with no auth flags and no YAML files
+- `toolkit audit <url>` without auth flags remains valid even when the target
+  login route is disabled
 - `toolkit audit <url>` can accept URL-first authenticated inputs through CLI
   flags and environment-variable references without requiring `apps.yaml`
+- `form` is the primary documented URL-first auth mode for standard web apps
+  with a basic username/password login form
+- `toolkit audit <url> --auth-mode form ...` fails with exit code `2` when
+  `login_url` is disabled, unreachable, rejected, or returns no reusable
+  session cookies
+- `toolkit audit <url> --auth-mode form ...` never silently downgrades to an
+  unauthenticated audit
 - Secret material is never echoed into stdout, reports, manifests, or raw
   artifacts
 - `httpx` fingerprints the target before the deeper audit stages begin
@@ -907,6 +927,7 @@ Verification commands
 uv run python -m unittest tests.unit.audit tests.integration.test_audit_command tests.integration.test_doctor_command
 uv run toolkit doctor
 uv run toolkit audit http://127.0.0.1:8000
+uv run toolkit audit http://127.0.0.1:8000 --auth-mode form --login-url http://127.0.0.1:8000/login --username-env-var TOOLKIT_AUDIT_USERNAME --password-env-var TOOLKIT_AUDIT_PASSWORD
 uv run toolkit audit http://127.0.0.1:8000 --auth-mode bearer_token --token-env-var TOOLKIT_AUDIT_TOKEN
 uv run pre-commit run --all-files
 ```
