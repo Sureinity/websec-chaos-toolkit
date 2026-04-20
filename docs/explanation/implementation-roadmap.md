@@ -833,3 +833,96 @@ Dependencies on earlier milestones
 Detailed checkpoint plan reference
 
 - `/home/ghlen/Coding/Infosoft/milestones/testing/15.md`
+
+## Milestone 16: Authenticated And Discovery-Driven URL Audit
+
+Goal
+
+- Expand `toolkit audit <url>` from a seed-URL, unauthenticated audit into a
+  safer authenticated and discovery-driven assessment flow that can reach real
+  operator-relevant application surfaces while preserving the zero-config UX.
+
+Deliverables
+
+- URL-first authenticated audit inputs that reuse the existing auth contract:
+  - `--auth-mode none|bearer_token|cookie|session|form`
+  - `--token-env-var`
+  - `--cookie-name`
+  - `--cookie-value-env-var`
+  - `--session-header`
+  - `--session-value-env-var`
+  - `--login-url`
+  - `--username-env-var`
+  - `--password-env-var`
+- `httpx`-backed preflight fingerprinting for the supplied URL
+- `katana`-backed route discovery for links, JS-referenced endpoints,
+  sitemaps, and robots content
+- Route-aware audit execution where ZAP and Nuclei consume the seed URL plus
+  discovered routes
+- Audit report enrichment that includes:
+  - target fingerprint summary
+  - discovery coverage summary
+  - auth mode provenance without secret leakage
+  - findings grouped against the discovered audit surface
+- Doctor and runtime-readiness updates for the expanded audit toolchain:
+  - `httpx`
+  - `katana`
+  - `zap`
+  - `nuclei`
+  - `nmap`
+
+Files/directories to create
+
+- `src/toolkit/audit/`
+- `src/toolkit/audit/discovery.py`
+- `src/toolkit/audit/fingerprint.py`
+- `tests/unit/audit/`
+- `tests/integration/test_audit_command.py` updates for authenticated and
+  discovery-driven flows
+- `docs/tutorials/quickstart-authenticated-audit.md`
+- `docs/how-to/run-authenticated-url-audit.md`
+- `docs/explanation/url-audit-model.md`
+
+Acceptance criteria
+
+- `toolkit audit <url>` continues to work with no auth flags and no YAML files
+- `toolkit audit <url>` can accept URL-first authenticated inputs through CLI
+  flags and environment-variable references without requiring `apps.yaml`
+- Secret material is never echoed into stdout, reports, manifests, or raw
+  artifacts
+- `httpx` fingerprints the target before the deeper audit stages begin
+- `katana` discovers additional routes and writes a deterministic discovery
+  artifact under `outputs/<run-id>/raw/`
+- ZAP and Nuclei run against the seed URL plus discovered routes
+- Nmap remains limited to conservative host and service context rather than
+  route discovery
+- The audit report includes target fingerprinting, discovery coverage, and
+  auth-mode context alongside findings
+- `toolkit doctor` can report readiness for the expanded URL-first audit
+  toolchain
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.unit.audit tests.integration.test_audit_command tests.integration.test_doctor_command
+uv run toolkit doctor
+uv run toolkit audit http://127.0.0.1:8000
+uv run toolkit audit http://127.0.0.1:8000 --auth-mode bearer_token --token-env-var TOOLKIT_AUDIT_TOKEN
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 2
+- Milestone 3
+- Milestone 4
+- Milestone 5
+- Milestone 9
+- Milestone 11
+- Milestone 13
+- Milestone 14
+
+Detailed checkpoint plan reference
+
+- `/home/ghlen/Coding/Infosoft/milestones/testing/16.md`
