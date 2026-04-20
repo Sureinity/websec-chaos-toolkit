@@ -15,12 +15,16 @@ Current state:
 - a higher-level auth bootstrap entrypoint is implemented for validated app
   config
 - this document remains the runtime auth contract for scanner and chaos adapter integration
+- Milestone 16 extends this contract into the URL-first `toolkit audit <url>`
+  path and introduces `api_login` as the primary automated auth path for apps
+  whose login logic is API-based with JSON
 
 ## Supported Auth Modes
 
 The runtime layer supports these auth modes only:
 
 - `none`
+- `api_login`
 - `bearer_token`
 - `cookie`
 - `session`
@@ -35,6 +39,23 @@ Anything outside this list is out of scope for v1.
 - no secret resolution is attempted
 - no headers or cookies are injected
 - the runtime auth payload should be explicitly marked as unauthenticated
+- this remains valid for URL-first audit even when the target login route is
+  disabled
+
+### `api_login`
+
+- perform a scripted HTTP login against `login_url`
+- resolve credentials only from `username_env_var` and `password_env_var`
+- send a JSON payload for the current milestone
+- use configurable credential field names for the JSON request body
+- extract reusable authenticated session material derived from the login API
+- support response extraction into:
+  - bearer token from JSON
+  - reusable cookies from the response
+  - session/header value from JSON
+- do not attempt browser automation, SSO handshakes, or MFA bypass
+- treat `api_login` as the primary documented automated auth path for
+  URL-first audit on modern web apps
 
 ### `bearer_token`
 
@@ -62,6 +83,56 @@ Anything outside this list is out of scope for v1.
 - submit standard `username` and `password` form fields
 - treat reusable cookies as the success signal for the current implementation
 - do not attempt browser automation, SSO handshakes, or MFA bypass
+- treat `form` as a secondary compatibility path for classic HTML login forms
+
+## URL-First Audit Rules
+
+The URL-first `toolkit audit <url>` path follows these auth rules:
+
+- authentication is optional overall
+- if no auth mode is selected, the audit runs unauthenticated
+- at most one auth mode may be selected per run
+- mixed auth-mode flag sets must fail closed
+- selecting one auth mode makes that mode's flags required
+- explicit auth modes must never silently downgrade to unauthenticated audit
+
+For URL-first audit, recommended auth-mode priority is:
+
+1. `api_login`
+2. `form`
+3. manual `bearer_token`, `cookie`, or `session`
+
+## URL-First Audit Prerequisites
+
+Before running authenticated URL-first audit, the operator should have:
+
+- authorization to test the target
+- a reachable target URL
+- a valid test account or reusable auth material
+- the chosen auth mode for the target
+- a shell environment where secret values can be supplied through environment
+  variables
+
+Mode-specific prerequisites:
+
+- `api_login`
+  - the login API route is enabled and reachable during the run
+  - the login request uses JSON
+  - the username and password field names are known
+  - the reusable auth result shape is known:
+    - bearer token in JSON
+    - session/header value in JSON
+    - reusable cookies from the response
+- `form`
+  - the visible login route is enabled and reachable during the run
+  - the form accepts standard `username` and `password` POST fields
+  - successful login returns reusable cookies
+- `bearer_token`
+  - the operator already has a valid bearer token
+- `cookie`
+  - the operator already has a valid authenticated cookie name and value
+- `session`
+  - the operator already has a valid session header name and value
 
 ## Failure Policy
 
@@ -73,6 +144,10 @@ All runtime auth resolution is fail-closed.
 - unsupported login flows are hard failures
 - runtime auth should never silently downgrade from authenticated to
   unauthenticated behavior
+- disabled or unreachable login endpoints are hard failures for explicit
+  `form` or `api_login` modes
+- responses that produce no reusable auth material are hard failures for
+  explicit `form` or `api_login` modes
 
 ## Secret Handling Rules
 
@@ -107,6 +182,7 @@ The current bootstrap entrypoint resolves a validated app config into that
 shared runtime session shape for:
 
 - `none`
+- `api_login`
 - `bearer_token`
 - `cookie`
 - `session`

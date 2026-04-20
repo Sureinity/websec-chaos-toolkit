@@ -841,14 +841,16 @@ Goal
 - Expand `toolkit audit <url>` from a seed-URL, unauthenticated audit into a
   safer authenticated and discovery-driven assessment flow that can reach real
   operator-relevant application surfaces while preserving the zero-config UX.
-  Treat standard username/password form login as the primary documented auth
-  path for typical web applications, while keeping bearer, cookie, and session
-  modes available as secondary expert paths.
+  Treat API-based JSON login as the primary documented automated auth path for
+  typical modern web applications, while keeping classic HTML form login as a
+  secondary compatibility path and bearer, cookie, and session modes as
+  secondary expert/manual paths.
 
 Deliverables
 
 - URL-first authenticated audit inputs that reuse the existing auth contract:
   - `--auth-mode none|bearer_token|cookie|session|form`
+  - `--auth-mode api_login`
   - `--token-env-var`
   - `--cookie-name`
   - `--cookie-value-env-var`
@@ -857,14 +859,20 @@ Deliverables
   - `--login-url`
   - `--username-env-var`
   - `--password-env-var`
-- Form-first operator guidance for standard web apps that:
-  - use a basic username/password login page
+- `api_login`-first operator guidance for standard web apps that:
+  - use a JSON login API
+  - return reusable auth material such as bearer tokens, cookies, or session
+    values
+  - require the login API route to be enabled and reachable during the run
+- Form-login compatibility guidance for classic HTML login forms that:
+  - use standard username/password fields
   - return reusable authenticated cookies after login
-  - require the login route to be enabled and reachable during the run
-- Explicit fail-closed auth behavior for URL-first form login when:
+  - require the visible login route to be enabled and reachable during the run
+- Explicit fail-closed auth behavior for URL-first form and API login when:
   - the login route is disabled
   - the login route is unreachable
-  - the response returns no reusable session cookies
+  - the response cannot be parsed
+  - the response returns no reusable auth material
 - `httpx`-backed preflight fingerprinting for the supplied URL
 - `katana`-backed route discovery for links, JS-referenced endpoints,
   sitemaps, and robots content
@@ -901,13 +909,23 @@ Acceptance criteria
   login route is disabled
 - `toolkit audit <url>` can accept URL-first authenticated inputs through CLI
   flags and environment-variable references without requiring `apps.yaml`
-- `form` is the primary documented URL-first auth mode for standard web apps
-  with a basic username/password login form
+- auth remains optional overall for `toolkit audit <url>`
+- at most one auth mode may be selected per run
+- mode-specific auth flags become required when that mode is selected
+- mixed auth-mode flag sets fail closed with exit code `2`
+- `api_login` is the primary documented automated auth mode for apps whose
+  login logic is API-based with JSON
+- `form` remains a secondary compatibility mode for basic HTML login forms
 - `toolkit audit <url> --auth-mode form ...` fails with exit code `2` when
   `login_url` is disabled, unreachable, rejected, or returns no reusable
   session cookies
 - `toolkit audit <url> --auth-mode form ...` never silently downgrades to an
   unauthenticated audit
+- `toolkit audit <url> --auth-mode api_login ...` fails with exit code `2`
+  when `login_url` is disabled, unreachable, rejected, unparseable, or
+  returns unusable auth material
+- `toolkit audit <url> --auth-mode api_login ...` never silently downgrades to
+  an unauthenticated audit
 - Secret material is never echoed into stdout, reports, manifests, or raw
   artifacts
 - `httpx` fingerprints the target before the deeper audit stages begin
@@ -927,7 +945,7 @@ Verification commands
 uv run python -m unittest tests.unit.audit tests.integration.test_audit_command tests.integration.test_doctor_command
 uv run toolkit doctor
 uv run toolkit audit http://127.0.0.1:8000
-uv run toolkit audit http://127.0.0.1:8000 --auth-mode form --login-url http://127.0.0.1:8000/login --username-env-var TOOLKIT_AUDIT_USERNAME --password-env-var TOOLKIT_AUDIT_PASSWORD
+uv run toolkit audit http://127.0.0.1:8000 --auth-mode api_login --login-url http://127.0.0.1:8000/api/login --username-env-var TOOLKIT_AUDIT_USERNAME --password-env-var TOOLKIT_AUDIT_PASSWORD --login-content-type json --login-username-field username --login-password-field password --auth-result bearer_json --auth-result-path token
 uv run toolkit audit http://127.0.0.1:8000 --auth-mode bearer_token --token-env-var TOOLKIT_AUDIT_TOKEN
 uv run pre-commit run --all-files
 ```

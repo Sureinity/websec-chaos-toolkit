@@ -12,14 +12,21 @@ preparing repository YAML config files.
 The simplified audit path currently supports:
 
 - remote web targets
-- unauthenticated access
+- unauthenticated access by default
 - one ad hoc URL at a time
 
-It does not yet support:
+Milestone 16 extends this path with authenticated and discovery-driven audit.
+The locked contract for that work is:
 
-- form login
-- bearer, cookie, or session injection
-- simplified edge-chaos execution
+- authentication is optional overall
+- if no auth mode is selected, audit remains unauthenticated
+- at most one auth mode may be selected per run
+- mode-specific flags become required when that mode is selected
+- `api_login` is the primary automated auth path for apps with JSON-based
+  login logic
+- `form` remains a secondary compatibility path for classic HTML login forms
+- explicit auth modes fail closed and never silently downgrade
+- unauthenticated audit still works even if the target login route is disabled
 
 ## Check Runtime Readiness
 
@@ -34,7 +41,7 @@ Expected behavior:
 - `container` is recommended when Docker is available
 - `host` is usable when `zap-baseline.py`, `nuclei`, and `nmap` are present on
   `PATH`
-- edge-chaos is expected to report as not ready until that runtime lands later
+- edge-chaos readiness is reported separately by `toolkit doctor`
 
 ## Run The Audit
 
@@ -100,7 +107,7 @@ Common remediation steps:
 Use the YAML-driven path when you need:
 
 - repeatable named app definitions
-- auth injection or form login
+- full config-driven auth setup outside the URL-first path
 - multiple reusable pentest profiles
 - live chaos execution
 
