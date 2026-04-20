@@ -13,7 +13,9 @@ from toolkit.config.errors import ConfigValidationCode, config_error
 
 EnvironmentName = Literal["local", "staging"]
 ModuleName = Literal["pentest", "chaos"]
-AuthMethod = Literal["none", "bearer_token", "cookie", "session", "form"]
+AuthMethod = Literal["none", "api_login", "bearer_token", "cookie", "session", "form"]
+ApiLoginContentType = Literal["json"]
+ApiLoginAuthResult = Literal["bearer_json", "cookie", "session_json"]
 PentestAssessmentModeName = Literal["remote_web", "source_tree", "artifact_image"]
 FaultType = Literal[
     "latency",
@@ -50,6 +52,9 @@ class AuthConfig(BaseModel):
 
     Locked v1 auth contract:
     - ``none``: no auth-specific secret reference fields are allowed
+    - ``api_login``: requires ``login_url``, ``username_env_var``,
+      ``password_env_var``, ``login_content_type``,
+      ``login_username_field``, ``login_password_field``, and ``auth_result``
     - ``bearer_token``: requires ``token_env_var``
     - ``cookie``: requires ``cookie_name`` and ``cookie_value_env_var``
     - ``session``: requires ``session_header`` and ``session_value_env_var``
@@ -69,6 +74,11 @@ class AuthConfig(BaseModel):
     login_url: HttpUrl | None = None
     username_env_var: str | None = None
     password_env_var: str | None = None
+    login_content_type: ApiLoginContentType | None = None
+    login_username_field: str | None = None
+    login_password_field: str | None = None
+    auth_result: ApiLoginAuthResult | None = None
+    auth_result_path: str | None = None
 
     @field_validator(
         "token_env_var",
@@ -78,6 +88,9 @@ class AuthConfig(BaseModel):
         "session_value_env_var",
         "username_env_var",
         "password_env_var",
+        "login_username_field",
+        "login_password_field",
+        "auth_result_path",
     )
     @classmethod
     def validate_optional_string_fields(cls, value: str | None) -> str | None:
@@ -102,6 +115,11 @@ class AuthConfig(BaseModel):
             "login_url": self.login_url,
             "username_env_var": self.username_env_var,
             "password_env_var": self.password_env_var,
+            "login_content_type": self.login_content_type,
+            "login_username_field": self.login_username_field,
+            "login_password_field": self.login_password_field,
+            "auth_result": self.auth_result,
+            "auth_result_path": self.auth_result_path,
         }
 
         if self.method == "none":
@@ -113,6 +131,57 @@ class AuthConfig(BaseModel):
                     ConfigValidationCode.AUTH_NONE_FORBIDS_SECRET_REFS,
                     "Auth method 'none' does not allow secret reference fields: {fields}.",
                     fields=", ".join(populated_fields),
+                )
+            return self
+
+        if self.method == "api_login":
+            if self.login_url is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_API_LOGIN_REQUIRES_LOGIN_URL,
+                    "Auth method 'api_login' requires login_url.",
+                )
+            if self.username_env_var is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_API_LOGIN_REQUIRES_USERNAME_ENV_VAR,
+                    "Auth method 'api_login' requires username_env_var.",
+                )
+            if self.password_env_var is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_API_LOGIN_REQUIRES_PASSWORD_ENV_VAR,
+                    "Auth method 'api_login' requires password_env_var.",
+                )
+            if self.login_content_type is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_API_LOGIN_REQUIRES_LOGIN_CONTENT_TYPE,
+                    "Auth method 'api_login' requires login_content_type.",
+                )
+            if self.login_username_field is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_API_LOGIN_REQUIRES_USERNAME_FIELD,
+                    "Auth method 'api_login' requires login_username_field.",
+                )
+            if self.login_password_field is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_API_LOGIN_REQUIRES_PASSWORD_FIELD,
+                    "Auth method 'api_login' requires login_password_field.",
+                )
+            if self.auth_result is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_API_LOGIN_REQUIRES_AUTH_RESULT,
+                    "Auth method 'api_login' requires auth_result.",
+                )
+            if (
+                self.auth_result in {"bearer_json", "session_json"}
+                and self.auth_result_path is None
+            ):
+                raise config_error(
+                    ConfigValidationCode.AUTH_API_LOGIN_REQUIRES_AUTH_RESULT_PATH,
+                    "Auth method 'api_login' requires auth_result_path for JSON extraction modes.",
+                )
+            if self.auth_result == "session_json" and self.session_header is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_API_LOGIN_SESSION_JSON_REQUIRES_SESSION_HEADER,
+                    "Auth method 'api_login' with session_json requires session_header.",
                 )
             return self
 

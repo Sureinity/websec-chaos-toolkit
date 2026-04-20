@@ -95,6 +95,70 @@ class ConfigModelValidationTests(unittest.TestCase):
 
         self.assertEqual(error["loc"], ("apps", 0, "auth"))
 
+    def test_api_login_requires_auth_result(self) -> None:
+        payload = {
+            "apps": [
+                {
+                    "id": "api-login-missing-result",
+                    "environment": "local",
+                    "base_url": "http://localhost:8000",
+                    "host_targets": ["localhost"],
+                    "target_allowlist": ["localhost"],
+                    "auth": {
+                        "method": "api_login",
+                        "login_url": "http://localhost:8000/api/login",
+                        "username_env_var": "TEST_USERNAME",
+                        "password_env_var": "TEST_PASSWORD",
+                        "login_content_type": "json",
+                        "login_username_field": "username",
+                        "login_password_field": "password",
+                    },
+                    "health_endpoint": "/health",
+                    "enabled_modules": ["pentest"],
+                }
+            ]
+        }
+
+        error = self.assert_validation_error(
+            lambda: AppRegistry.model_validate(payload),
+            ConfigValidationCode.AUTH_API_LOGIN_REQUIRES_AUTH_RESULT,
+        )
+
+        self.assertEqual(error["loc"], ("apps", 0, "auth"))
+
+    def test_api_login_session_json_requires_session_header(self) -> None:
+        payload = {
+            "apps": [
+                {
+                    "id": "api-login-session-json-missing-header",
+                    "environment": "local",
+                    "base_url": "http://localhost:8000",
+                    "host_targets": ["localhost"],
+                    "target_allowlist": ["localhost"],
+                    "auth": {
+                        "method": "api_login",
+                        "login_url": "http://localhost:8000/api/login",
+                        "username_env_var": "TEST_USERNAME",
+                        "password_env_var": "TEST_PASSWORD",
+                        "login_content_type": "json",
+                        "login_username_field": "username",
+                        "login_password_field": "password",
+                        "auth_result": "session_json",
+                        "auth_result_path": "data.session_id",
+                    },
+                    "health_endpoint": "/health",
+                    "enabled_modules": ["pentest"],
+                }
+            ]
+        }
+
+        error = self.assert_validation_error(
+            lambda: AppRegistry.model_validate(payload),
+            ConfigValidationCode.AUTH_API_LOGIN_SESSION_JSON_REQUIRES_SESSION_HEADER,
+        )
+
+        self.assertEqual(error["loc"], ("apps", 0, "auth"))
+
     def test_base_url_host_must_be_allowlisted(self) -> None:
         payload = {
             "apps": [

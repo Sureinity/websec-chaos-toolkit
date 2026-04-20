@@ -27,6 +27,7 @@ The locked contract for that work is:
 - `form` remains a secondary compatibility path for classic HTML login forms
 - explicit auth modes fail closed and never silently downgrade
 - unauthenticated audit still works even if the target login route is disabled
+- the CLI now validates these auth inputs explicitly before a run starts
 
 ## Check Runtime Readiness
 

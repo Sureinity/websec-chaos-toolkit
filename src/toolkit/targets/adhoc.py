@@ -43,6 +43,18 @@ def build_url_audit_app(url: str | HttpUrl) -> AppConfig:
     return _build_url_app(url, enabled_modules=["pentest"])
 
 
+def build_url_audit_app_with_auth(url: str | HttpUrl, auth: AuthConfig) -> AppConfig:
+    """Build a validated AppConfig for a zero-config URL audit run with auth."""
+
+    resolved = _build_url_app(url, enabled_modules=["pentest"])
+    return AppConfig.model_validate(
+        {
+            **resolved.model_dump(mode="json"),
+            "auth": auth.model_dump(mode="json"),
+        }
+    )
+
+
 def build_url_edge_chaos_app(url: str | HttpUrl) -> AppConfig:
     """Build a validated AppConfig for a URL-first edge-chaos run.
 

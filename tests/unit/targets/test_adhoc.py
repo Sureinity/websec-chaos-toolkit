@@ -1,11 +1,13 @@
 import unittest
 
+from toolkit.config.models import AuthConfig
 from toolkit.pentest.planner import CORE_PENTEST_TOOL_ORDER, build_pentest_plan
 from toolkit.targets.adhoc import (
     URL_AUDIT_DEFAULT_ENVIRONMENT,
     URL_AUDIT_DEFAULT_HEALTH_ENDPOINT,
     URL_AUDIT_PROFILE_NAME,
     build_url_audit_app,
+    build_url_audit_app_with_auth,
     build_url_audit_profile,
     build_url_edge_chaos_app,
     derive_url_audit_app_id,
@@ -51,6 +53,18 @@ class AdHocTargetBuilderTests(unittest.TestCase):
         self.assertEqual(app.enabled_modules, ["chaos"])
         self.assertEqual(app.health_endpoint, URL_AUDIT_DEFAULT_HEALTH_ENDPOINT)
         self.assertEqual(app.base_url.host, "127.0.0.1")
+
+    def test_build_url_audit_app_with_auth_overrides_auth_contract(self) -> None:
+        app = build_url_audit_app_with_auth(
+            "http://127.0.0.1:8000",
+            auth=AuthConfig(
+                method="cookie", cookie_name="sessionid", cookie_value_env_var="COOKIE"
+            ),
+        )
+
+        self.assertEqual(app.auth.method, "cookie")
+        self.assertEqual(app.auth.cookie_name, "sessionid")
+        self.assertEqual(app.auth.cookie_value_env_var, "COOKIE")
 
     def test_build_url_audit_profile_matches_safe_remote_web_contract(self) -> None:
         profile = build_url_audit_profile()

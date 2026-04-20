@@ -9,6 +9,17 @@ class ConfigValidationCode(StrEnum):
     """Stable validation codes for user-facing configuration errors."""
 
     AUTH_NONE_FORBIDS_SECRET_REFS = "auth_none_forbids_secret_refs"
+    AUTH_API_LOGIN_REQUIRES_LOGIN_URL = "auth_api_login_requires_login_url"
+    AUTH_API_LOGIN_REQUIRES_USERNAME_ENV_VAR = "auth_api_login_requires_username_env_var"
+    AUTH_API_LOGIN_REQUIRES_PASSWORD_ENV_VAR = "auth_api_login_requires_password_env_var"
+    AUTH_API_LOGIN_REQUIRES_LOGIN_CONTENT_TYPE = "auth_api_login_requires_login_content_type"
+    AUTH_API_LOGIN_REQUIRES_USERNAME_FIELD = "auth_api_login_requires_username_field"
+    AUTH_API_LOGIN_REQUIRES_PASSWORD_FIELD = "auth_api_login_requires_password_field"
+    AUTH_API_LOGIN_REQUIRES_AUTH_RESULT = "auth_api_login_requires_auth_result"
+    AUTH_API_LOGIN_REQUIRES_AUTH_RESULT_PATH = "auth_api_login_requires_auth_result_path"
+    AUTH_API_LOGIN_SESSION_JSON_REQUIRES_SESSION_HEADER = (
+        "auth_api_login_session_json_requires_session_header"
+    )
     AUTH_BEARER_TOKEN_REQUIRES_TOKEN_ENV_VAR = "auth_bearer_token_requires_token_env_var"
     AUTH_COOKIE_REQUIRES_COOKIE_NAME = "auth_cookie_requires_cookie_name"
     AUTH_COOKIE_REQUIRES_COOKIE_VALUE_ENV_VAR = "auth_cookie_requires_cookie_value_env_var"

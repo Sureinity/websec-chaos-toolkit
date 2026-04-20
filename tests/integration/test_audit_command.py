@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
+from toolkit.audit.auth import AuditAuthMode
 from toolkit.cli import app
 from toolkit.core.exits import ExitCode
 from toolkit.pentest.contracts import PentestRunStatus, PentestRunSummary
@@ -74,8 +75,108 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["project_root"], project_root)
         self.assertEqual(kwargs["app"].id, "adhoc-127-0-0-1-8000")
         self.assertEqual(kwargs["app"].environment, "local")
+        self.assertEqual(kwargs["app"].auth.method, "none")
         self.assertEqual(kwargs["profile"].name, "adhoc-safe-web-baseline")
         self.assertEqual(kwargs["profile"].assessment_mode, "remote_web")
+
+    def test_audit_rejects_missing_required_auth_flags(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with chdir(project_root):
+                result = RUNNER.invoke(
+                    app,
+                    ["audit", "http://127.0.0.1:8000", "--auth-mode", "bearer_token"],
+                    catch_exceptions=False,
+                )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertIn("requires", result.stderr)
+
+    def test_audit_rejects_mixed_auth_mode_flags(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with chdir(project_root):
+                result = RUNNER.invoke(
+                    app,
+                    [
+                        "audit",
+                        "http://127.0.0.1:8000",
+                        "--auth-mode",
+                        "bearer_token",
+                        "--token-env-var",
+                        "TOKEN",
+                        "--cookie-name",
+                        "sessionid",
+                    ],
+                    catch_exceptions=False,
+                )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertIn("does not allow", result.stderr)
+
+    def test_audit_rejects_auth_flags_without_auth_mode(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with chdir(project_root):
+                result = RUNNER.invoke(
+                    app,
+                    [
+                        "audit",
+                        "http://127.0.0.1:8000",
+                        "--token-env-var",
+                        "TOKEN",
+                    ],
+                    catch_exceptions=False,
+                )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertIn("--auth-mode", result.stderr)
+
+    def test_audit_passes_api_login_auth_config_without_downgrading(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with patch(
+                "toolkit.commands.audit.select_audit_runtime",
+                return_value=_selection(RuntimeMode.HOST),
+            ):
+                with patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ) as run_flow:
+                    with chdir(project_root):
+                        result = RUNNER.invoke(
+                            app,
+                            [
+                                "audit",
+                                "http://127.0.0.1:8000",
+                                "--auth-mode",
+                                "api_login",
+                                "--login-url",
+                                "http://127.0.0.1:8000/api/login",
+                                "--username-env-var",
+                                "TOOLKIT_AUDIT_USERNAME",
+                                "--password-env-var",
+                                "TOOLKIT_AUDIT_PASSWORD",
+                                "--login-content-type",
+                                "json",
+                                "--login-username-field",
+                                "username",
+                                "--login-password-field",
+                                "password",
+                                "--auth-result",
+                                "bearer_json",
+                                "--auth-result-path",
+                                "token",
+                            ],
+                            catch_exceptions=False,
+                        )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        kwargs = run_flow.call_args.kwargs
+        self.assertEqual(kwargs["app"].auth.method, AuditAuthMode.API_LOGIN.value)
+        self.assertEqual(kwargs["app"].auth.login_url.host, "127.0.0.1")
+        self.assertEqual(kwargs["app"].auth.login_content_type, "json")
+        self.assertEqual(kwargs["app"].auth.auth_result, "bearer_json")
 
     def test_audit_honors_explicit_runtime_selection(self) -> None:
         with TemporaryDirectory() as tmp:
