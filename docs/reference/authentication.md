@@ -7,6 +7,8 @@ scanner and chaos workflows.
 Current state:
 
 - config-level auth validation is implemented
+- runtime auth resolution is implemented for `api_login` with JSON login
+  payloads and reusable auth extraction modes
 - env-backed runtime auth resolution is implemented for `bearer_token`,
   `cookie`, and `session`
 - direct form login is implemented for standard `username` / `password` POST

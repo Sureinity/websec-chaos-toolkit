@@ -8,6 +8,7 @@ from toolkit.auth.bootstrap import resolve_auth_session
 from toolkit.auth.errors import (
     BlankSecretValueError,
     MissingEnvironmentVariableError,
+    MissingSessionMaterialError,
     UnsupportedAuthFlowError,
 )
 from toolkit.config.models import AppRegistry
@@ -98,6 +99,47 @@ class AuthResolutionIntegrationTests(unittest.TestCase):
             session.provenance["final_url"], "https://staging.internal.example/dashboard"
         )
 
+    def test_resolve_auth_session_supports_api_login_bearer_json(self) -> None:
+        auth_config = self.apps["local-no-auth-app"].model_copy(deep=True)
+        auth_config.auth = auth_config.auth.model_copy(
+            update={
+                "method": "api_login",
+                "login_url": "https://staging.internal.example/api/login",
+                "username_env_var": "SECURITY_TEST_USERNAME",
+                "password_env_var": "SECURITY_TEST_PASSWORD",
+                "login_content_type": "json",
+                "login_username_field": "username",
+                "login_password_field": "password",
+                "auth_result": "bearer_json",
+                "auth_result_path": "token",
+            }
+        )
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.method == "POST":
+                return httpx.Response(
+                    status_code=200,
+                    json={"token": "api-token"},
+                    request=request,
+                )
+            return httpx.Response(status_code=404, request=request)
+
+        client = httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True)
+        self.addCleanup(client.close)
+
+        session = resolve_auth_session(
+            auth_config,
+            environ={
+                "SECURITY_TEST_USERNAME": "alice",
+                "SECURITY_TEST_PASSWORD": "hunter2",
+            },
+            client=client,
+        )
+
+        self.assertEqual(session.method, "api_login")
+        self.assertEqual(session.headers, {"Authorization": "Bearer api-token"})
+        self.assertEqual(session.provenance["auth_result"], "bearer_json")
+
     def test_resolve_auth_session_fails_for_missing_env_var(self) -> None:
         with self.assertRaises(MissingEnvironmentVariableError) as context:
             resolve_auth_session(self.apps["local-bearer-auth-app"], environ={})
@@ -136,3 +178,38 @@ class AuthResolutionIntegrationTests(unittest.TestCase):
 
         self.assertIn("Unsupported authentication flow.", str(context.exception))
         self.assertNotIn("hunter2", str(context.exception))
+
+    def test_resolve_auth_session_fails_for_unusable_api_login_response(self) -> None:
+        auth_config = self.apps["local-no-auth-app"].model_copy(deep=True)
+        auth_config.auth = auth_config.auth.model_copy(
+            update={
+                "method": "api_login",
+                "login_url": "https://staging.internal.example/api/login",
+                "username_env_var": "SECURITY_TEST_USERNAME",
+                "password_env_var": "SECURITY_TEST_PASSWORD",
+                "login_content_type": "json",
+                "login_username_field": "username",
+                "login_password_field": "password",
+                "auth_result": "cookie",
+            }
+        )
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                status_code=200,
+                json={"message": "ok"},
+                request=request,
+            )
+
+        client = httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True)
+        self.addCleanup(client.close)
+
+        with self.assertRaises(MissingSessionMaterialError):
+            resolve_auth_session(
+                auth_config,
+                environ={
+                    "SECURITY_TEST_USERNAME": "alice",
+                    "SECURITY_TEST_PASSWORD": "hunter2",
+                },
+                client=client,
+            )

@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
-AuthSessionMethod = Literal["none", "bearer_token", "cookie", "session", "form"]
+AuthSessionMethod = Literal["none", "api_login", "bearer_token", "cookie", "session", "form"]
 
 
 @dataclass(slots=True, frozen=True)

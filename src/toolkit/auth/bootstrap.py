@@ -4,6 +4,7 @@ from collections.abc import Mapping
 
 import httpx
 
+from toolkit.auth.api_login import perform_api_login
 from toolkit.auth.form_login import perform_form_login
 from toolkit.auth.resolver import resolve_supported_env_auth
 from toolkit.auth.session import AuthSession, unauthenticated_session
@@ -27,6 +28,13 @@ def resolve_auth_session(
         return resolve_supported_env_auth(
             auth_config,
             environ=dict(environ) if environ is not None else None,
+        )
+
+    if auth_config.method == "api_login":
+        return perform_api_login(
+            auth_config,
+            environ=dict(environ) if environ is not None else None,
+            client=client,
         )
 
     return perform_form_login(
