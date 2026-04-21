@@ -156,7 +156,7 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["target_urls"]["zap"][1], "http://127.0.0.1:8000/admin")
         self.assertEqual(kwargs["target_urls"]["nuclei"][1], "http://127.0.0.1:8000/admin")
 
-    def test_audit_curates_zap_scope_but_keeps_nuclei_broad(self) -> None:
+    def test_audit_curates_zap_and_nuclei_scope(self) -> None:
         with TemporaryDirectory() as tmp:
             project_root = Path(tmp)
             with (
@@ -198,8 +198,14 @@ class AuditCommandTests(unittest.TestCase):
                 "http://127.0.0.1:8000/report-problem",
             ),
         )
-        self.assertIn("http://127.0.0.1:8000/build/app.js", kwargs["target_urls"]["nuclei"])
-        self.assertIn("http://127.0.0.1:8000/assets/logo.png", kwargs["target_urls"]["nuclei"])
+        self.assertEqual(
+            kwargs["target_urls"]["nuclei"],
+            (
+                "http://127.0.0.1:8000/",
+                "http://127.0.0.1:8000/login",
+                "http://127.0.0.1:8000/report-problem",
+            ),
+        )
 
     def test_audit_rejects_missing_required_auth_flags(self) -> None:
         with TemporaryDirectory() as tmp:

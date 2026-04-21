@@ -55,6 +55,8 @@ _STATIC_ASSET_EXTENSIONS = frozenset(
     }
 )
 _HIGH_VALUE_ROUTE_HINTS = (
+    "api",
+    "graphql",
     "login",
     "register",
     "forgot-password",
@@ -68,8 +70,21 @@ _HIGH_VALUE_ROUTE_HINTS = (
     "apply",
     "checkout",
     "payment",
+    "wp-json",
+    "xmlrpc",
 )
 _DEFAULT_ZAP_ROUTE_LIMIT = 8
+_DEFAULT_NUCLEI_ROUTE_LIMIT = 12
+_LOW_VALUE_NUCLEI_SEGMENTS = (
+    "/feed",
+    "/oembed/",
+)
+_LOW_VALUE_NUCLEI_FILENAMES = frozenset(
+    {
+        "load-scripts.php",
+        "load-styles.php",
+    }
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -211,27 +226,35 @@ def plan_discovered_audit_scope(
     seed_url: str,
     discovered_routes: tuple[str, ...],
     zap_route_limit: int = _DEFAULT_ZAP_ROUTE_LIMIT,
+    nuclei_route_limit: int = _DEFAULT_NUCLEI_ROUTE_LIMIT,
 ) -> AuditTargetScope:
     """Plan downstream audit tool scope from discovered same-origin routes.
 
     ZAP gets a curated subset so URL-first runs stay practical on medium sites.
-    Nuclei keeps the broader same-origin route set because it runs as one
-    batched scan rather than one route-by-route baseline session.
+    Nuclei gets a larger but still curated same-origin route set with static
+    assets, noisy helper endpoints, and query variants removed so batched scans
+    stay practical on medium sites.
     """
 
     normalized_routes = _deduplicate_routes(discovered_routes, seed_url=seed_url)
     zap_candidates = [route for route in normalized_routes if _is_zap_candidate(route)]
+    nuclei_candidates = [route for route in normalized_routes if _is_nuclei_candidate(route)]
     zap_routes = _select_zap_routes(
         seed_url=seed_url,
         routes=tuple(zap_candidates),
         limit=zap_route_limit,
+    )
+    nuclei_routes = _select_nuclei_routes(
+        seed_url=seed_url,
+        routes=tuple(nuclei_candidates),
+        limit=nuclei_route_limit,
     )
 
     return AuditTargetScope(
         seed_url=seed_url,
         discovered_routes=normalized_routes,
         zap_routes=zap_routes,
-        nuclei_routes=normalized_routes,
+        nuclei_routes=nuclei_routes,
     )
 
 
@@ -287,6 +310,14 @@ def _canonical_route(route: str) -> str:
     return parsed._replace(path=path, query=parsed.query, fragment="").geturl()
 
 
+def _canonical_nuclei_route(route: str) -> str:
+    parsed = urlsplit(route)
+    path = parsed.path or "/"
+    if path != "/":
+        path = path.rstrip("/")
+    return parsed._replace(path=path, query="", fragment="").geturl()
+
+
 def _is_zap_candidate(route: str) -> bool:
     parsed = urlsplit(route)
     path = parsed.path or "/"
@@ -294,7 +325,29 @@ def _is_zap_candidate(route: str) -> bool:
         suffix = Path(path).suffix.lower()
         if suffix in _STATIC_ASSET_EXTENSIONS:
             return False
+    if parsed.query:
+        return False
+    if _is_low_value_helper_path(path):
+        return False
     return True
+
+
+def _is_nuclei_candidate(route: str) -> bool:
+    parsed = urlsplit(route)
+    path = parsed.path or "/"
+    filename = Path(path.lower()).name
+    if not _is_zap_candidate(route):
+        return False
+    if filename in _LOW_VALUE_NUCLEI_FILENAMES:
+        return False
+    return True
+
+
+def _is_low_value_helper_path(path: str) -> bool:
+    lowered = path.lower()
+    if Path(lowered).name in _LOW_VALUE_NUCLEI_FILENAMES:
+        return True
+    return any(segment in lowered for segment in _LOW_VALUE_NUCLEI_SEGMENTS)
 
 
 def _select_zap_routes(
@@ -312,6 +365,37 @@ def _select_zap_routes(
     selected: list[str] = [seed_url]
     for _, route in sorted(
         ranked,
+        key=lambda item: (
+            _route_priority(item[1]),
+            _route_depth(item[1]),
+            len(item[1]),
+            item[1],
+        ),
+    ):
+        if len(selected) >= max(1, limit):
+            break
+        selected.append(route)
+    return tuple(selected)
+
+
+def _select_nuclei_routes(
+    *,
+    seed_url: str,
+    routes: tuple[str, ...],
+    limit: int,
+) -> tuple[str, ...]:
+    seed_canonical = _canonical_nuclei_route(seed_url)
+    normalized_routes: dict[str, str] = {seed_canonical: seed_url}
+    for route in routes:
+        normalized_routes.setdefault(_canonical_nuclei_route(route), _canonical_nuclei_route(route))
+
+    selected: list[str] = [seed_url]
+    for _canonical, route in sorted(
+        (
+            (canonical, route)
+            for canonical, route in normalized_routes.items()
+            if canonical != seed_canonical
+        ),
         key=lambda item: (
             _route_priority(item[1]),
             _route_depth(item[1]),

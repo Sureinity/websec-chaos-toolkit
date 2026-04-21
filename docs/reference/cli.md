@@ -19,8 +19,8 @@ Current command behavior:
   available audit runtime (`container` preferred, `host` fallback), accepts
   optional auth-mode flags, validates one auth mode per run fail-closed,
   captures an `httpx` preflight fingerprint, discovers same-origin routes with
-  `katana`, feeds a curated discovered-route subset into ZAP, keeps the
-  broader same-origin route set for Nuclei, executes a safe remote-web audit,
+  `katana`, feeds a curated discovered-route subset into ZAP, feeds a larger
+  but filtered same-origin route set into Nuclei, executes a safe remote-web audit,
   emits structured runtime log records for tool start, output, and finish
   events, writes run artifacts under
   `outputs/<run-id>/`, reports failed tool details when a scanner runtime

@@ -55,15 +55,18 @@ class KatanaDiscoveryTests(unittest.TestCase):
             ("https://target.internal/", "https://target.internal/admin"),
         )
 
-    def test_plan_discovered_audit_scope_filters_static_assets_for_zap(self) -> None:
+    def test_plan_discovered_audit_scope_curates_nuclei_targets(self) -> None:
         scope = plan_discovered_audit_scope(
             seed_url="https://target.internal/",
             discovered_routes=(
                 "https://target.internal/",
                 "https://target.internal/login",
+                "https://target.internal/login?next=/admin",
                 "https://target.internal/build/app.js",
                 "https://target.internal/image/logo.png",
                 "https://target.internal/report-problem",
+                "https://target.internal/feed/",
+                "https://target.internal/api/openapi.json",
             ),
         )
 
@@ -75,8 +78,14 @@ class KatanaDiscoveryTests(unittest.TestCase):
                 "https://target.internal/report-problem",
             ),
         )
-        self.assertIn("https://target.internal/build/app.js", scope.nuclei_routes)
-        self.assertIn("https://target.internal/image/logo.png", scope.nuclei_routes)
+        self.assertEqual(
+            scope.nuclei_routes,
+            (
+                "https://target.internal/",
+                "https://target.internal/login",
+                "https://target.internal/report-problem",
+            ),
+        )
 
     def test_plan_discovered_audit_scope_caps_zap_routes_and_prefers_high_value_paths(self) -> None:
         scope = plan_discovered_audit_scope(
@@ -95,6 +104,7 @@ class KatanaDiscoveryTests(unittest.TestCase):
                 "https://target.internal/blog/post-1",
             ),
             zap_route_limit=4,
+            nuclei_route_limit=6,
         )
 
         self.assertEqual(
@@ -106,7 +116,17 @@ class KatanaDiscoveryTests(unittest.TestCase):
                 "https://target.internal/register",
             ),
         )
-        self.assertGreater(len(scope.nuclei_routes), len(scope.zap_routes))
+        self.assertEqual(
+            scope.nuclei_routes,
+            (
+                "https://target.internal/",
+                "https://target.internal/login",
+                "https://target.internal/contact",
+                "https://target.internal/register",
+                "https://target.internal/report-problem",
+                "https://target.internal/blog",
+            ),
+        )
 
     def test_run_katana_discovery_forwards_auth_headers_and_cookies(self) -> None:
         runtime = _RuntimeStub()
