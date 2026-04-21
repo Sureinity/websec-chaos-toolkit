@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
+from toolkit.adapters.base import build_failed_result
 from toolkit.audit.auth import AuditAuthMode
 from toolkit.audit.discovery import KatanaDiscoveryResult
 from toolkit.audit.fingerprint import AuditFingerprintError, HttpxFingerprint
@@ -291,6 +292,61 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
         self.assertIn("Runtime: host", result.stdout)
         select_runtime.assert_called_once_with(preferred_mode=RuntimeMode.HOST)
+
+    def test_audit_reports_failed_summary_and_tool_details(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            failed_summary = PentestRunSummary(
+                run_id="20260420-074911-3af8685e",
+                status=PentestRunStatus.FAILED,
+                exit_code=ExitCode.CONFIG_OR_RUNTIME_ERROR,
+                findings_count=3,
+                actionable_findings_count=2,
+                adapter_results=(
+                    build_failed_result(
+                        "zap",
+                        error_detail="zap exited with code 3",
+                    ),
+                ),
+                normalized_bundle_path=(
+                    project_root / "outputs" / "run" / "normalized" / "findings.json"
+                ),
+                report_path=(project_root / "outputs" / "run" / "reports" / "executive-summary.md"),
+            )
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=failed_summary,
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "https://infosoft.poolreno.com/"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertNotIn("Audit completed.", result.stdout)
+        self.assertIn("Status: failed", result.stdout)
+        self.assertIn("Audit failed.", result.stderr)
+        self.assertIn("Tool failure: zap: zap exited with code 3", result.stderr)
 
     def test_audit_rejects_invalid_url(self) -> None:
         with TemporaryDirectory() as tmp:

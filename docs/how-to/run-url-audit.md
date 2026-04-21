@@ -79,7 +79,7 @@ uv run toolkit audit https://target.internal --runtime container
 
 ## Successful Output
 
-On success, the command prints a summary similar to:
+On success or findings, the command prints a summary similar to:
 
 ```text
 Audit completed.
@@ -92,6 +92,10 @@ Actionable findings: 1
 Normalized bundle: /path/to/outputs/<run-id>/normalized/findings.json
 Report: /path/to/outputs/<run-id>/reports/executive-summary.md
 ```
+
+If a core scanner fails at runtime, the command prints `Audit failed.`, keeps
+the run summary, and reports the failed tool details on stderr before exiting
+with `2`.
 
 ## Failure Behavior
 

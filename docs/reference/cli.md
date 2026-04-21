@@ -21,7 +21,8 @@ Current command behavior:
   captures an `httpx` preflight fingerprint, discovers same-origin routes with
   `katana`, feeds the seed URL plus discovered routes into ZAP and Nuclei,
   executes a safe remote-web audit, writes run artifacts under
-  `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
+  `outputs/<run-id>/`, reports failed tool details when a scanner runtime
+  fails, and exits with `0`, `1`, or `2`
 - `toolkit edge-chaos` derives an ad hoc chaos target from the supplied URL,
   starts a managed local Toxiproxy container, creates a local proxy, probes
   the requested URL path through that proxy, runs one reversible edge-chaos

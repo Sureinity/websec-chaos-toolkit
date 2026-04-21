@@ -1,7 +1,9 @@
 """Tests for the Docker container runtime backend."""
 
+import subprocess
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from toolkit.runtime.container import ContainerRuntime
@@ -215,3 +217,30 @@ class ContainerExecutionTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("no container image", result.stderr)
+
+    def test_execute_creates_output_directory_before_running_docker(self) -> None:
+        runtime = ContainerRuntime()
+        with TemporaryDirectory() as tmp_dir_name:
+            output_path = Path(tmp_dir_name) / "outputs" / "zap" / "results.json"
+            request = RuntimeRequest(
+                tool="zap",
+                command=("zap-baseline.py", "-J", str(output_path)),
+                output_path=output_path,
+            )
+
+            def _run(*args, **kwargs):  # type: ignore[no-untyped-def]
+                self.assertTrue(output_path.parent.is_dir())
+                return subprocess.CompletedProcess(
+                    args=kwargs.get("args", args[0] if args else ()),
+                    returncode=0,
+                    stdout="",
+                    stderr="",
+                )
+
+            with patch(
+                "toolkit.runtime.container.subprocess.run",
+                side_effect=_run,
+            ):
+                result = runtime.execute(request)
+
+        self.assertEqual(result.returncode, 0)

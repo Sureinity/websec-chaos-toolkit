@@ -23,6 +23,7 @@ from toolkit.auth.bootstrap import resolve_auth_session
 from toolkit.auth.errors import AuthRuntimeError
 from toolkit.core.exits import ExitCode
 from toolkit.core.run_context import RunRequest, prepare_run_context, utc_now
+from toolkit.pentest.contracts import PentestRunStatus, PentestRunSummary
 from toolkit.pentest.runner import run_pentest_live_flow
 from toolkit.runtime.contracts import RuntimeMode
 from toolkit.runtime.selector import RuntimeSelectionError, select_audit_runtime
@@ -193,7 +194,12 @@ def register(root_app: typer.Typer) -> None:
             typer.echo(str(exc), err=True)
             raise typer.Exit(code=ExitCode.CONFIG_OR_RUNTIME_ERROR) from exc
 
-        typer.echo("Audit completed.")
+        if summary.status == PentestRunStatus.FAILED:
+            typer.echo("Audit failed.", err=True)
+            for detail in _failed_tool_details(summary):
+                typer.echo(f"Tool failure: {detail}", err=True)
+        else:
+            typer.echo("Audit completed.")
         typer.echo(f"Target: {app_config.base_url}")
         typer.echo(f"Run: {summary.run_id}")
         typer.echo(f"Status: {summary.status}")
@@ -209,3 +215,11 @@ def register(root_app: typer.Typer) -> None:
         typer.echo(f"Normalized bundle: {summary.normalized_bundle_path}")
         typer.echo(f"Report: {summary.report_path}")
         raise typer.Exit(code=summary.exit_code)
+
+
+def _failed_tool_details(summary: PentestRunSummary) -> tuple[str, ...]:
+    return tuple(
+        f"{result.tool}: {result.error_detail}"
+        for result in summary.adapter_results
+        if result.failed and result.error_detail is not None
+    )

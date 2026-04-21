@@ -61,8 +61,8 @@ class ContainerRuntime:
                 stderr=(f"no container image configured for tool: {request.tool}"),
             )
 
+        request.output_path.parent.mkdir(parents=True, exist_ok=True)
         docker_command = self._build_docker_command(request, image=image)
-
         merged_env = dict(os.environ)
         merged_env.update(request.env_overrides)
 
