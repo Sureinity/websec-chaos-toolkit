@@ -9,8 +9,10 @@ from toolkit.audit.auth import (
 )
 from toolkit.audit.discovery import (
     AuditDiscoveryError,
+    AuditTargetScope,
     KatanaDiscoveryResult,
     load_discovered_routes,
+    plan_discovered_audit_scope,
     run_katana_discovery,
 )
 from toolkit.audit.fingerprint import (
@@ -24,6 +26,7 @@ from toolkit.audit.metadata import load_audit_auth_context, write_audit_auth_con
 
 __all__ = [
     "AuditDiscoveryError",
+    "AuditTargetScope",
     "AuditFingerprintError",
     "ApiLoginAuthResult",
     "ApiLoginContentType",
@@ -36,6 +39,7 @@ __all__ = [
     "load_audit_auth_context",
     "load_discovered_routes",
     "load_httpx_fingerprint",
+    "plan_discovered_audit_scope",
     "run_katana_discovery",
     "write_audit_auth_context",
     "write_httpx_fingerprint",

@@ -13,6 +13,63 @@ from toolkit.runtime.base import RuntimeBackend
 from toolkit.runtime.models import RuntimeRequest
 
 _DISCOVERED_URL_PATTERN = re.compile(r'"(?:endpoint|url)":"((?:\\.|[^"\\])*)"')
+_STATIC_ASSET_EXTENSIONS = frozenset(
+    {
+        ".7z",
+        ".avi",
+        ".bmp",
+        ".css",
+        ".csv",
+        ".doc",
+        ".docx",
+        ".eot",
+        ".gif",
+        ".gz",
+        ".ico",
+        ".jpeg",
+        ".jpg",
+        ".js",
+        ".json",
+        ".map",
+        ".mp3",
+        ".mp4",
+        ".pdf",
+        ".png",
+        ".ppt",
+        ".pptx",
+        ".rar",
+        ".svg",
+        ".tar",
+        ".tgz",
+        ".ttf",
+        ".txt",
+        ".wav",
+        ".webm",
+        ".webp",
+        ".woff",
+        ".woff2",
+        ".xls",
+        ".xlsx",
+        ".xml",
+        ".zip",
+    }
+)
+_HIGH_VALUE_ROUTE_HINTS = (
+    "login",
+    "register",
+    "forgot-password",
+    "reset-password",
+    "contact",
+    "report-problem",
+    "account",
+    "profile",
+    "dashboard",
+    "admin",
+    "apply",
+    "checkout",
+    "payment",
+)
+_DEFAULT_ZAP_ROUTE_LIMIT = 8
 
 
 @dataclass(slots=True, frozen=True)
@@ -22,6 +79,16 @@ class KatanaDiscoveryResult:
     raw_output_path: Path
     route_manifest_path: Path
     routes: tuple[str, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class AuditTargetScope:
+    """Curated discovery scope for downstream runtime-backed audit tools."""
+
+    seed_url: str
+    discovered_routes: tuple[str, ...]
+    zap_routes: tuple[str, ...]
+    nuclei_routes: tuple[str, ...]
 
 
 class AuditDiscoveryError(RuntimeError):
@@ -139,6 +206,35 @@ def load_discovered_routes(run_dir: Path) -> tuple[str, ...]:
     )
 
 
+def plan_discovered_audit_scope(
+    *,
+    seed_url: str,
+    discovered_routes: tuple[str, ...],
+    zap_route_limit: int = _DEFAULT_ZAP_ROUTE_LIMIT,
+) -> AuditTargetScope:
+    """Plan downstream audit tool scope from discovered same-origin routes.
+
+    ZAP gets a curated subset so URL-first runs stay practical on medium sites.
+    Nuclei keeps the broader same-origin route set because it runs as one
+    batched scan rather than one route-by-route baseline session.
+    """
+
+    normalized_routes = _deduplicate_routes(discovered_routes, seed_url=seed_url)
+    zap_candidates = [route for route in normalized_routes if _is_zap_candidate(route)]
+    zap_routes = _select_zap_routes(
+        seed_url=seed_url,
+        routes=tuple(zap_candidates),
+        limit=zap_route_limit,
+    )
+
+    return AuditTargetScope(
+        seed_url=seed_url,
+        discovered_routes=normalized_routes,
+        zap_routes=zap_routes,
+        nuclei_routes=normalized_routes,
+    )
+
+
 def _extract_discovered_url(payload: dict[str, object]) -> str | None:
     request = payload.get("request")
     if isinstance(request, dict):
@@ -167,3 +263,80 @@ def _extract_discovered_url_from_line(line: str) -> str | None:
     if not isinstance(payload, dict):
         return None
     return _extract_discovered_url(payload)
+
+
+def _deduplicate_routes(routes: tuple[str, ...], *, seed_url: str) -> tuple[str, ...]:
+    canonical_to_route: dict[str, str] = {_canonical_route(seed_url): seed_url}
+    for route in routes:
+        canonical_to_route.setdefault(_canonical_route(route), route)
+
+    ordered_routes = [seed_url]
+    ordered_routes.extend(
+        route
+        for canonical, route in sorted(canonical_to_route.items(), key=lambda item: item[1])
+        if canonical != _canonical_route(seed_url)
+    )
+    return tuple(ordered_routes)
+
+
+def _canonical_route(route: str) -> str:
+    parsed = urlsplit(route)
+    path = parsed.path or "/"
+    if path != "/":
+        path = path.rstrip("/")
+    return parsed._replace(path=path, query=parsed.query, fragment="").geturl()
+
+
+def _is_zap_candidate(route: str) -> bool:
+    parsed = urlsplit(route)
+    path = parsed.path or "/"
+    if path != "/" and "." in Path(path).name:
+        suffix = Path(path).suffix.lower()
+        if suffix in _STATIC_ASSET_EXTENSIONS:
+            return False
+    return True
+
+
+def _select_zap_routes(
+    *,
+    seed_url: str,
+    routes: tuple[str, ...],
+    limit: int,
+) -> tuple[str, ...]:
+    seed_canonical = _canonical_route(seed_url)
+    ranked = sorted(
+        (_canonical_route(route), route)
+        for route in routes
+        if _canonical_route(route) != seed_canonical
+    )
+    selected: list[str] = [seed_url]
+    for _, route in sorted(
+        ranked,
+        key=lambda item: (
+            _route_priority(item[1]),
+            _route_depth(item[1]),
+            len(item[1]),
+            item[1],
+        ),
+    ):
+        if len(selected) >= max(1, limit):
+            break
+        selected.append(route)
+    return tuple(selected)
+
+
+def _route_priority(route: str) -> int:
+    lowered = route.lower()
+    if any(hint in lowered for hint in _HIGH_VALUE_ROUTE_HINTS):
+        return 0
+    parsed = urlsplit(route)
+    if (parsed.path or "/") == "/":
+        return 0
+    return 1
+
+
+def _route_depth(route: str) -> int:
+    path = urlsplit(route).path.strip("/")
+    if not path:
+        return 0
+    return len([segment for segment in path.split("/") if segment])

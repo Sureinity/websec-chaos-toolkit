@@ -3,7 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from toolkit.adapters.base import AdapterAvailability
-from toolkit.audit.discovery import run_katana_discovery
+from toolkit.audit.discovery import plan_discovered_audit_scope, run_katana_discovery
 from toolkit.auth.session import AuthSession
 from toolkit.runtime.models import RuntimeResult
 
@@ -54,6 +54,59 @@ class KatanaDiscoveryTests(unittest.TestCase):
             result.routes,
             ("https://target.internal/", "https://target.internal/admin"),
         )
+
+    def test_plan_discovered_audit_scope_filters_static_assets_for_zap(self) -> None:
+        scope = plan_discovered_audit_scope(
+            seed_url="https://target.internal/",
+            discovered_routes=(
+                "https://target.internal/",
+                "https://target.internal/login",
+                "https://target.internal/build/app.js",
+                "https://target.internal/image/logo.png",
+                "https://target.internal/report-problem",
+            ),
+        )
+
+        self.assertEqual(
+            scope.zap_routes,
+            (
+                "https://target.internal/",
+                "https://target.internal/login",
+                "https://target.internal/report-problem",
+            ),
+        )
+        self.assertIn("https://target.internal/build/app.js", scope.nuclei_routes)
+        self.assertIn("https://target.internal/image/logo.png", scope.nuclei_routes)
+
+    def test_plan_discovered_audit_scope_caps_zap_routes_and_prefers_high_value_paths(self) -> None:
+        scope = plan_discovered_audit_scope(
+            seed_url="https://target.internal/",
+            discovered_routes=(
+                "https://target.internal/",
+                "https://target.internal/login",
+                "https://target.internal/register",
+                "https://target.internal/contact",
+                "https://target.internal/report-problem",
+                "https://target.internal/projects",
+                "https://target.internal/projects/one",
+                "https://target.internal/projects/two",
+                "https://target.internal/about",
+                "https://target.internal/blog",
+                "https://target.internal/blog/post-1",
+            ),
+            zap_route_limit=4,
+        )
+
+        self.assertEqual(
+            scope.zap_routes,
+            (
+                "https://target.internal/",
+                "https://target.internal/login",
+                "https://target.internal/contact",
+                "https://target.internal/register",
+            ),
+        )
+        self.assertGreater(len(scope.nuclei_routes), len(scope.zap_routes))
 
     def test_run_katana_discovery_forwards_auth_headers_and_cookies(self) -> None:
         runtime = _RuntimeStub()

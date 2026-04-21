@@ -128,6 +128,8 @@ These instructions apply to this repository directory. If a deeper
     Markdown summary under `outputs/<run-id>/`, emits structured runtime log
     records for tool start, output, and finish events, and exits with `0`,
     `1`, or `2`; auto-selects `container` then `host` runtime when possible;
+    curates a smaller discovered-route subset for ZAP while keeping a broader
+    same-origin route set for Nuclei;
     `-v` shows stderr tool output, `-vv` adds stdout tool output, and `-vvv`
     adds command-level context such as command and working directory
   - `toolkit edge-chaos` derives an ad hoc chaos target from a single URL,

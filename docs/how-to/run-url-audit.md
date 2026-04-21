@@ -78,7 +78,8 @@ uv run toolkit audit -vvv https://target.internal
 - derives an internal app id, allowlist, and health endpoint from that URL
 - captures an `httpx` preflight fingerprint before deeper scanner execution
 - discovers same-origin routes with `katana`
-- feeds the seed URL plus discovered routes into ZAP and Nuclei
+- feeds a curated discovered-route subset into ZAP
+- keeps the broader same-origin route set for Nuclei
 - keeps Nmap limited to conservative host and service context
 - captures an `httpx` preflight fingerprint before deeper scanner execution
 - builds the built-in safe remote-web profile

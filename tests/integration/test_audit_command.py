@@ -73,6 +73,22 @@ def _discovery(tmp_dir: Path) -> KatanaDiscoveryResult:
     )
 
 
+def _discovery_with_assets(tmp_dir: Path) -> KatanaDiscoveryResult:
+    raw_output_path = tmp_dir / "outputs" / "run" / "raw" / "katana" / "results.jsonl"
+    route_manifest_path = tmp_dir / "outputs" / "run" / "raw" / "katana" / "discovered-routes.txt"
+    return KatanaDiscoveryResult(
+        raw_output_path=raw_output_path,
+        route_manifest_path=route_manifest_path,
+        routes=(
+            "http://127.0.0.1:8000/",
+            "http://127.0.0.1:8000/login",
+            "http://127.0.0.1:8000/build/app.js",
+            "http://127.0.0.1:8000/assets/logo.png",
+            "http://127.0.0.1:8000/report-problem",
+        ),
+    )
+
+
 def _auth_session(method: str = "none") -> AuthSession:
     if method == "api_login":
         return AuthSession(
@@ -139,6 +155,51 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["extra_raw_artifact_paths"][0].name, "fingerprint.json")
         self.assertEqual(kwargs["target_urls"]["zap"][1], "http://127.0.0.1:8000/admin")
         self.assertEqual(kwargs["target_urls"]["nuclei"][1], "http://127.0.0.1:8000/admin")
+
+    def test_audit_curates_zap_scope_but_keeps_nuclei_broad(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery_with_assets(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ) as run_flow,
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        kwargs = run_flow.call_args.kwargs
+        self.assertEqual(
+            kwargs["target_urls"]["zap"],
+            (
+                "http://127.0.0.1:8000/",
+                "http://127.0.0.1:8000/login",
+                "http://127.0.0.1:8000/report-problem",
+            ),
+        )
+        self.assertIn("http://127.0.0.1:8000/build/app.js", kwargs["target_urls"]["nuclei"])
+        self.assertIn("http://127.0.0.1:8000/assets/logo.png", kwargs["target_urls"]["nuclei"])
 
     def test_audit_rejects_missing_required_auth_flags(self) -> None:
         with TemporaryDirectory() as tmp:

@@ -15,6 +15,7 @@ from toolkit.audit import (
     AuditFingerprintError,
     build_url_audit_auth_config,
     capture_httpx_fingerprint,
+    plan_discovered_audit_scope,
     run_katana_discovery,
     write_audit_auth_context,
     write_httpx_fingerprint,
@@ -171,6 +172,10 @@ def register(root_app: typer.Typer) -> None:
                     runtime=selection.backend,
                     auth_session=auth_session,
                 )
+                target_scope = plan_discovered_audit_scope(
+                    seed_url=str(app_config.base_url),
+                    discovered_routes=discovery.routes,
+                )
                 summary = run_pentest_live_flow(
                     project_root=project_root,
                     app=app_config,
@@ -186,8 +191,8 @@ def register(root_app: typer.Typer) -> None:
                     ),
                     auth_session=auth_session,
                     target_urls={
-                        "zap": discovery.routes,
-                        "nuclei": discovery.routes,
+                        "zap": target_scope.zap_routes,
+                        "nuclei": target_scope.nuclei_routes,
                     },
                 )
             except (
