@@ -104,6 +104,27 @@ def _auth_session(method: str = "none") -> AuthSession:
 
 
 class AuditCommandTests(unittest.TestCase):
+    def test_audit_help_groups_auth_options_by_mode(self) -> None:
+        result = RUNNER.invoke(
+            app,
+            ["audit", "--help"],
+            catch_exceptions=False,
+        )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        self.assertIn("General Audit Options", result.stdout)
+        self.assertIn("Auth Mode Selection", result.stdout)
+        self.assertIn("Auth Mode: bearer_token", result.stdout)
+        self.assertIn("Auth Mode: cookie", result.stdout)
+        self.assertIn("Auth Mode: session", result.stdout)
+        self.assertIn("Auth Modes: form and api_login", result.stdout)
+        self.assertIn("Auth Mode: api_login", result.stdout)
+        self.assertIn("--token-env-var", result.stdout)
+        self.assertIn("--cookie-name", result.stdout)
+        self.assertIn("--session-header", result.stdout)
+        self.assertIn("--login-url", result.stdout)
+        self.assertIn("--auth-result", result.stdout)
+
     def test_audit_succeeds_without_yaml_using_auto_selected_runtime(self) -> None:
         with TemporaryDirectory() as tmp:
             project_root = Path(tmp)

@@ -31,6 +31,14 @@ from toolkit.runtime.contracts import RuntimeMode
 from toolkit.runtime.selector import RuntimeSelectionError, select_audit_runtime
 from toolkit.targets import build_url_audit_app_with_auth, build_url_audit_profile
 
+_GENERAL_AUDIT_PANEL = "General Audit Options"
+_AUTH_MODE_SELECTION_PANEL = "Auth Mode Selection"
+_AUTH_BEARER_PANEL = "Auth Mode: bearer_token"
+_AUTH_COOKIE_PANEL = "Auth Mode: cookie"
+_AUTH_SESSION_PANEL = "Auth Mode: session"
+_AUTH_SHARED_LOGIN_PANEL = "Auth Modes: form and api_login"
+_AUTH_API_LOGIN_PANEL = "Auth Mode: api_login"
+
 
 def register(root_app: typer.Typer) -> None:
     """Register the top-level URL-first audit command."""
@@ -46,6 +54,7 @@ def register(root_app: typer.Typer) -> None:
             typer.Option(
                 "--runtime",
                 help="Execution backend: container or host. Auto-select when omitted.",
+                rich_help_panel=_GENERAL_AUDIT_PANEL,
             ),
         ] = None,
         verbose: Annotated[
@@ -55,6 +64,7 @@ def register(root_app: typer.Typer) -> None:
                 "-v",
                 count=True,
                 help="Increase runtime log verbosity (-v, -vv, -vvv).",
+                rich_help_panel=_GENERAL_AUDIT_PANEL,
             ),
         ] = 0,
         auth_mode: Annotated[
@@ -65,70 +75,126 @@ def register(root_app: typer.Typer) -> None:
                     "Optional auth mode for URL-first audit: "
                     "none, api_login, bearer_token, cookie, session, or form."
                 ),
+                rich_help_panel=_AUTH_MODE_SELECTION_PANEL,
             ),
         ] = None,
         token_env_var: Annotated[
             str | None,
-            typer.Option("--token-env-var", help="Env var name for bearer_token auth."),
+            typer.Option(
+                "--token-env-var",
+                help="Required for bearer_token. Env var name that holds the bearer token.",
+                rich_help_panel=_AUTH_BEARER_PANEL,
+            ),
         ] = None,
         cookie_name: Annotated[
             str | None,
-            typer.Option("--cookie-name", help="Cookie name for cookie auth."),
+            typer.Option(
+                "--cookie-name",
+                help="Required for cookie. Cookie name to inject into requests.",
+                rich_help_panel=_AUTH_COOKIE_PANEL,
+            ),
         ] = None,
         cookie_value_env_var: Annotated[
             str | None,
-            typer.Option("--cookie-value-env-var", help="Env var name for cookie auth."),
+            typer.Option(
+                "--cookie-value-env-var",
+                help="Required for cookie. Env var name that holds the cookie value.",
+                rich_help_panel=_AUTH_COOKIE_PANEL,
+            ),
         ] = None,
         session_header: Annotated[
             str | None,
-            typer.Option("--session-header", help="Header name for session or session_json auth."),
+            typer.Option(
+                "--session-header",
+                help=(
+                    "Required for session. Also required for api_login when "
+                    "--auth-result is session_json."
+                ),
+                rich_help_panel=_AUTH_SESSION_PANEL,
+            ),
         ] = None,
         session_value_env_var: Annotated[
             str | None,
-            typer.Option("--session-value-env-var", help="Env var name for session auth."),
+            typer.Option(
+                "--session-value-env-var",
+                help="Required for session. Env var name that holds the session header value.",
+                rich_help_panel=_AUTH_SESSION_PANEL,
+            ),
         ] = None,
         login_url: Annotated[
             str | None,
-            typer.Option("--login-url", help="Login endpoint used by form or api_login auth."),
+            typer.Option(
+                "--login-url",
+                help="Required for form and api_login. Login endpoint to submit credentials to.",
+                rich_help_panel=_AUTH_SHARED_LOGIN_PANEL,
+            ),
         ] = None,
         username_env_var: Annotated[
             str | None,
-            typer.Option("--username-env-var", help="Env var name for login username."),
+            typer.Option(
+                "--username-env-var",
+                help="Required for form and api_login. Env var name that holds the login username.",
+                rich_help_panel=_AUTH_SHARED_LOGIN_PANEL,
+            ),
         ] = None,
         password_env_var: Annotated[
             str | None,
-            typer.Option("--password-env-var", help="Env var name for login password."),
+            typer.Option(
+                "--password-env-var",
+                help="Required for form and api_login. Env var name that holds the login password.",
+                rich_help_panel=_AUTH_SHARED_LOGIN_PANEL,
+            ),
         ] = None,
         login_content_type: Annotated[
             ApiLoginContentType | None,
-            typer.Option("--login-content-type", help="Login request content type for api_login."),
+            typer.Option(
+                "--login-content-type",
+                help="Required for api_login. Login request content type.",
+                rich_help_panel=_AUTH_API_LOGIN_PANEL,
+            ),
         ] = None,
         login_username_field: Annotated[
             str | None,
             typer.Option(
                 "--login-username-field",
-                help="Username field name for form or api_login.",
+                help=(
+                    "Required for form and api_login. Username field name in the "
+                    "submitted form body or JSON payload."
+                ),
+                rich_help_panel=_AUTH_SHARED_LOGIN_PANEL,
             ),
         ] = None,
         login_password_field: Annotated[
             str | None,
             typer.Option(
                 "--login-password-field",
-                help="Password field name for form or api_login.",
+                help=(
+                    "Required for form and api_login. Password field name in the "
+                    "submitted form body or JSON payload."
+                ),
+                rich_help_panel=_AUTH_SHARED_LOGIN_PANEL,
             ),
         ] = None,
         auth_result: Annotated[
             ApiLoginAuthResult | None,
             typer.Option(
                 "--auth-result",
-                help="Reusable auth material to extract for api_login.",
+                help=(
+                    "Required for api_login. Reusable auth material to extract "
+                    "from the login response."
+                ),
+                rich_help_panel=_AUTH_API_LOGIN_PANEL,
             ),
         ] = None,
         auth_result_path: Annotated[
             str | None,
             typer.Option(
                 "--auth-result-path",
-                help="JSON path for bearer_json or session_json extraction modes.",
+                help=(
+                    "Required for api_login when bearer_json or session_json is "
+                    "selected. JSON path to the reusable auth value."
+                ),
+                rich_help_panel=_AUTH_API_LOGIN_PANEL,
             ),
         ] = None,
     ) -> None:
