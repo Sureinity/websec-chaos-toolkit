@@ -96,6 +96,26 @@ class ZapAdapterTests(unittest.TestCase):
         self.assertIn("matchstr=Authorization", execution.command[-1])
         self.assertIn("matchstr=Cookie", execution.command[-1])
 
+    def test_build_execution_supports_explicit_cookie_header(self) -> None:
+        adapter = ZapAdapter(
+            app=build_app(),
+            settings=build_settings(),
+            output_path=Path("/tmp/run/raw/zap/results.json"),
+            auth_session=AuthSession(
+                method="form",
+                headers={"Cookie": "wordpress_cookie=admin; wordpress_cookie=root"},
+                cookie_header="wordpress_cookie=admin; wordpress_cookie=root",
+            ),
+        )
+
+        execution = adapter.build_execution()
+
+        self.assertIn("matchstr=Cookie", execution.command[-1])
+        self.assertIn(
+            "replacement=wordpress_cookie=admin; wordpress_cookie=root",
+            execution.command[-1],
+        )
+
     def test_build_execution_blocks_when_safe_mode_is_disabled(self) -> None:
         adapter = ZapAdapter(
             app=build_app(),

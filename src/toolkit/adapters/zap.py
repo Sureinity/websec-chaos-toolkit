@@ -13,7 +13,7 @@ from toolkit.adapters.base import (
     build_success_result,
 )
 from toolkit.adapters.process import check_binary_available
-from toolkit.auth.session import AuthSession
+from toolkit.auth.session import AuthSession, resolve_cookie_header
 from toolkit.config.models import AppConfig, PentestToolSettings
 from toolkit.results.models import NormalizedResult
 from toolkit.results.normalizers import build_normalized_result
@@ -184,9 +184,11 @@ def _build_replacer_options(auth_session: AuthSession | None) -> tuple[str, ...]
     if auth_session is None:
         return ()
 
-    header_values = dict(auth_session.headers)
-    if auth_session.cookies:
-        cookie_header = "; ".join(f"{name}={value}" for name, value in auth_session.cookies.items())
+    header_values = {
+        name: value for name, value in auth_session.headers.items() if name.lower() != "cookie"
+    }
+    cookie_header = resolve_cookie_header(auth_session)
+    if cookie_header:
         header_values["Cookie"] = cookie_header
 
     options: list[str] = []

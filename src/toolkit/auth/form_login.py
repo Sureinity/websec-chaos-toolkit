@@ -12,7 +12,7 @@ from toolkit.auth.errors import (
     MissingSessionMaterialError,
     UnsupportedAuthFlowError,
 )
-from toolkit.auth.session import AuthSession
+from toolkit.auth.session import AuthSession, extract_cookie_material
 from toolkit.config.models import AuthConfig
 
 UNSUPPORTED_LOGIN_MARKERS = ("sso", "mfa", "captcha", "multi-factor")
@@ -116,8 +116,25 @@ def _perform_login_request(
             secrets=secrets,
         )
 
-    cookies = dict(client.cookies.items())
+    cookies, cookie_header = extract_cookie_material(client.cookies.jar)
     if not cookies:
+        if cookie_header is not None:
+            return AuthSession(
+                method="form",
+                headers={"Cookie": cookie_header},
+                cookie_header=cookie_header,
+                provenance={
+                    "source": "form_login",
+                    "login_url": login_url,
+                    "username_env_var": username_env_var,
+                    "password_env_var": password_env_var,
+                    "login_username_field": username_field,
+                    "login_password_field": password_field,
+                    "final_url": str(response.url),
+                    "status_code": str(response.status_code),
+                    "cookie_transport": "header",
+                },
+            )
         raise MissingSessionMaterialError(
             method="form",
             detail=(
@@ -139,6 +156,7 @@ def _perform_login_request(
             "login_password_field": password_field,
             "final_url": str(response.url),
             "status_code": str(response.status_code),
+            "cookie_transport": "mapping",
         },
     )
 

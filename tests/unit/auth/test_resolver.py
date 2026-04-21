@@ -138,6 +138,8 @@ class AuthResolverTests(unittest.TestCase):
             login_url="https://staging.internal.example/login",
             username_env_var="SECURITY_TEST_USERNAME",
             password_env_var="SECURITY_TEST_PASSWORD",
+            login_username_field="username",
+            login_password_field="password",
         )
 
         with self.assertRaises(UnsupportedAuthFlowError) as context:

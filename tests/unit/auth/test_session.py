@@ -1,6 +1,13 @@
 import unittest
 
-from toolkit.auth.session import AuthSession, unauthenticated_session
+import httpx
+
+from toolkit.auth.session import (
+    AuthSession,
+    extract_cookie_material,
+    resolve_cookie_header,
+    unauthenticated_session,
+)
 
 
 class AuthSessionTests(unittest.TestCase):
@@ -22,3 +29,23 @@ class AuthSessionTests(unittest.TestCase):
 
         self.assertTrue(session.is_authenticated)
         self.assertEqual(session.provenance["token_env_var"], "SECURITY_TEST_BEARER_TOKEN")
+
+    def test_resolve_cookie_header_prefers_explicit_cookie_header(self) -> None:
+        session = AuthSession(
+            method="form",
+            headers={"Cookie": "a=1; a=2"},
+            cookie_header="a=1; a=2",
+        )
+
+        self.assertEqual(resolve_cookie_header(session), "a=1; a=2")
+
+    def test_extract_cookie_material_falls_back_to_header_for_duplicate_names(self) -> None:
+        client = httpx.Client()
+        self.addCleanup(client.close)
+        client.cookies.set("wordpress_cookie", "root", domain="example.com", path="/")
+        client.cookies.set("wordpress_cookie", "admin", domain="example.com", path="/wp-admin")
+
+        cookies, cookie_header = extract_cookie_material(client.cookies.jar)
+
+        self.assertEqual(cookies, {})
+        self.assertEqual(cookie_header, "wordpress_cookie=admin; wordpress_cookie=root")

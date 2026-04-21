@@ -13,7 +13,7 @@ from toolkit.auth.errors import (
     MissingSessionMaterialError,
     UnsupportedAuthFlowError,
 )
-from toolkit.auth.session import AuthSession
+from toolkit.auth.session import AuthSession, extract_cookie_material
 from toolkit.config.models import AuthConfig
 
 
@@ -105,8 +105,19 @@ def _perform_login_request(
         )
 
     if auth_config.auth_result == "cookie":
-        cookies = dict(client.cookies.items())
+        cookies, cookie_header = extract_cookie_material(client.cookies.jar)
         if not cookies:
+            if cookie_header is not None:
+                return AuthSession(
+                    method="api_login",
+                    headers={"Cookie": cookie_header},
+                    cookie_header=cookie_header,
+                    provenance=_provenance(
+                        auth_config,
+                        response,
+                        cookie_transport="header",
+                    ),
+                )
             raise MissingSessionMaterialError(
                 method="api_login",
                 detail="Login response did not produce reusable cookies.",
@@ -115,7 +126,7 @@ def _perform_login_request(
         return AuthSession(
             method="api_login",
             cookies=cookies,
-            provenance=_provenance(auth_config, response),
+            provenance=_provenance(auth_config, response, cookie_transport="mapping"),
         )
 
     payload = _parse_json_response(response, secrets=secrets)
@@ -198,7 +209,12 @@ def _extract_json_path(
     return value
 
 
-def _provenance(auth_config: AuthConfig, response: httpx.Response) -> dict[str, str]:
+def _provenance(
+    auth_config: AuthConfig,
+    response: httpx.Response,
+    *,
+    cookie_transport: str | None = None,
+) -> dict[str, str]:
     provenance = {
         "source": "api_login",
         "login_url": str(auth_config.login_url),
@@ -213,6 +229,8 @@ def _provenance(auth_config: AuthConfig, response: httpx.Response) -> dict[str, 
         provenance["auth_result_path"] = auth_config.auth_result_path
     if auth_config.session_header is not None:
         provenance["session_header"] = auth_config.session_header
+    if cookie_transport is not None:
+        provenance["cookie_transport"] = cookie_transport
     return provenance
 
 

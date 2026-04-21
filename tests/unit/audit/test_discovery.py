@@ -149,6 +149,27 @@ class KatanaDiscoveryTests(unittest.TestCase):
         self.assertIn("Authorization: Bearer token", runtime.request.command)
         self.assertIn("Cookie: sessionid=cookie-value", runtime.request.command)
 
+    def test_run_katana_discovery_supports_explicit_cookie_header(self) -> None:
+        runtime = _RuntimeStub()
+        auth_session = AuthSession(
+            method="form",
+            headers={"Cookie": "wordpress_cookie=admin; wordpress_cookie=root"},
+            cookie_header="wordpress_cookie=admin; wordpress_cookie=root",
+        )
+
+        with TemporaryDirectory() as tmp_dir_name:
+            raw_dir = Path(tmp_dir_name) / "raw"
+            run_katana_discovery(
+                seed_url="https://target.internal/",
+                raw_dir=raw_dir,
+                runtime=runtime,
+                auth_session=auth_session,
+            )
+
+        self.assertIn(
+            "Cookie: wordpress_cookie=admin; wordpress_cookie=root", runtime.request.command
+        )
+
     def test_run_katana_discovery_tolerates_malformed_json_lines(self) -> None:
         runtime = _RuntimeStub()
 

@@ -83,6 +83,46 @@ class ApiLoginUnitTests(unittest.TestCase):
 
         self.assertEqual(session.cookies, {"sessionid": "session-cookie"})
         self.assertEqual(session.provenance["auth_result"], "cookie")
+        self.assertEqual(session.provenance["cookie_transport"], "mapping")
+
+    def test_perform_api_login_preserves_duplicate_cookie_names_as_cookie_header(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.method == "POST":
+                return httpx.Response(
+                    status_code=HTTPStatus.OK,
+                    headers=[
+                        ("Set-Cookie", "wordpress_cookie=root-cookie; Path=/; HttpOnly"),
+                        (
+                            "Set-Cookie",
+                            "wordpress_cookie=admin-cookie; Path=/wp-admin; HttpOnly",
+                        ),
+                    ],
+                    json={"message": "ok"},
+                    request=request,
+                )
+            return httpx.Response(status_code=HTTPStatus.NOT_FOUND, request=request)
+
+        client = httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True)
+        self.addCleanup(client.close)
+
+        session = perform_api_login(
+            build_api_login_config(auth_result="cookie", auth_result_path=None),
+            environ={
+                "SECURITY_TEST_USERNAME": "alice",
+                "SECURITY_TEST_PASSWORD": "hunter2",
+            },
+            client=client,
+        )
+
+        self.assertEqual(session.cookies, {})
+        self.assertEqual(
+            session.cookie_header, "wordpress_cookie=admin-cookie; wordpress_cookie=root-cookie"
+        )
+        self.assertEqual(
+            session.headers["Cookie"],
+            "wordpress_cookie=admin-cookie; wordpress_cookie=root-cookie",
+        )
+        self.assertEqual(session.provenance["cookie_transport"], "header")
 
     def test_perform_api_login_returns_session_header_from_json(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:

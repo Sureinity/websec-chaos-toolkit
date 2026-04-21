@@ -75,6 +75,8 @@ class FormLoginIntegrationTests(unittest.TestCase):
             login_url=f"{self.base_url}/login",
             username_env_var="SECURITY_TEST_USERNAME",
             password_env_var="SECURITY_TEST_PASSWORD",
+            login_username_field="username",
+            login_password_field="password",
         )
 
         session = perform_form_login(
@@ -96,6 +98,8 @@ class FormLoginIntegrationTests(unittest.TestCase):
             login_url=f"{self.base_url}/login",
             username_env_var="SECURITY_TEST_USERNAME",
             password_env_var="SECURITY_TEST_PASSWORD",
+            login_username_field="username",
+            login_password_field="password",
         )
 
         with self.assertRaises(UnsupportedAuthFlowError) as context:

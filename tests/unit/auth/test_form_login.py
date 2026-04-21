@@ -74,6 +74,7 @@ class FormLoginUnitTests(unittest.TestCase):
                 "login_password_field": "passwd",
                 "final_url": "https://staging.internal.example/dashboard",
                 "status_code": "200",
+                "cookie_transport": "mapping",
             },
         )
 
@@ -166,3 +167,46 @@ class FormLoginUnitTests(unittest.TestCase):
 
         self.assertIn("No reusable cookies were returned", str(context.exception))
         self.assertNotIn("hunter2", str(context.exception))
+
+    def test_perform_form_login_preserves_duplicate_cookie_names_as_cookie_header(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.method == "POST":
+                return httpx.Response(
+                    status_code=HTTPStatus.FOUND,
+                    headers=[
+                        ("Location", "https://staging.internal.example/dashboard"),
+                        ("Set-Cookie", "wordpress_cookie=root-cookie; Path=/; HttpOnly"),
+                        (
+                            "Set-Cookie",
+                            "wordpress_cookie=admin-cookie; Path=/wp-admin; HttpOnly",
+                        ),
+                    ],
+                    request=request,
+                )
+            return httpx.Response(
+                status_code=HTTPStatus.OK,
+                text="dashboard",
+                request=request,
+            )
+
+        client = httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True)
+        self.addCleanup(client.close)
+
+        session = perform_form_login(
+            build_form_auth_config(),
+            environ={
+                "SECURITY_TEST_USERNAME": "alice",
+                "SECURITY_TEST_PASSWORD": "hunter2",
+            },
+            client=client,
+        )
+
+        self.assertEqual(session.cookies, {})
+        self.assertEqual(
+            session.cookie_header, "wordpress_cookie=admin-cookie; wordpress_cookie=root-cookie"
+        )
+        self.assertEqual(
+            session.headers["Cookie"],
+            "wordpress_cookie=admin-cookie; wordpress_cookie=root-cookie",
+        )
+        self.assertEqual(session.provenance["cookie_transport"], "header")

@@ -112,6 +112,24 @@ class NucleiAdapterTests(unittest.TestCase):
         self.assertIn("Cookie: sessionid=cookie-value", execution.command)
         self.assertEqual(execution.cwd, output_path.parent)
 
+    def test_build_execution_supports_explicit_cookie_header(self) -> None:
+        with TemporaryDirectory() as temp_dir_name:
+            output_path = Path(temp_dir_name) / "results.jsonl"
+            adapter = NucleiAdapter(
+                app=build_app(),
+                settings=build_settings(),
+                output_path=output_path,
+                auth_session=AuthSession(
+                    method="form",
+                    headers={"Cookie": "wordpress_cookie=admin; wordpress_cookie=root"},
+                    cookie_header="wordpress_cookie=admin; wordpress_cookie=root",
+                ),
+            )
+
+            execution = adapter.build_execution()
+
+        self.assertIn("Cookie: wordpress_cookie=admin; wordpress_cookie=root", execution.command)
+
     def test_build_execution_blocks_when_safe_mode_is_disabled(self) -> None:
         adapter = NucleiAdapter(
             app=build_app(),

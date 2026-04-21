@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from toolkit.auth.session import AuthSession
+from toolkit.auth.session import AuthSession, resolve_cookie_header
 from toolkit.runtime.base import RuntimeBackend
 from toolkit.runtime.models import RuntimeRequest
 
@@ -185,9 +185,13 @@ def _auth_headers(auth_session: AuthSession | None) -> dict[str, str]:
     if auth_session is None:
         return {}
 
-    headers = {name: f"{name}: {value}" for name, value in auth_session.headers.items()}
-    if auth_session.cookies:
-        cookie_header = "; ".join(f"{name}={value}" for name, value in auth_session.cookies.items())
+    headers = {
+        name: f"{name}: {value}"
+        for name, value in auth_session.headers.items()
+        if name.lower() != "cookie"
+    }
+    cookie_header = resolve_cookie_header(auth_session)
+    if cookie_header:
         headers["Cookie"] = f"Cookie: {cookie_header}"
     return headers
 
