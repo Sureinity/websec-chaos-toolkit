@@ -125,8 +125,9 @@ These instructions apply to this repository directory. If a deeper
 - Current behavior:
   - `toolkit audit` derives an ad hoc target from a single URL, executes a
     safe remote-web audit, writes raw artifacts, normalized findings, and a
-    Markdown summary under `outputs/<run-id>/`, and exits with `0`, `1`, or
-    `2`; auto-selects `container` then `host` runtime when possible
+    Markdown summary under `outputs/<run-id>/`, streams live tool stdout and
+    stderr from the selected runtime, and exits with `0`, `1`, or `2`;
+    auto-selects `container` then `host` runtime when possible
   - `toolkit edge-chaos` derives an ad hoc chaos target from a single URL,
     starts a managed local Toxiproxy container, creates one local proxy,
     probes the requested URL path through that proxy, injects one reversible
@@ -137,7 +138,8 @@ These instructions apply to this repository directory. If a deeper
     path, runs Semgrep and/or Trivy using the built-in `source_tree` profile,
     selects host or container runtime for the selected tools, writes raw
     artifacts, normalized findings, and a Markdown summary under
-    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
+    `outputs/<run-id>/`, streams live tool stdout and stderr from the
+    selected runtime, and exits with `0`, `1`, or `2`
   - `toolkit validate` loads and validates repository YAML config from the
     current working directory and exits with `0` on success or `2` on
     validation/runtime failure
@@ -145,8 +147,9 @@ These instructions apply to this repository directory. If a deeper
     current edge-chaos readiness status
   - `toolkit pentest run` executes real scanner binaries against a live target,
     writes raw artifacts, normalized findings, and a Markdown summary under
-    `outputs/<run-id>/`, and exits with `0`, `1`, or `2`; requires core
-    binaries on `PATH`; optional Trivy and Semgrep join when explicitly enabled
+    `outputs/<run-id>/`, streams live tool stdout and stderr from the selected
+    runtime, and exits with `0`, `1`, or `2`; requires core binaries on
+    `PATH`; optional Trivy and Semgrep join when explicitly enabled
   - `toolkit chaos run` executes a live Toxiproxy-backed chaos experiment,
     writes raw artifacts, normalized findings, and a Markdown summary under
     `outputs/<run-id>/`, and exits with `0`, `1`, or `2`; requires a running

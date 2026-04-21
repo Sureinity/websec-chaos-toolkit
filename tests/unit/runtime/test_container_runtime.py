@@ -1,11 +1,11 @@
 """Tests for the Docker container runtime backend."""
 
-import subprocess
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from toolkit.adapters.process import ProcessResult
 from toolkit.runtime.container import ContainerRuntime
 from toolkit.runtime.models import RuntimeRequest
 
@@ -230,15 +230,16 @@ class ContainerExecutionTests(unittest.TestCase):
 
             def _run(*args, **kwargs):  # type: ignore[no-untyped-def]
                 self.assertTrue(output_path.parent.is_dir())
-                return subprocess.CompletedProcess(
-                    args=kwargs.get("args", args[0] if args else ()),
+                self.assertTrue(kwargs["stream_output"])
+                return ProcessResult(
+                    command=kwargs["command"],
                     returncode=0,
                     stdout="",
                     stderr="",
                 )
 
             with patch(
-                "toolkit.runtime.container.subprocess.run",
+                "toolkit.runtime.container.run_process_command",
                 side_effect=_run,
             ):
                 result = runtime.execute(request)

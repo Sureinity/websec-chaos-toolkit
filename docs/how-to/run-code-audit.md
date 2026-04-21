@@ -92,6 +92,7 @@ uv run toolkit code-audit . --tool trivy --runtime container
   - host when the selected tools are available locally
   - container when host tools are missing and Docker is available
   - explicit `--runtime` override when requested
+- streams live tool stdout and stderr while scanners are running
 - writes outputs under `outputs/<run-id>/`
 
 ## Successful Output
@@ -108,6 +109,9 @@ Actionable findings: 2
 Normalized bundle: /path/to/outputs/<run-id>/normalized/findings.json
 Report: /path/to/outputs/<run-id>/reports/executive-summary.md
 ```
+
+The live tool output appears before the final summary and remains visible even
+when the run later fails.
 
 ## Failure Behavior
 

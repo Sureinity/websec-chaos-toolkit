@@ -75,6 +75,7 @@ uv run toolkit audit https://target.internal --runtime container
 - captures an `httpx` preflight fingerprint before deeper scanner execution
 - builds the built-in safe remote-web profile
 - runs ZAP, Nuclei, and Nmap through the selected runtime backend
+- streams live tool stdout and stderr while scanners are running
 - writes outputs under `outputs/<run-id>/`
 
 ## Successful Output
@@ -95,7 +96,8 @@ Report: /path/to/outputs/<run-id>/reports/executive-summary.md
 
 If a core scanner fails at runtime, the command prints `Audit failed.`, keeps
 the run summary, and reports the failed tool details on stderr before exiting
-with `2`.
+with `2`. Live tool output that was already emitted stays visible in the
+terminal.
 
 ## Failure Behavior
 

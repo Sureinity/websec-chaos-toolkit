@@ -1,4 +1,5 @@
 import unittest
+from io import StringIO
 
 from toolkit.adapters.base import ToolExecution
 from toolkit.adapters.process import (
@@ -66,3 +67,28 @@ class ProcessRunnerTests(unittest.TestCase):
         self.assertFalse(result.succeeded)
         self.assertTrue(result.timed_out)
         self.assertEqual(result.returncode, -1)
+
+    def test_run_tool_execution_streams_stdout_and_stderr(self) -> None:
+        execution = ToolExecution(
+            tool="python",
+            command=(
+                "python3",
+                "-c",
+                ("import sys; " "print('hello streamed'); " "sys.stderr.write('warn streamed\\n')"),
+            ),
+        )
+        stdout_target = StringIO()
+        stderr_target = StringIO()
+
+        result = run_tool_execution(
+            execution,
+            stream_output=True,
+            stdout_target=stdout_target,
+            stderr_target=stderr_target,
+        )
+
+        self.assertTrue(result.succeeded)
+        self.assertIn("hello streamed", result.stdout)
+        self.assertIn("warn streamed", result.stderr)
+        self.assertIn("hello streamed", stdout_target.getvalue())
+        self.assertIn("warn streamed", stderr_target.getvalue())

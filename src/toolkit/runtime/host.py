@@ -5,12 +5,8 @@ RuntimeBackend protocol. The host backend requires scanner binaries
 installed on the operator's PATH.
 """
 
-import os
-import subprocess
-from pathlib import Path
-
 from toolkit.adapters.base import AdapterAvailability
-from toolkit.adapters.process import find_binary
+from toolkit.adapters.process import find_binary, run_process_command
 from toolkit.runtime.models import RuntimeRequest, RuntimeResult
 
 
@@ -31,33 +27,18 @@ class HostRuntime:
         )
 
     def execute(self, request: RuntimeRequest) -> RuntimeResult:
-        merged_env = dict(os.environ)
-        merged_env.update(request.env_overrides)
-
-        try:
-            completed = subprocess.run(
-                request.command,
-                cwd=request.cwd,
-                env=merged_env,
-                capture_output=True,
-                text=True,
-                timeout=request.timeout_seconds,
-                check=False,
-            )
-        except subprocess.TimeoutExpired as exc:
-            stdout = exc.stdout if isinstance(exc.stdout, str) else ""
-            stderr = exc.stderr if isinstance(exc.stderr, str) else ""
-            return RuntimeResult(
-                command=request.command,
-                returncode=-1,
-                stdout=stdout,
-                stderr=stderr,
-                timed_out=True,
-            )
+        completed = run_process_command(
+            command=request.command,
+            cwd=request.cwd,
+            env_overrides=request.env_overrides,
+            timeout_seconds=request.timeout_seconds,
+            stream_output=True,
+        )
 
         return RuntimeResult(
-            command=request.command,
+            command=completed.command,
             returncode=completed.returncode,
             stdout=completed.stdout,
             stderr=completed.stderr,
+            timed_out=completed.timed_out,
         )

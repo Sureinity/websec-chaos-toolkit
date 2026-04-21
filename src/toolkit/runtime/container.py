@@ -11,12 +11,10 @@ Failure contract:
 - Container execution failure: RuntimeResult with non-zero returncode.
 """
 
-import os
-import subprocess
 from pathlib import Path
 
 from toolkit.adapters.base import AdapterAvailability
-from toolkit.adapters.process import find_binary
+from toolkit.adapters.process import find_binary, run_process_command
 from toolkit.runtime.contracts import CONTAINER_TOOL_ALIASES, CONTAINER_TOOL_IMAGES
 from toolkit.runtime.models import RuntimeRequest, RuntimeResult
 
@@ -63,34 +61,19 @@ class ContainerRuntime:
 
         request.output_path.parent.mkdir(parents=True, exist_ok=True)
         docker_command = self._build_docker_command(request, image=image)
-        merged_env = dict(os.environ)
-        merged_env.update(request.env_overrides)
-
-        try:
-            completed = subprocess.run(
-                docker_command,
-                env=merged_env,
-                capture_output=True,
-                text=True,
-                timeout=request.timeout_seconds,
-                check=False,
-            )
-        except subprocess.TimeoutExpired as exc:
-            stdout = exc.stdout if isinstance(exc.stdout, str) else ""
-            stderr = exc.stderr if isinstance(exc.stderr, str) else ""
-            return RuntimeResult(
-                command=docker_command,
-                returncode=-1,
-                stdout=stdout,
-                stderr=stderr,
-                timed_out=True,
-            )
+        completed = run_process_command(
+            command=docker_command,
+            env_overrides=request.env_overrides,
+            timeout_seconds=request.timeout_seconds,
+            stream_output=True,
+        )
 
         return RuntimeResult(
-            command=docker_command,
+            command=completed.command,
             returncode=completed.returncode,
             stdout=completed.stdout,
             stderr=completed.stderr,
+            timed_out=completed.timed_out,
         )
 
     def _resolve_image(self, tool: str) -> str | None:

@@ -2,12 +2,12 @@
 
 import unittest
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from toolkit.adapters.base import AdapterAvailability, ToolExecution
+from toolkit.adapters.base import ToolExecution
+from toolkit.adapters.process import ProcessResult
 from toolkit.runtime.host import HostRuntime
-from toolkit.runtime.models import RuntimeRequest, RuntimeResult
+from toolkit.runtime.models import RuntimeRequest
 
 
 class HostRuntimeAvailabilityTests(unittest.TestCase):
@@ -43,11 +43,27 @@ class HostRuntimeExecutionTests(unittest.TestCase):
             output_path=Path("/dev/null"),
         )
 
-        result = runtime.execute(request)
+        with patch(
+            "toolkit.runtime.host.run_process_command",
+            return_value=ProcessResult(
+                command=request.command,
+                returncode=0,
+                stdout="hello\n",
+                stderr="",
+            ),
+        ) as run_process:
+            result = runtime.execute(request)
 
         self.assertEqual(result.returncode, 0)
         self.assertIn("hello", result.stdout)
         self.assertTrue(result.succeeded)
+        run_process.assert_called_once_with(
+            command=request.command,
+            cwd=None,
+            env_overrides={},
+            timeout_seconds=None,
+            stream_output=True,
+        )
 
     def test_execute_captures_nonzero_returncode(self) -> None:
         runtime = HostRuntime()
@@ -57,7 +73,16 @@ class HostRuntimeExecutionTests(unittest.TestCase):
             output_path=Path("/dev/null"),
         )
 
-        result = runtime.execute(request)
+        with patch(
+            "toolkit.runtime.host.run_process_command",
+            return_value=ProcessResult(
+                command=request.command,
+                returncode=1,
+                stdout="",
+                stderr="failed\n",
+            ),
+        ):
+            result = runtime.execute(request)
 
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(result.succeeded)
@@ -71,7 +96,17 @@ class HostRuntimeExecutionTests(unittest.TestCase):
             timeout_seconds=0.1,
         )
 
-        result = runtime.execute(request)
+        with patch(
+            "toolkit.runtime.host.run_process_command",
+            return_value=ProcessResult(
+                command=request.command,
+                returncode=-1,
+                stdout="",
+                stderr="",
+                timed_out=True,
+            ),
+        ):
+            result = runtime.execute(request)
 
         self.assertTrue(result.timed_out)
         self.assertFalse(result.succeeded)
@@ -88,9 +123,7 @@ class RuntimeRequestFromToolExecutionTests(unittest.TestCase):
         )
         output = Path("/tmp/results.xml")
 
-        request = RuntimeRequest.from_tool_execution(
-            execution, output_path=output
-        )
+        request = RuntimeRequest.from_tool_execution(execution, output_path=output)
 
         self.assertEqual(request.tool, "nmap")
         self.assertEqual(request.command, ("nmap", "-F", "localhost"))
