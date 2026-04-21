@@ -7,6 +7,7 @@ installed on the operator's PATH.
 
 from toolkit.adapters.base import AdapterAvailability
 from toolkit.adapters.process import find_binary, run_process_command
+from toolkit.core.logging import ProcessLogContext
 from toolkit.runtime.models import RuntimeRequest, RuntimeResult
 
 
@@ -33,6 +34,12 @@ class HostRuntime:
             env_overrides=request.env_overrides,
             timeout_seconds=request.timeout_seconds,
             stream_output=True,
+            log_context=ProcessLogContext(
+                runtime="host",
+                tool=request.tool,
+                output_path=request.output_path,
+                cwd=request.cwd,
+            ),
         )
 
         return RuntimeResult(

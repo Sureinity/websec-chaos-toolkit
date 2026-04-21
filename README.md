@@ -9,17 +9,17 @@ Current state:
 - `toolkit audit` runs a zero-config safe web audit from a single URL and
   auto-selects `container` or `host` runtime readiness, supports optional
   auth modes, fingerprints the target with `httpx`, discovers routes with
-  `katana`, and streams live tool output from the selected runtime
+  `katana`, and emits structured runtime logs from the selected runtime
 - `toolkit edge-chaos` runs a managed local edge-chaos experiment from a
   single URL
 - `toolkit code-audit` runs a zero-config source-tree audit from a local path
   and can narrow to `semgrep` or `trivy`; auto-selects `host` first and then
-  `container` when Docker is available, while streaming live tool output
+  `container` when Docker is available, while emitting structured runtime logs
 - `toolkit validate` validates app/profile config against the locked schema
 - `toolkit pentest run` executes real scanner binaries (zap, nuclei, nmap)
   against a live target via host subprocess or Docker container backend; a
   fixture-backed flow is preserved for onboarding and offline testing, and
-  live runs stream tool output to the operator terminal
+  live runs emit structured runtime logs to the operator terminal
 - `toolkit doctor` reports environment readiness for the simplified audit path
 - `toolkit chaos run` executes live Toxiproxy-backed experiments against a
   live target; a fixture-backed flow is preserved for onboarding and offline
@@ -199,30 +199,30 @@ Reference and rationale:
 The public CLI surface is implemented and uses one entrypoint:
 
 ```text
-toolkit audit <url> [--runtime host|container] [--auth-mode <mode>] [mode-specific auth flags]
+toolkit audit <url> [--runtime host|container] [-v|-vv|-vvv] [--auth-mode <mode>] [mode-specific auth flags]
 toolkit edge-chaos <url> [--fault <name>]
-toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
+toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container] [-v|-vv|-vvv]
 toolkit validate --app <id> --env <env>
 toolkit doctor
-toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
+toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container] [-v|-vv|-vvv]
 toolkit chaos run --app <id> --env <env> --profile <name>
 toolkit report build --run-id <id>
 ```
 
-`toolkit audit` runs a zero-config remote web audit from a URL, optionally
+`toolkit audit <url> [-v|-vv|-vvv]` runs a zero-config remote web audit from a URL, optionally
 authenticates, fingerprints the target, discovers same-origin routes,
-streams live tool output, and writes run artifacts.
+emits structured runtime logs, and writes run artifacts.
 `toolkit edge-chaos` runs one managed local edge-chaos experiment from a URL
 and writes run artifacts with probe, fault, rollback, and recovery summary
 fields.
-`toolkit code-audit` runs a zero-config source-tree audit from a path,
-streams live tool output, and writes run artifacts; it prefers host
+`toolkit code-audit <path> [-v|-vv|-vvv]` runs a zero-config source-tree audit from a path,
+emits structured runtime logs, and writes run artifacts; it prefers host
 execution when selected tools are installed and falls back to container
 execution when Docker is available.
 `toolkit validate` now performs real configuration loading and validation.
 `toolkit doctor` reports simplified runtime readiness for the audit path.
-`toolkit pentest run` now executes real scanner binaries against a live target,
-streams live tool output, and writes run artifacts.
+`toolkit pentest run [-v|-vv|-vvv]` now executes real scanner binaries against
+a live target, emits structured runtime logs, and writes run artifacts.
 `toolkit chaos run` now executes live Toxiproxy-backed experiments and writes
 run artifacts.
 `toolkit report build` now rebuilds Markdown summaries from stored normalized

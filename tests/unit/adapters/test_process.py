@@ -7,6 +7,7 @@ from toolkit.adapters.process import (
     find_binary,
     run_tool_execution,
 )
+from toolkit.core.logging import runtime_logging_scope
 
 
 class ProcessRunnerTests(unittest.TestCase):
@@ -80,15 +81,22 @@ class ProcessRunnerTests(unittest.TestCase):
         stdout_target = StringIO()
         stderr_target = StringIO()
 
-        result = run_tool_execution(
-            execution,
-            stream_output=True,
-            stdout_target=stdout_target,
-            stderr_target=stderr_target,
-        )
+        with runtime_logging_scope(verbosity=2, color=False):
+            result = run_tool_execution(
+                execution,
+                stream_output=True,
+                stdout_target=stdout_target,
+                stderr_target=stderr_target,
+            )
 
         self.assertTrue(result.succeeded)
         self.assertIn("hello streamed", result.stdout)
         self.assertIn("warn streamed", result.stderr)
+        self.assertIn("event=tool.start", stdout_target.getvalue())
+        self.assertIn("event=tool.output", stdout_target.getvalue())
+        self.assertIn("tool=python", stdout_target.getvalue())
+        self.assertIn("stream=stdout", stdout_target.getvalue())
         self.assertIn("hello streamed", stdout_target.getvalue())
+        self.assertIn("event=tool.finish", stdout_target.getvalue())
+        self.assertIn("stream=stderr", stderr_target.getvalue())
         self.assertIn("warn streamed", stderr_target.getvalue())

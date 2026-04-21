@@ -13,6 +13,7 @@ from toolkit.codeaudit.selection import (
     select_code_audit_tools,
 )
 from toolkit.core.exits import ExitCode
+from toolkit.core.logging import runtime_logging_scope
 from toolkit.pentest.runner import run_pentest_live_flow
 from toolkit.runtime.contracts import RuntimeMode
 from toolkit.targets import build_source_tree_audit_app, build_source_tree_audit_profile
@@ -41,41 +42,51 @@ def register(root_app: typer.Typer) -> None:
                 help="Execution backend: host or container. Auto-select when omitted.",
             ),
         ] = None,
+        verbose: Annotated[
+            int,
+            typer.Option(
+                "--verbose",
+                "-v",
+                count=True,
+                help="Increase runtime log verbosity (-v, -vv, -vvv).",
+            ),
+        ] = 0,
     ) -> None:
         """Run a zero-config source-tree audit with Semgrep and/or Trivy."""
 
         project_root = Path.cwd()
 
-        try:
-            resolved_path = path.expanduser().resolve()
-            selection = select_code_audit_runtime(
-                resolved_path,
-                preferred_tool=tool,
-                preferred_mode=runtime,
-            )
-            app_config = build_source_tree_audit_app(resolved_path)
-            code_audit_profile = _profile_for_selected_tools(tool)
-            target_paths = {
-                selected_tool: resolved_path for selected_tool in select_code_audit_tools(tool)
-            }
-            summary = run_pentest_live_flow(
-                project_root=project_root,
-                app=app_config,
-                profile=code_audit_profile,
-                runtime=selection.backend,
-                target_paths=target_paths,
-            )
-        except (
-            AuthRuntimeError,
-            CodeAuditSelectionError,
-            FileExistsError,
-            FileNotFoundError,
-            ValidationError,
-            ValueError,
-        ) as exc:
-            typer.echo("Code audit failed.", err=True)
-            typer.echo(str(exc), err=True)
-            raise typer.Exit(code=ExitCode.CONFIG_OR_RUNTIME_ERROR) from exc
+        with runtime_logging_scope(verbosity=verbose):
+            try:
+                resolved_path = path.expanduser().resolve()
+                selection = select_code_audit_runtime(
+                    resolved_path,
+                    preferred_tool=tool,
+                    preferred_mode=runtime,
+                )
+                app_config = build_source_tree_audit_app(resolved_path)
+                code_audit_profile = _profile_for_selected_tools(tool)
+                target_paths = {
+                    selected_tool: resolved_path for selected_tool in select_code_audit_tools(tool)
+                }
+                summary = run_pentest_live_flow(
+                    project_root=project_root,
+                    app=app_config,
+                    profile=code_audit_profile,
+                    runtime=selection.backend,
+                    target_paths=target_paths,
+                )
+            except (
+                AuthRuntimeError,
+                CodeAuditSelectionError,
+                FileExistsError,
+                FileNotFoundError,
+                ValidationError,
+                ValueError,
+            ) as exc:
+                typer.echo("Code audit failed.", err=True)
+                typer.echo(str(exc), err=True)
+                raise typer.Exit(code=ExitCode.CONFIG_OR_RUNTIME_ERROR) from exc
 
         typer.echo("Code audit completed.")
         typer.echo(f"Target path: {resolved_path}")

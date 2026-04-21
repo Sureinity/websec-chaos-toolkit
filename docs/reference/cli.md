@@ -3,12 +3,12 @@
 The bootstrap scaffold exposes the implemented public command tree:
 
 ```text
-toolkit audit <url> [--runtime host|container] [--auth-mode <mode>] [mode-specific auth flags]
+toolkit audit <url> [--runtime host|container] [-v|-vv|-vvv] [--auth-mode <mode>] [mode-specific auth flags]
 toolkit edge-chaos <url> [--fault <name>]
-toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]
+toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container] [-v|-vv|-vvv]
 toolkit validate --app <id> --env <env>
 toolkit doctor
-toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
+toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container] [-v|-vv|-vvv]
 toolkit chaos run --app <id> --env <env> --profile <name>
 toolkit report build --run-id <id>
 ```
@@ -20,10 +20,11 @@ Current command behavior:
   optional auth-mode flags, validates one auth mode per run fail-closed,
   captures an `httpx` preflight fingerprint, discovers same-origin routes with
   `katana`, feeds the seed URL plus discovered routes into ZAP and Nuclei,
-  executes a safe remote-web audit, streams live tool stdout and stderr from
-  the selected runtime, writes run artifacts under `outputs/<run-id>/`,
-  reports failed tool details when a scanner runtime fails, and exits with
-  `0`, `1`, or `2`
+  executes a safe remote-web audit, emits structured runtime log records for
+  tool start, output, and finish events, writes run artifacts under
+  `outputs/<run-id>/`, reports failed tool details when a scanner runtime
+  fails, and exits with `0`, `1`, or `2`; `-v` shows stderr tool output,
+  `-vv` adds stdout tool output, and `-vvv` adds command-level context
 - `toolkit edge-chaos` derives an ad hoc chaos target from the supplied URL,
   starts a managed local Toxiproxy container, creates a local proxy, probes
   the requested URL path through that proxy, runs one reversible edge-chaos
@@ -36,17 +37,21 @@ Current command behavior:
   - `--runtime host`
   - `--runtime container`
   - host first, then container, when omitted
-  It streams live tool stdout and stderr from the selected runtime, writes
-  run artifacts under `outputs/<run-id>/`, and exits with `0`, `1`, or `2`
+  It emits structured runtime log records for tool start, output, and finish
+  events, writes run artifacts under `outputs/<run-id>/`, and exits with `0`,
+  `1`, or `2`; `-v` shows stderr tool output, `-vv` adds stdout tool output,
+  and `-vvv` adds command-level context
 - `toolkit validate` loads the repository YAML files from the current working
   directory, validates the selected `--app/--env` pair, and exits with `0` on
   success
 - `toolkit doctor` reports audit runtime readiness and the current simplified
   edge-chaos readiness status
 - `toolkit pentest run` executes real scanner adapters (zap, nuclei, nmap)
-  against a live target, streams live tool stdout and stderr from the
-  selected runtime, writes run artifacts under `outputs/<run-id>/`, and exits
-  with `0`, `1`, or `2` according to the pentest outcome contract;
+  against a live target, emits structured runtime log records for tool start,
+  output, and finish events, writes run artifacts under `outputs/<run-id>/`,
+  and exits with `0`, `1`, or `2` according to the pentest outcome contract;
+  `-v` shows stderr tool output, `-vv` adds stdout tool output, and `-vvv`
+  adds command-level context;
   `--runtime host` (default) requires scanner binaries on `PATH`;
   `--runtime container` runs scanners in Docker containers instead
 - `toolkit report build` reads `outputs/<run-id>/normalized/findings.json`,

@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from toolkit.adapters.process import ProcessResult
+from toolkit.core.logging import ProcessLogContext
 from toolkit.runtime.container import ContainerRuntime
 from toolkit.runtime.models import RuntimeRequest
 
@@ -231,6 +232,15 @@ class ContainerExecutionTests(unittest.TestCase):
             def _run(*args, **kwargs):  # type: ignore[no-untyped-def]
                 self.assertTrue(output_path.parent.is_dir())
                 self.assertTrue(kwargs["stream_output"])
+                self.assertEqual(
+                    kwargs["log_context"],
+                    ProcessLogContext(
+                        runtime="container",
+                        tool="zap",
+                        output_path=output_path,
+                        cwd=None,
+                    ),
+                )
                 return ProcessResult(
                     command=kwargs["command"],
                     returncode=0,

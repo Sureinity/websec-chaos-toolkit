@@ -184,6 +184,33 @@ class CodeAuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["target_paths"], {"trivy": source_tree.resolve()})
         self.assertIsInstance(kwargs["runtime"], HostRuntime)
 
+    def test_code_audit_accepts_verbose_flags(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            source_tree = project_root / "repo"
+            source_tree.mkdir()
+
+            with patch(
+                "toolkit.commands.code_audit.run_pentest_live_flow",
+                return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+            ):
+                with patch(
+                    "toolkit.commands.code_audit.select_code_audit_runtime",
+                    return_value=_selection(
+                        mode=RuntimeMode.HOST,
+                        selected_tools=("semgrep",),
+                        resolved_path=source_tree.resolve(),
+                    ),
+                ):
+                    with chdir(project_root):
+                        result = RUNNER.invoke(
+                            app,
+                            ["code-audit", "-vvv", str(source_tree), "--tool", "semgrep"],
+                            catch_exceptions=False,
+                        )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+
     def test_code_audit_rejects_invalid_tool(self) -> None:
         with TemporaryDirectory() as tmp:
             project_root = Path(tmp)

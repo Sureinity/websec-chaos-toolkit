@@ -1,6 +1,7 @@
 """Shared process execution helpers for scanner adapters."""
 
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -8,9 +9,15 @@ import threading
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from time import monotonic
 from typing import TextIO
 
 from toolkit.adapters.base import AdapterAvailability, ToolExecution
+from toolkit.core.logging import (
+    ProcessLogContext,
+    current_runtime_log_settings,
+    emit_runtime_log,
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -58,6 +65,7 @@ def run_tool_execution(
     stream_output: bool = False,
     stdout_target: TextIO | None = None,
     stderr_target: TextIO | None = None,
+    log_context: ProcessLogContext | None = None,
 ) -> ProcessResult:
     """Execute a prepared tool command and capture stdout/stderr."""
 
@@ -69,6 +77,12 @@ def run_tool_execution(
         stream_output=stream_output,
         stdout_target=stdout_target,
         stderr_target=stderr_target,
+        log_context=log_context
+        or ProcessLogContext(
+            runtime="host",
+            tool=execution.tool,
+            cwd=execution.cwd,
+        ),
     )
 
 
@@ -81,10 +95,16 @@ def run_process_command(
     stream_output: bool = False,
     stdout_target: TextIO | None = None,
     stderr_target: TextIO | None = None,
+    log_context: ProcessLogContext | None = None,
 ) -> ProcessResult:
     """Execute a command, optionally teeing live output to stdout/stderr."""
 
     merged_environment = _merged_environment(env_overrides or {})
+    resolved_log_context = log_context or ProcessLogContext(
+        runtime="host",
+        tool=command[0],
+        cwd=cwd,
+    )
 
     try:
         if stream_output:
@@ -93,8 +113,9 @@ def run_process_command(
                 cwd=cwd,
                 env=merged_environment,
                 timeout_seconds=timeout_seconds,
-                stdout_target=stdout_target or sys.stdout,
-                stderr_target=stderr_target or sys.stderr,
+                stdout_target=stdout_target,
+                stderr_target=stderr_target,
+                log_context=resolved_log_context,
             )
 
         completed = subprocess.run(
@@ -138,9 +159,13 @@ def _run_streaming_command(
     cwd: Path | None,
     env: dict[str, str],
     timeout_seconds: float | None,
-    stdout_target: TextIO,
-    stderr_target: TextIO,
+    stdout_target: TextIO | None,
+    stderr_target: TextIO | None,
+    log_context: ProcessLogContext,
 ) -> ProcessResult:
+    resolved_stdout_target = stdout_target or sys.stdout
+    resolved_stderr_target = stderr_target or sys.stderr
+    log_settings = current_runtime_log_settings()
     process = subprocess.Popen(
         command,
         cwd=cwd,
@@ -151,17 +176,47 @@ def _run_streaming_command(
         errors="replace",
         bufsize=1,
     )
+    started_at = monotonic()
     stdout_chunks: list[str] = []
     stderr_chunks: list[str] = []
 
+    emit_runtime_log(
+        resolved_stdout_target,
+        level="INFO",
+        event="tool.start",
+        runtime=log_context.runtime,
+        tool=log_context.tool,
+        output=log_context.output_path,
+        cwd=log_context.cwd or cwd,
+        command=shlex.join(command),
+        timeout_seconds=timeout_seconds,
+        settings=log_settings,
+    )
+
     stdout_thread = threading.Thread(
         target=_tee_stream,
-        args=(process.stdout, stdout_chunks, stdout_target),
+        args=(
+            process.stdout,
+            stdout_chunks,
+            resolved_stdout_target,
+            log_context,
+            "stdout",
+            "INFO",
+            log_settings,
+        ),
         daemon=True,
     )
     stderr_thread = threading.Thread(
         target=_tee_stream,
-        args=(process.stderr, stderr_chunks, stderr_target),
+        args=(
+            process.stderr,
+            stderr_chunks,
+            resolved_stderr_target,
+            log_context,
+            "stderr",
+            "WARN",
+            log_settings,
+        ),
         daemon=True,
     )
     stdout_thread.start()
@@ -177,9 +232,25 @@ def _run_streaming_command(
 
     stdout_thread.join()
     stderr_thread.join()
+    duration_ms = int((monotonic() - started_at) * 1000)
+    resolved_returncode = -1 if timed_out else (process.returncode or 0)
+    finish_target = (
+        resolved_stderr_target if timed_out or resolved_returncode != 0 else resolved_stdout_target
+    )
+    emit_runtime_log(
+        finish_target,
+        level="ERROR" if timed_out or resolved_returncode != 0 else "INFO",
+        event="tool.finish",
+        runtime=log_context.runtime,
+        tool=log_context.tool,
+        status="timed_out" if timed_out else ("failed" if resolved_returncode != 0 else "success"),
+        exit_code=resolved_returncode,
+        duration_ms=duration_ms,
+        settings=log_settings,
+    )
     return ProcessResult(
         command=command,
-        returncode=-1 if timed_out else (process.returncode or 0),
+        returncode=resolved_returncode,
         stdout="".join(stdout_chunks),
         stderr="".join(stderr_chunks),
         timed_out=timed_out,
@@ -190,6 +261,10 @@ def _tee_stream(
     stream: TextIO | None,
     sink: list[str],
     target: TextIO,
+    log_context: ProcessLogContext,
+    stream_name: str,
+    level: str,
+    log_settings,
 ) -> None:
     if stream is None:
         return
@@ -197,7 +272,18 @@ def _tee_stream(
     try:
         for line in iter(stream.readline, ""):
             sink.append(line)
-            target.write(line)
-            target.flush()
+            message = line.rstrip("\r\n")
+            if not message:
+                continue
+            emit_runtime_log(
+                target,
+                level=level,
+                event="tool.output",
+                runtime=log_context.runtime,
+                tool=log_context.tool,
+                stream=stream_name,
+                message=message,
+                settings=log_settings,
+            )
     finally:
         stream.close()

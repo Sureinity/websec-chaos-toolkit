@@ -64,6 +64,14 @@ Force container execution:
 uv run toolkit audit https://target.internal --runtime container
 ```
 
+Increase runtime log verbosity when needed:
+
+```bash
+uv run toolkit audit -v https://target.internal
+uv run toolkit audit -vv https://target.internal
+uv run toolkit audit -vvv https://target.internal
+```
+
 ## What The Command Does
 
 - validates the supplied URL through the ad hoc target builder
@@ -75,7 +83,7 @@ uv run toolkit audit https://target.internal --runtime container
 - captures an `httpx` preflight fingerprint before deeper scanner execution
 - builds the built-in safe remote-web profile
 - runs ZAP, Nuclei, and Nmap through the selected runtime backend
-- streams live tool stdout and stderr while scanners are running
+- emits structured runtime logs while scanners are running
 - writes outputs under `outputs/<run-id>/`
 
 ## Successful Output
@@ -96,8 +104,23 @@ Report: /path/to/outputs/<run-id>/reports/executive-summary.md
 
 If a core scanner fails at runtime, the command prints `Audit failed.`, keeps
 the run summary, and reports the failed tool details on stderr before exiting
-with `2`. Live tool output that was already emitted stays visible in the
-terminal.
+with `2`. Structured runtime logs that were already emitted stay visible in
+the terminal.
+
+The runtime logs are now organized as timestamped records, for example:
+
+```text
+2026-04-21T13:45:10+08:00 INFO event=tool.start runtime=container tool=zap output=/path/to/results.json timeout_seconds=600.0
+2026-04-21T13:45:12+08:00 INFO event=tool.output runtime=container tool=zap stream=stdout message="passive scan started"
+2026-04-21T13:45:20+08:00 INFO event=tool.finish runtime=container tool=zap status=success exit_code=0 duration_ms=9876
+```
+
+Verbosity levels:
+
+- default: tool start and finish records, plus warnings and errors
+- `-v`: include stderr tool output
+- `-vv`: include stdout and stderr tool output
+- `-vvv`: include command-level context such as command and working directory
 
 ## Failure Behavior
 

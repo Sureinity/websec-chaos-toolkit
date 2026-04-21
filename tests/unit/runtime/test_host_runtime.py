@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from toolkit.adapters.base import ToolExecution
 from toolkit.adapters.process import ProcessResult
+from toolkit.core.logging import ProcessLogContext
 from toolkit.runtime.host import HostRuntime
 from toolkit.runtime.models import RuntimeRequest
 
@@ -63,6 +64,12 @@ class HostRuntimeExecutionTests(unittest.TestCase):
             env_overrides={},
             timeout_seconds=None,
             stream_output=True,
+            log_context=ProcessLogContext(
+                runtime="host",
+                tool="echo",
+                output_path=Path("/dev/null"),
+                cwd=None,
+            ),
         )
 
     def test_execute_captures_nonzero_returncode(self) -> None:

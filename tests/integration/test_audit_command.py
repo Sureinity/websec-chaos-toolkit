@@ -293,6 +293,40 @@ class AuditCommandTests(unittest.TestCase):
         self.assertIn("Runtime: host", result.stdout)
         select_runtime.assert_called_once_with(preferred_mode=RuntimeMode.HOST)
 
+    def test_audit_accepts_verbose_flags(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.HOST),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "-vv", "https://example.internal"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+
     def test_audit_reports_failed_summary_and_tool_details(self) -> None:
         with TemporaryDirectory() as tmp:
             project_root = Path(tmp)

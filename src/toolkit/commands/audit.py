@@ -22,6 +22,7 @@ from toolkit.audit import (
 from toolkit.auth.bootstrap import resolve_auth_session
 from toolkit.auth.errors import AuthRuntimeError
 from toolkit.core.exits import ExitCode
+from toolkit.core.logging import runtime_logging_scope
 from toolkit.core.run_context import RunRequest, prepare_run_context, utc_now
 from toolkit.pentest.contracts import PentestRunStatus, PentestRunSummary
 from toolkit.pentest.runner import run_pentest_live_flow
@@ -46,6 +47,15 @@ def register(root_app: typer.Typer) -> None:
                 help="Execution backend: container or host. Auto-select when omitted.",
             ),
         ] = None,
+        verbose: Annotated[
+            int,
+            typer.Option(
+                "--verbose",
+                "-v",
+                count=True,
+                help="Increase runtime log verbosity (-v, -vv, -vvv).",
+            ),
+        ] = 0,
         auth_mode: Annotated[
             AuditAuthMode | None,
             typer.Option(
@@ -119,80 +129,81 @@ def register(root_app: typer.Typer) -> None:
 
         project_root = Path.cwd()
 
-        try:
-            auth_config = build_url_audit_auth_config(
-                auth_mode=auth_mode,
-                token_env_var=token_env_var,
-                cookie_name=cookie_name,
-                cookie_value_env_var=cookie_value_env_var,
-                session_header=session_header,
-                session_value_env_var=session_value_env_var,
-                login_url=login_url,
-                username_env_var=username_env_var,
-                password_env_var=password_env_var,
-                login_content_type=login_content_type,
-                login_username_field=login_username_field,
-                login_password_field=login_password_field,
-                auth_result=auth_result,
-                auth_result_path=auth_result_path,
-            )
-            app_config = build_url_audit_app_with_auth(url, auth=auth_config)
-            audit_profile = build_url_audit_profile()
-            resolved_when = utc_now()
-            context = prepare_run_context(
-                project_root,
-                RunRequest(
-                    app_id=app_config.id,
-                    environment=app_config.environment,
-                    profile=audit_profile.name,
-                    modules=("pentest",),
-                ),
-                when=resolved_when,
-            )
-            fingerprint = capture_httpx_fingerprint(str(app_config.base_url))
-            fingerprint_path = write_httpx_fingerprint(context.raw_dir, fingerprint)
-            selection = select_audit_runtime(preferred_mode=runtime)
-            auth_session = resolve_auth_session(app_config)
-            auth_context_path = write_audit_auth_context(context.raw_dir, auth_session)
-            discovery = run_katana_discovery(
-                seed_url=str(app_config.base_url),
-                raw_dir=context.raw_dir,
-                runtime=selection.backend,
-                auth_session=auth_session,
-            )
-            summary = run_pentest_live_flow(
-                project_root=project_root,
-                app=app_config,
-                profile=audit_profile,
-                when=resolved_when,
-                runtime=selection.backend,
-                context=context,
-                extra_raw_artifact_paths=(
-                    fingerprint_path,
-                    auth_context_path,
-                    discovery.raw_output_path,
-                    discovery.route_manifest_path,
-                ),
-                auth_session=auth_session,
-                target_urls={
-                    "zap": discovery.routes,
-                    "nuclei": discovery.routes,
-                },
-            )
-        except (
-            AuditDiscoveryError,
-            AuditFingerprintError,
-            AuditAuthValidationError,
-            AuthRuntimeError,
-            FileExistsError,
-            FileNotFoundError,
-            RuntimeSelectionError,
-            ValidationError,
-            ValueError,
-        ) as exc:
-            typer.echo("Audit failed.", err=True)
-            typer.echo(str(exc), err=True)
-            raise typer.Exit(code=ExitCode.CONFIG_OR_RUNTIME_ERROR) from exc
+        with runtime_logging_scope(verbosity=verbose):
+            try:
+                auth_config = build_url_audit_auth_config(
+                    auth_mode=auth_mode,
+                    token_env_var=token_env_var,
+                    cookie_name=cookie_name,
+                    cookie_value_env_var=cookie_value_env_var,
+                    session_header=session_header,
+                    session_value_env_var=session_value_env_var,
+                    login_url=login_url,
+                    username_env_var=username_env_var,
+                    password_env_var=password_env_var,
+                    login_content_type=login_content_type,
+                    login_username_field=login_username_field,
+                    login_password_field=login_password_field,
+                    auth_result=auth_result,
+                    auth_result_path=auth_result_path,
+                )
+                app_config = build_url_audit_app_with_auth(url, auth=auth_config)
+                audit_profile = build_url_audit_profile()
+                resolved_when = utc_now()
+                context = prepare_run_context(
+                    project_root,
+                    RunRequest(
+                        app_id=app_config.id,
+                        environment=app_config.environment,
+                        profile=audit_profile.name,
+                        modules=("pentest",),
+                    ),
+                    when=resolved_when,
+                )
+                fingerprint = capture_httpx_fingerprint(str(app_config.base_url))
+                fingerprint_path = write_httpx_fingerprint(context.raw_dir, fingerprint)
+                selection = select_audit_runtime(preferred_mode=runtime)
+                auth_session = resolve_auth_session(app_config)
+                auth_context_path = write_audit_auth_context(context.raw_dir, auth_session)
+                discovery = run_katana_discovery(
+                    seed_url=str(app_config.base_url),
+                    raw_dir=context.raw_dir,
+                    runtime=selection.backend,
+                    auth_session=auth_session,
+                )
+                summary = run_pentest_live_flow(
+                    project_root=project_root,
+                    app=app_config,
+                    profile=audit_profile,
+                    when=resolved_when,
+                    runtime=selection.backend,
+                    context=context,
+                    extra_raw_artifact_paths=(
+                        fingerprint_path,
+                        auth_context_path,
+                        discovery.raw_output_path,
+                        discovery.route_manifest_path,
+                    ),
+                    auth_session=auth_session,
+                    target_urls={
+                        "zap": discovery.routes,
+                        "nuclei": discovery.routes,
+                    },
+                )
+            except (
+                AuditDiscoveryError,
+                AuditFingerprintError,
+                AuditAuthValidationError,
+                AuthRuntimeError,
+                FileExistsError,
+                FileNotFoundError,
+                RuntimeSelectionError,
+                ValidationError,
+                ValueError,
+            ) as exc:
+                typer.echo("Audit failed.", err=True)
+                typer.echo(str(exc), err=True)
+                raise typer.Exit(code=ExitCode.CONFIG_OR_RUNTIME_ERROR) from exc
 
         if summary.status == PentestRunStatus.FAILED:
             typer.echo("Audit failed.", err=True)

@@ -114,20 +114,22 @@ These instructions apply to this repository directory. If a deeper
 ## Current CLI Behavior
 
 - The intended public interface is already wired:
-  - `toolkit audit <url> [--runtime host|container]`
+  - `toolkit audit <url> [--runtime host|container] [-v|-vv|-vvv]`
   - `toolkit edge-chaos <url> [--fault <name>]`
-  - `toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container]`
+  - `toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container] [-v|-vv|-vvv]`
   - `toolkit validate --app <id> --env <env>`
   - `toolkit doctor`
-  - `toolkit pentest run --app <id> --env <env> --profile <name>`
+  - `toolkit pentest run --app <id> --env <env> --profile <name> [-v|-vv|-vvv]`
   - `toolkit chaos run --app <id> --env <env> --profile <name>`
   - `toolkit report build --run-id <id>`
 - Current behavior:
   - `toolkit audit` derives an ad hoc target from a single URL, executes a
     safe remote-web audit, writes raw artifacts, normalized findings, and a
-    Markdown summary under `outputs/<run-id>/`, streams live tool stdout and
-    stderr from the selected runtime, and exits with `0`, `1`, or `2`;
-    auto-selects `container` then `host` runtime when possible
+    Markdown summary under `outputs/<run-id>/`, emits structured runtime log
+    records for tool start, output, and finish events, and exits with `0`,
+    `1`, or `2`; auto-selects `container` then `host` runtime when possible;
+    `-v` shows stderr tool output, `-vv` adds stdout tool output, and `-vvv`
+    adds command-level context such as command and working directory
   - `toolkit edge-chaos` derives an ad hoc chaos target from a single URL,
     starts a managed local Toxiproxy container, creates one local proxy,
     probes the requested URL path through that proxy, injects one reversible
@@ -138,8 +140,10 @@ These instructions apply to this repository directory. If a deeper
     path, runs Semgrep and/or Trivy using the built-in `source_tree` profile,
     selects host or container runtime for the selected tools, writes raw
     artifacts, normalized findings, and a Markdown summary under
-    `outputs/<run-id>/`, streams live tool stdout and stderr from the
-    selected runtime, and exits with `0`, `1`, or `2`
+    `outputs/<run-id>/`, emits structured runtime log records for tool start,
+    output, and finish events, and exits with `0`, `1`, or `2`; `-v` shows
+    stderr tool output, `-vv` adds stdout tool output, and `-vvv` adds
+    command-level context such as command and working directory
   - `toolkit validate` loads and validates repository YAML config from the
     current working directory and exits with `0` on success or `2` on
     validation/runtime failure
@@ -147,9 +151,11 @@ These instructions apply to this repository directory. If a deeper
     current edge-chaos readiness status
   - `toolkit pentest run` executes real scanner binaries against a live target,
     writes raw artifacts, normalized findings, and a Markdown summary under
-    `outputs/<run-id>/`, streams live tool stdout and stderr from the selected
-    runtime, and exits with `0`, `1`, or `2`; requires core binaries on
-    `PATH`; optional Trivy and Semgrep join when explicitly enabled
+    `outputs/<run-id>/`, emits structured runtime log records for tool start,
+    output, and finish events, and exits with `0`, `1`, or `2`; `-v` shows
+    stderr tool output, `-vv` adds stdout tool output, and `-vvv` adds
+    command-level context such as command and working directory; requires core
+    binaries on `PATH`; optional Trivy and Semgrep join when explicitly enabled
   - `toolkit chaos run` executes a live Toxiproxy-backed chaos experiment,
     writes raw artifacts, normalized findings, and a Markdown summary under
     `outputs/<run-id>/`, and exits with `0`, `1`, or `2`; requires a running

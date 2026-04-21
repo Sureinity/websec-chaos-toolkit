@@ -80,6 +80,14 @@ Force container execution:
 uv run toolkit code-audit . --tool trivy --runtime container
 ```
 
+Increase runtime log verbosity when needed:
+
+```bash
+uv run toolkit code-audit -v .
+uv run toolkit code-audit -vv .
+uv run toolkit code-audit -vvv . --tool semgrep
+```
+
 ## What The Command Does
 
 - validates the path as a source-tree target
@@ -92,7 +100,7 @@ uv run toolkit code-audit . --tool trivy --runtime container
   - host when the selected tools are available locally
   - container when host tools are missing and Docker is available
   - explicit `--runtime` override when requested
-- streams live tool stdout and stderr while scanners are running
+- emits structured runtime logs while scanners are running
 - writes outputs under `outputs/<run-id>/`
 
 ## Successful Output
@@ -110,8 +118,15 @@ Normalized bundle: /path/to/outputs/<run-id>/normalized/findings.json
 Report: /path/to/outputs/<run-id>/reports/executive-summary.md
 ```
 
-The live tool output appears before the final summary and remains visible even
-when the run later fails.
+The structured runtime logs appear before the final summary and remain visible
+even when the run later fails.
+
+Verbosity levels:
+
+- default: tool start and finish records, plus warnings and errors
+- `-v`: include stderr tool output
+- `-vv`: include stdout and stderr tool output
+- `-vvv`: include command-level context such as command and working directory
 
 ## Failure Behavior
 
