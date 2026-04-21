@@ -1,5 +1,7 @@
 import unittest
 from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from toolkit.adapters.base import ToolExecution
 from toolkit.adapters.process import (
@@ -7,7 +9,7 @@ from toolkit.adapters.process import (
     find_binary,
     run_tool_execution,
 )
-from toolkit.core.logging import runtime_logging_scope
+from toolkit.core.logging import ProcessLogContext, runtime_logging_scope
 
 
 class ProcessRunnerTests(unittest.TestCase):
@@ -100,3 +102,42 @@ class ProcessRunnerTests(unittest.TestCase):
         self.assertIn("event=tool.finish", stdout_target.getvalue())
         self.assertIn("stream=stderr", stderr_target.getvalue())
         self.assertIn("warn streamed", stderr_target.getvalue())
+
+    def test_run_tool_execution_treats_zap_exit_with_artifact_as_completed_with_findings(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as tmp_dir_name:
+            output_path = Path(tmp_dir_name) / "results.json"
+            execution = ToolExecution(
+                tool="python",
+                command=(
+                    "python3",
+                    "-c",
+                    (
+                        "from pathlib import Path; "
+                        f"Path({str(output_path)!r}).write_text('{{}}', encoding='utf-8'); "
+                        "raise SystemExit(2)"
+                    ),
+                ),
+            )
+            stdout_target = StringIO()
+            stderr_target = StringIO()
+
+            with runtime_logging_scope(verbosity=0, color=False):
+                result = run_tool_execution(
+                    execution,
+                    stream_output=True,
+                    stdout_target=stdout_target,
+                    stderr_target=stderr_target,
+                    log_context=ProcessLogContext(
+                        runtime="container",
+                        tool="zap",
+                        output_path=output_path,
+                    ),
+                )
+
+        self.assertFalse(result.succeeded)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("status=completed_with_findings", stdout_target.getvalue())
+        self.assertIn("event=tool.finish", stdout_target.getvalue())
+        self.assertNotIn("status=failed", stdout_target.getvalue())

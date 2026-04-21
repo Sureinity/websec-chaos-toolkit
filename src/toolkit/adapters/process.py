@@ -234,16 +234,19 @@ def _run_streaming_command(
     stderr_thread.join()
     duration_ms = int((monotonic() - started_at) * 1000)
     resolved_returncode = -1 if timed_out else (process.returncode or 0)
-    finish_target = (
-        resolved_stderr_target if timed_out or resolved_returncode != 0 else resolved_stdout_target
+    finish_level, finish_status = _classify_finish_status(
+        log_context=log_context,
+        returncode=resolved_returncode,
+        timed_out=timed_out,
     )
+    finish_target = resolved_stderr_target if finish_level == "ERROR" else resolved_stdout_target
     emit_runtime_log(
         finish_target,
-        level="ERROR" if timed_out or resolved_returncode != 0 else "INFO",
+        level=finish_level,
         event="tool.finish",
         runtime=log_context.runtime,
         tool=log_context.tool,
-        status="timed_out" if timed_out else ("failed" if resolved_returncode != 0 else "success"),
+        status=finish_status,
         exit_code=resolved_returncode,
         duration_ms=duration_ms,
         settings=log_settings,
@@ -287,3 +290,32 @@ def _tee_stream(
             )
     finally:
         stream.close()
+
+
+def _classify_finish_status(
+    *,
+    log_context: ProcessLogContext,
+    returncode: int,
+    timed_out: bool,
+) -> tuple[str, str]:
+    if timed_out:
+        return "ERROR", "timed_out"
+    if _is_accepted_nonzero_exit(log_context=log_context, returncode=returncode):
+        return "WARN", "completed_with_findings"
+    if returncode != 0:
+        return "ERROR", "failed"
+    return "INFO", "success"
+
+
+def _is_accepted_nonzero_exit(
+    *,
+    log_context: ProcessLogContext,
+    returncode: int,
+) -> bool:
+    if log_context.tool != "zap":
+        return False
+    if returncode not in {1, 2}:
+        return False
+    if log_context.output_path is None:
+        return False
+    return log_context.output_path.is_file()

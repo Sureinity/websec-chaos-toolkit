@@ -116,6 +116,10 @@ The runtime logs are now organized as timestamped records, for example:
 2026-04-21T13:45:20+08:00 INFO event=tool.finish runtime=container tool=zap status=success exit_code=0 duration_ms=9876
 ```
 
+For ZAP specifically, a non-zero wrapper exit can still be accepted when the
+JSON artifact was produced. In that case the finish record is reported as
+`status=completed_with_findings` instead of `status=failed`.
+
 Verbosity levels:
 
 - default: tool start and finish records, plus warnings and errors
