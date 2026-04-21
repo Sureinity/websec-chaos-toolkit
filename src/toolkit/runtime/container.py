@@ -126,6 +126,12 @@ class ContainerRuntime:
         for key, value in request.env_overrides.items():
             parts.extend(["-e", f"{key}={value}"])
 
+        if request.tool == "zap":
+            # The baseline wrapper writes auxiliary files under Path.home().
+            # Point HOME at the mounted workdir so those writes succeed in
+            # container mode and stay inside the captured artifact directory.
+            parts.extend(["-e", "HOME=/zap/wrk"])
+
         # Override the entrypoint with the actual tool binary so the
         # command works regardless of whether the image defines one.
         if request.command:

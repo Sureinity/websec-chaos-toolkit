@@ -74,7 +74,7 @@ _HIGH_VALUE_ROUTE_HINTS = (
     "xmlrpc",
 )
 _DEFAULT_ZAP_ROUTE_LIMIT = 8
-_DEFAULT_NUCLEI_ROUTE_LIMIT = 12
+_DEFAULT_NUCLEI_ROUTE_LIMIT = 8
 _LOW_VALUE_NUCLEI_SEGMENTS = (
     "/feed",
     "/oembed/",
@@ -361,25 +361,23 @@ def _select_zap_routes(
     limit: int,
 ) -> tuple[str, ...]:
     seed_canonical = _canonical_route(seed_url)
-    ranked = sorted(
-        (_canonical_route(route), route)
-        for route in routes
-        if _canonical_route(route) != seed_canonical
+    ranked = tuple(
+        route
+        for _canonical, route in sorted(
+            (
+                (_canonical_route(route), route)
+                for route in routes
+                if _canonical_route(route) != seed_canonical
+            ),
+            key=lambda item: (
+                _route_priority(item[1]),
+                _route_depth(item[1]),
+                len(item[1]),
+                item[1],
+            ),
+        )
     )
-    selected: list[str] = [seed_url]
-    for _, route in sorted(
-        ranked,
-        key=lambda item: (
-            _route_priority(item[1]),
-            _route_depth(item[1]),
-            len(item[1]),
-            item[1],
-        ),
-    ):
-        if len(selected) >= max(1, limit):
-            break
-        selected.append(route)
-    return tuple(selected)
+    return _select_diversified_routes(seed_url=seed_url, ranked_routes=ranked, limit=limit)
 
 
 def _select_nuclei_routes(
@@ -393,24 +391,58 @@ def _select_nuclei_routes(
     for route in routes:
         normalized_routes.setdefault(_canonical_nuclei_route(route), _canonical_nuclei_route(route))
 
+    ranked = tuple(
+        route
+        for _canonical, route in sorted(
+            (
+                (canonical, route)
+                for canonical, route in normalized_routes.items()
+                if canonical != seed_canonical
+            ),
+            key=lambda item: (
+                _route_priority(item[1]),
+                _route_depth(item[1]),
+                len(item[1]),
+                item[1],
+            ),
+        )
+    )
+    return _select_diversified_routes(seed_url=seed_url, ranked_routes=ranked, limit=limit)
+
+
+def _select_diversified_routes(
+    *,
+    seed_url: str,
+    ranked_routes: tuple[str, ...],
+    limit: int,
+) -> tuple[str, ...]:
     selected: list[str] = [seed_url]
-    for _canonical, route in sorted(
-        (
-            (canonical, route)
-            for canonical, route in normalized_routes.items()
-            if canonical != seed_canonical
-        ),
-        key=lambda item: (
-            _route_priority(item[1]),
-            _route_depth(item[1]),
-            len(item[1]),
-            item[1],
-        ),
-    ):
+    selected_families: set[str] = set()
+    deferred: list[str] = []
+
+    for route in ranked_routes:
+        family = _route_family(route)
+        if family in selected_families:
+            deferred.append(route)
+            continue
+        selected.append(route)
+        selected_families.add(family)
+        if len(selected) >= max(1, limit):
+            return tuple(selected)
+
+    for route in deferred:
         if len(selected) >= max(1, limit):
             break
         selected.append(route)
+
     return tuple(selected)
+
+
+def _route_family(route: str) -> str:
+    path = urlsplit(route).path.strip("/")
+    if not path:
+        return "/"
+    return path.split("/", 1)[0]
 
 
 def _route_priority(route: str) -> int:

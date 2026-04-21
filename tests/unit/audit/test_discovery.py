@@ -128,6 +128,35 @@ class KatanaDiscoveryTests(unittest.TestCase):
             ),
         )
 
+    def test_plan_discovered_audit_scope_prefers_route_family_diversity(self) -> None:
+        scope = plan_discovered_audit_scope(
+            seed_url="https://target.internal/",
+            discovered_routes=(
+                "https://target.internal/",
+                "https://target.internal/login",
+                "https://target.internal/login/help",
+                "https://target.internal/login/support",
+                "https://target.internal/contact",
+                "https://target.internal/contact/team",
+                "https://target.internal/register",
+                "https://target.internal/register/confirm",
+                "https://target.internal/about",
+                "https://target.internal/about/history",
+            ),
+            nuclei_route_limit=5,
+        )
+
+        self.assertEqual(
+            scope.nuclei_routes,
+            (
+                "https://target.internal/",
+                "https://target.internal/login",
+                "https://target.internal/contact",
+                "https://target.internal/register",
+                "https://target.internal/about",
+            ),
+        )
+
     def test_run_katana_discovery_forwards_auth_headers_and_cookies(self) -> None:
         runtime = _RuntimeStub()
         auth_session = AuthSession(

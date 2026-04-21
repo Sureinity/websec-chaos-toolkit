@@ -152,6 +152,19 @@ class ContainerCommandBuildTests(unittest.TestCase):
         self.assertNotIn("/zap/wrk/results.json", tool_args)
         self.assertNotIn("/tmp/outputs/zap/results.json", tool_args)
 
+    def test_zap_sets_home_to_zap_wrk_in_container_mode(self) -> None:
+        runtime = ContainerRuntime()
+        request = RuntimeRequest(
+            tool="zap",
+            command=("zap-baseline.py", "-J", "/tmp/outputs/zap/results.json"),
+            output_path=Path("/tmp/outputs/zap/results.json"),
+        )
+
+        cmd = runtime._build_docker_command(request, image="ghcr.io/zaproxy/zaproxy:stable")
+
+        env_args = [cmd[i + 1] for i in range(len(cmd)) if cmd[i] == "-e"]
+        self.assertIn("HOME=/zap/wrk", env_args)
+
     def test_forwards_env_overrides(self) -> None:
         runtime = ContainerRuntime()
         request = RuntimeRequest(
