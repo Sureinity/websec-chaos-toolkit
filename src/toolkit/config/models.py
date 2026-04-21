@@ -58,8 +58,9 @@ class AuthConfig(BaseModel):
     - ``bearer_token``: requires ``token_env_var``
     - ``cookie``: requires ``cookie_name`` and ``cookie_value_env_var``
     - ``session``: requires ``session_header`` and ``session_value_env_var``
-    - ``form``: requires ``login_url``, ``username_env_var``, and
-      ``password_env_var``
+    - ``form``: requires ``login_url``, ``username_env_var``,
+      ``password_env_var``, ``login_username_field``, and
+      ``login_password_field``
 
     The config stores references only. Real secrets and session material must
     be supplied from the runtime environment, never committed to YAML.
@@ -227,6 +228,16 @@ class AuthConfig(BaseModel):
                 raise config_error(
                     ConfigValidationCode.AUTH_FORM_REQUIRES_PASSWORD_ENV_VAR,
                     "Auth method 'form' requires password_env_var.",
+                )
+            if self.login_username_field is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_FORM_REQUIRES_USERNAME_FIELD,
+                    "Auth method 'form' requires login_username_field.",
+                )
+            if self.login_password_field is None:
+                raise config_error(
+                    ConfigValidationCode.AUTH_FORM_REQUIRES_PASSWORD_FIELD,
+                    "Auth method 'form' requires login_password_field.",
                 )
 
         return self

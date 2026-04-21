@@ -69,6 +69,18 @@ class UrlAuditAuthConfigTests(unittest.TestCase):
 
         self.assertIn("does not allow", str(context.exception))
 
+    def test_form_mode_requires_form_field_names(self) -> None:
+        with self.assertRaises(AuditAuthValidationError) as context:
+            build_url_audit_auth_config(
+                auth_mode=AuditAuthMode.FORM,
+                login_url="https://example.internal/login",
+                username_env_var="USER",
+                password_env_var="PASS",
+            )
+
+        self.assertIn("login_password_field", str(context.exception))
+        self.assertIn("login_username_field", str(context.exception))
+
     def test_api_login_builds_auth_config_for_cookie_result(self) -> None:
         auth = build_url_audit_auth_config(
             auth_mode=AuditAuthMode.API_LOGIN,
@@ -84,3 +96,17 @@ class UrlAuditAuthConfigTests(unittest.TestCase):
         self.assertEqual(auth.method, "api_login")
         self.assertEqual(auth.login_username_field, "email")
         self.assertEqual(auth.auth_result, "cookie")
+
+    def test_form_mode_builds_auth_config_with_custom_field_names(self) -> None:
+        auth = build_url_audit_auth_config(
+            auth_mode=AuditAuthMode.FORM,
+            login_url="https://example.internal/login",
+            username_env_var="USER",
+            password_env_var="PASS",
+            login_username_field="email",
+            login_password_field="passwd",
+        )
+
+        self.assertEqual(auth.method, "form")
+        self.assertEqual(auth.login_username_field, "email")
+        self.assertEqual(auth.login_password_field, "passwd")

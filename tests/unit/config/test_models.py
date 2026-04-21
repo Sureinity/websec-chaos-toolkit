@@ -95,6 +95,35 @@ class ConfigModelValidationTests(unittest.TestCase):
 
         self.assertEqual(error["loc"], ("apps", 0, "auth"))
 
+    def test_form_auth_requires_username_field(self) -> None:
+        payload = {
+            "apps": [
+                {
+                    "id": "form-missing-username-field",
+                    "environment": "staging",
+                    "base_url": "https://staging.internal.example",
+                    "host_targets": ["staging.internal.example"],
+                    "target_allowlist": ["staging.internal.example"],
+                    "auth": {
+                        "method": "form",
+                        "login_url": "https://staging.internal.example/login",
+                        "username_env_var": "TEST_USERNAME",
+                        "password_env_var": "TEST_PASSWORD",
+                        "login_password_field": "password",
+                    },
+                    "health_endpoint": "/health",
+                    "enabled_modules": ["pentest"],
+                }
+            ]
+        }
+
+        error = self.assert_validation_error(
+            lambda: AppRegistry.model_validate(payload),
+            ConfigValidationCode.AUTH_FORM_REQUIRES_USERNAME_FIELD,
+        )
+
+        self.assertEqual(error["loc"], ("apps", 0, "auth"))
+
     def test_api_login_requires_auth_result(self) -> None:
         payload = {
             "apps": [

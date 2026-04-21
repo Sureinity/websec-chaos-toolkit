@@ -86,13 +86,15 @@ uv run toolkit audit https://target.internal \
   --auth-mode form \
   --login-url https://target.internal/login \
   --username-env-var TOOLKIT_AUDIT_USERNAME \
-  --password-env-var TOOLKIT_AUDIT_PASSWORD
+  --password-env-var TOOLKIT_AUDIT_PASSWORD \
+  --login-username-field email \
+  --login-password-field password
 ```
 
 Use this only when:
 
 - the target exposes an HTML login form
-- it accepts standard `username` and `password` POST fields
+- you know the username and password input field names
 - it returns reusable cookies after login
 
 ## Manual Expert Paths

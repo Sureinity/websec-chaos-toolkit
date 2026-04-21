@@ -11,8 +11,8 @@ Current state:
   payloads and reusable auth extraction modes
 - env-backed runtime auth resolution is implemented for `bearer_token`,
   `cookie`, and `session`
-- direct form login is implemented for standard `username` / `password` POST
-  fields and cookie-based session reuse
+- direct form login is implemented for operator-supplied form field names and
+  cookie-based session reuse
 - a shared runtime auth/session payload is implemented for supported auth modes
 - a higher-level auth bootstrap entrypoint is implemented for validated app
   config
@@ -82,7 +82,7 @@ Anything outside this list is out of scope for v1.
 - perform a scripted HTTP login against `login_url`
 - resolve credentials only from `username_env_var` and `password_env_var`
 - return reusable authenticated session material derived from the login flow
-- submit standard `username` and `password` form fields
+- submit operator-supplied username and password form field names
 - treat reusable cookies as the success signal for the current implementation
 - do not attempt browser automation, SSO handshakes, or MFA bypass
 - treat `form` as a secondary compatibility path for classic HTML login forms
@@ -127,7 +127,7 @@ Mode-specific prerequisites:
     - reusable cookies from the response
 - `form`
   - the visible login route is enabled and reachable during the run
-  - the form accepts standard `username` and `password` POST fields
+  - the username and password input field names are known
   - successful login returns reusable cookies
 - `bearer_token`
   - the operator already has a valid bearer token

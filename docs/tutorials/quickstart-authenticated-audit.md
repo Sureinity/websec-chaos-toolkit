@@ -60,15 +60,17 @@ What happens:
 
 ## Alternative: Classic HTML Form Login
 
-Use `form` only when the target still exposes a classic login page that accepts
-standard `username` and `password` fields and returns reusable cookies:
+Use `form` only when the target still exposes a classic login page, you know
+the input field names, and it returns reusable cookies:
 
 ```bash
 uv run toolkit audit https://target.internal \
   --auth-mode form \
   --login-url https://target.internal/login \
   --username-env-var TOOLKIT_AUDIT_USERNAME \
-  --password-env-var TOOLKIT_AUDIT_PASSWORD
+  --password-env-var TOOLKIT_AUDIT_PASSWORD \
+  --login-username-field email \
+  --login-password-field password
 ```
 
 ## Expected Output

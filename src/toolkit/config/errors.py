@@ -28,6 +28,8 @@ class ConfigValidationCode(StrEnum):
     AUTH_FORM_REQUIRES_LOGIN_URL = "auth_form_requires_login_url"
     AUTH_FORM_REQUIRES_USERNAME_ENV_VAR = "auth_form_requires_username_env_var"
     AUTH_FORM_REQUIRES_PASSWORD_ENV_VAR = "auth_form_requires_password_env_var"
+    AUTH_FORM_REQUIRES_USERNAME_FIELD = "auth_form_requires_username_field"
+    AUTH_FORM_REQUIRES_PASSWORD_FIELD = "auth_form_requires_password_field"
     EMPTY_STRING_NOT_ALLOWED = "empty_string_not_allowed"
     HEALTH_ENDPOINT_MUST_BE_ABSOLUTE_PATH = "health_endpoint_must_be_absolute_path"
     BASE_URL_HOST_NOT_ALLOWLISTED = "base_url_host_not_allowlisted"

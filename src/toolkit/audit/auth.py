@@ -139,7 +139,13 @@ def _validate_auth_options(options: AuditAuthOptions) -> None:
         allowed = {"session_header", "session_value_env_var"}
         required = {"session_header", "session_value_env_var"}
     elif options.auth_mode == AuditAuthMode.FORM:
-        allowed = {"login_url", "username_env_var", "password_env_var"}
+        allowed = {
+            "login_url",
+            "username_env_var",
+            "password_env_var",
+            "login_username_field",
+            "login_password_field",
+        }
         required = allowed
     else:
         allowed = {
@@ -208,6 +214,8 @@ def _build_auth_config(options: AuditAuthOptions) -> AuthConfig:
             login_url=options.login_url,
             username_env_var=options.username_env_var,
             password_env_var=options.password_env_var,
+            login_username_field=options.login_username_field,
+            login_password_field=options.login_password_field,
         )
     return AuthConfig(
         method="api_login",

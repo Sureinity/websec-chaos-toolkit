@@ -69,6 +69,7 @@ class AuthResolutionIntegrationTests(unittest.TestCase):
     def test_resolve_auth_session_supports_form_auth(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             if request.method == "POST":
+                self.assertEqual(request.content.decode(), "email=alice&passwd=hunter2")
                 return httpx.Response(
                     status_code=302,
                     headers={
@@ -95,6 +96,8 @@ class AuthResolutionIntegrationTests(unittest.TestCase):
         self.assertTrue(session.is_authenticated)
         self.assertEqual(session.cookies, {"sessionid": "session-cookie"})
         self.assertEqual(session.provenance["source"], "form_login")
+        self.assertEqual(session.provenance["login_username_field"], "email")
+        self.assertEqual(session.provenance["login_password_field"], "passwd")
         self.assertEqual(
             session.provenance["final_url"], "https://staging.internal.example/dashboard"
         )

@@ -20,6 +20,8 @@ def build_form_auth_config() -> AuthConfig:
         login_url="https://staging.internal.example/login",
         username_env_var="SECURITY_TEST_USERNAME",
         password_env_var="SECURITY_TEST_PASSWORD",
+        login_username_field="email",
+        login_password_field="passwd",
     )
 
 
@@ -30,6 +32,7 @@ class FormLoginUnitTests(unittest.TestCase):
                 request.method == "POST"
                 and str(request.url) == "https://staging.internal.example/login"
             ):
+                self.assertEqual(request.content.decode(), "email=alice&passwd=hunter2")
                 return httpx.Response(
                     status_code=HTTPStatus.FOUND,
                     headers={
@@ -67,6 +70,8 @@ class FormLoginUnitTests(unittest.TestCase):
                 "login_url": "https://staging.internal.example/login",
                 "username_env_var": "SECURITY_TEST_USERNAME",
                 "password_env_var": "SECURITY_TEST_PASSWORD",
+                "login_username_field": "email",
+                "login_password_field": "passwd",
                 "final_url": "https://staging.internal.example/dashboard",
                 "status_code": "200",
             },

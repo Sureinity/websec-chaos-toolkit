@@ -54,6 +54,8 @@ def perform_form_login(
             login_url=login_url,
             username=username,
             password=password,
+            username_field=auth_config.login_username_field,
+            password_field=auth_config.login_password_field,
             username_env_var=auth_config.username_env_var,
             password_env_var=auth_config.password_env_var,
             secrets=secrets,
@@ -65,6 +67,8 @@ def perform_form_login(
             login_url=login_url,
             username=username,
             password=password,
+            username_field=auth_config.login_username_field,
+            password_field=auth_config.login_password_field,
             username_env_var=auth_config.username_env_var,
             password_env_var=auth_config.password_env_var,
             secrets=secrets,
@@ -77,6 +81,8 @@ def _perform_login_request(
     login_url: str,
     username: str,
     password: str,
+    username_field: str,
+    password_field: str,
     username_env_var: str,
     password_env_var: str,
     secrets: tuple[str, ...],
@@ -85,8 +91,8 @@ def _perform_login_request(
         response = client.post(
             login_url,
             data={
-                "username": username,
-                "password": password,
+                username_field: username,
+                password_field: password,
             },
         )
     except httpx.HTTPError as exc:
@@ -114,7 +120,10 @@ def _perform_login_request(
     if not cookies:
         raise MissingSessionMaterialError(
             method="form",
-            detail=f"No reusable cookies were returned by {login_url}. Response preview: {response_preview}",
+            detail=(
+                f"No reusable cookies were returned by {login_url}. "
+                f"Response preview: {response_preview}"
+            ),
             secrets=secrets,
         )
 
@@ -126,6 +135,8 @@ def _perform_login_request(
             "login_url": login_url,
             "username_env_var": username_env_var,
             "password_env_var": password_env_var,
+            "login_username_field": username_field,
+            "login_password_field": password_field,
             "final_url": str(response.url),
             "status_code": str(response.status_code),
         },

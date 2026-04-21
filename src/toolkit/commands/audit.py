@@ -105,11 +105,17 @@ def register(root_app: typer.Typer) -> None:
         ] = None,
         login_username_field: Annotated[
             str | None,
-            typer.Option("--login-username-field", help="Username field name for api_login."),
+            typer.Option(
+                "--login-username-field",
+                help="Username field name for form or api_login.",
+            ),
         ] = None,
         login_password_field: Annotated[
             str | None,
-            typer.Option("--login-password-field", help="Password field name for api_login."),
+            typer.Option(
+                "--login-password-field",
+                help="Password field name for form or api_login.",
+            ),
         ] = None,
         auth_result: Annotated[
             ApiLoginAuthResult | None,

@@ -324,6 +324,31 @@ class AuditCommandTests(unittest.TestCase):
         self.assertIn("Fingerprint final URL: http://127.0.0.1:8000/", result.stdout)
         self.assertIn("Discovery routes: 2", result.stdout)
 
+    def test_audit_requires_form_field_names(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with chdir(project_root):
+                result = RUNNER.invoke(
+                    app,
+                    [
+                        "audit",
+                        "http://127.0.0.1:8000",
+                        "--auth-mode",
+                        "form",
+                        "--login-url",
+                        "http://127.0.0.1:8000/login",
+                        "--username-env-var",
+                        "TOOLKIT_AUDIT_USERNAME",
+                        "--password-env-var",
+                        "TOOLKIT_AUDIT_PASSWORD",
+                    ],
+                    catch_exceptions=False,
+                )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertIn("login_password_field", result.stderr)
+        self.assertIn("login_username_field", result.stderr)
+
     def test_audit_honors_explicit_runtime_selection(self) -> None:
         with TemporaryDirectory() as tmp:
             project_root = Path(tmp)

@@ -74,6 +74,8 @@ apps:
       login_url: https://staging.internal.example/login
       username_env_var: SECURITY_TEST_USERNAME
       password_env_var: SECURITY_TEST_PASSWORD
+      login_username_field: email
+      login_password_field: passwd
     health_endpoint: /health
     metrics:
       endpoint: https://staging.internal.example/metrics
