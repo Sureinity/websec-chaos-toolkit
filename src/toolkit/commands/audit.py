@@ -13,9 +13,11 @@ from toolkit.audit import (
     AuditAuthValidationError,
     AuditDiscoveryError,
     AuditFingerprintError,
+    AuditIntensityMode,
     build_url_audit_auth_config,
     capture_httpx_fingerprint,
     plan_discovered_audit_scope,
+    resolve_audit_intensity,
     run_katana_discovery,
     write_audit_auth_context,
     write_httpx_fingerprint,
@@ -67,6 +69,17 @@ def register(root_app: typer.Typer) -> None:
                 rich_help_panel=_GENERAL_AUDIT_PANEL,
             ),
         ] = 0,
+        intensity: Annotated[
+            AuditIntensityMode | None,
+            typer.Option(
+                "--intensity",
+                help=(
+                    "Audit breadth and budget mode: safe, balanced, or deep. "
+                    "Omitted behaves like safe."
+                ),
+                rich_help_panel=_GENERAL_AUDIT_PANEL,
+            ),
+        ] = None,
         auth_mode: Annotated[
             AuditAuthMode | None,
             typer.Option(
@@ -204,6 +217,7 @@ def register(root_app: typer.Typer) -> None:
 
         with runtime_logging_scope(verbosity=verbose):
             try:
+                _ = resolve_audit_intensity(intensity)
                 auth_config = build_url_audit_auth_config(
                     auth_mode=auth_mode,
                     token_env_var=token_env_var,

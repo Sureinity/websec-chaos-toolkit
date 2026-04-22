@@ -119,6 +119,7 @@ class AuditCommandTests(unittest.TestCase):
         self.assertIn("Auth Mode: session", result.stdout)
         self.assertIn("Auth Modes: form and api_login", result.stdout)
         self.assertIn("Auth Mode: api_login", result.stdout)
+        self.assertIn("--intensity", result.stdout)
         self.assertIn("--token-env-var", result.stdout)
         self.assertIn("--cookie-name", result.stdout)
         self.assertIn("--session-header", result.stdout)
@@ -176,6 +177,120 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["extra_raw_artifact_paths"][0].name, "fingerprint.json")
         self.assertEqual(kwargs["target_urls"]["zap"][1], "http://127.0.0.1:8000/admin")
         self.assertEqual(kwargs["target_urls"]["nuclei"][1], "http://127.0.0.1:8000/admin")
+
+    def test_audit_accepts_explicit_safe_intensity(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000", "--intensity", "safe"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+
+    def test_audit_accepts_explicit_balanced_intensity(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000", "--intensity", "balanced"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+
+    def test_audit_accepts_explicit_deep_intensity(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000", "--intensity", "deep"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+
+    def test_audit_rejects_invalid_intensity_value(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with chdir(project_root):
+                result = RUNNER.invoke(
+                    app,
+                    ["audit", "http://127.0.0.1:8000", "--intensity", "extreme"],
+                )
+
+        self.assertEqual(result.exit_code, 2)
+        self.assertIn("Invalid value", result.output)
 
     def test_audit_curates_zap_and_nuclei_scope(self) -> None:
         with TemporaryDirectory() as tmp:
