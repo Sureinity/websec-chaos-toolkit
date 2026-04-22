@@ -14,6 +14,8 @@ from toolkit.audit import (
     AuditDiscoveryError,
     AuditFingerprintError,
     AuditIntensityMode,
+    apply_audit_intensity,
+    build_audit_intensity_plan,
     build_url_audit_auth_config,
     capture_httpx_fingerprint,
     plan_discovered_audit_scope,
@@ -217,7 +219,8 @@ def register(root_app: typer.Typer) -> None:
 
         with runtime_logging_scope(verbosity=verbose):
             try:
-                _ = resolve_audit_intensity(intensity)
+                selected_intensity = resolve_audit_intensity(intensity)
+                intensity_plan = build_audit_intensity_plan(selected_intensity)
                 auth_config = build_url_audit_auth_config(
                     auth_mode=auth_mode,
                     token_env_var=token_env_var,
@@ -235,7 +238,10 @@ def register(root_app: typer.Typer) -> None:
                     auth_result_path=auth_result_path,
                 )
                 app_config = build_url_audit_app_with_auth(url, auth=auth_config)
-                audit_profile = build_url_audit_profile()
+                audit_profile = apply_audit_intensity(
+                    build_url_audit_profile(),
+                    mode=selected_intensity,
+                )
                 resolved_when = utc_now()
                 context = prepare_run_context(
                     project_root,
@@ -261,6 +267,8 @@ def register(root_app: typer.Typer) -> None:
                 target_scope = plan_discovered_audit_scope(
                     seed_url=str(app_config.base_url),
                     discovered_routes=discovery.routes,
+                    zap_route_limit=intensity_plan.zap_route_limit,
+                    nuclei_route_limit=intensity_plan.nuclei_route_limit,
                 )
                 summary = run_pentest_live_flow(
                     project_root=project_root,
