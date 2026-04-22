@@ -1074,3 +1074,130 @@ Dependencies on earlier milestones
 - Milestone 13
 - Milestone 14
 - Milestone 16
+
+## Milestone 18: URL-First Audit Intensity Modes
+
+Goal
+
+- Add explicit operator-selectable intensity modes to `toolkit audit <url>` so
+  users can choose broader coverage and longer scanner budgets when they want
+  a more complete assessment outcome, while preserving the current safe and
+  bounded audit behavior as the default.
+
+Deliverables
+
+- A new URL-first audit CLI option:
+  - `--intensity safe|balanced|deep`
+- A locked default behavior contract:
+  - omitted `--intensity` means `safe`
+  - `safe` preserves the current hardened default behavior from Milestone 17
+- A mode-selection model that affects only URL-first audit:
+  - route scope breadth
+  - scanner time budgets
+  - safe template/rule breadth where explicitly allowed
+  - report and artifact metadata about the selected intensity
+- Explicit intensity contracts:
+  - `safe`
+    - current default bounded route budgets
+    - current safe ZAP baseline behavior
+    - current Nuclei allowlist
+    - current conservative Nmap host/service behavior
+  - `balanced`
+    - moderate increase in discovered-route coverage
+    - moderate increase in ZAP and Nuclei time budgets
+    - same read-only safety posture
+    - no active exploit behavior
+  - `deep`
+    - largest bounded discovered-route coverage
+    - longest scanner time budgets
+    - expanded but still explicitly allowlisted safe Nuclei coverage
+    - no destructive or state-mutating behavior
+- Locked per-mode audit scope and budget decisions:
+  - `safe`
+    - ZAP route limit: `8`
+    - Nuclei route limit: `8`
+    - ZAP spider budget: `1` minute per selected route
+    - Nuclei timeout: `300` seconds
+    - Nmap profile: current conservative default
+    - Nuclei allowlist: `http/exposures`
+  - `balanced`
+    - ZAP route limit: `12`
+    - Nuclei route limit: `16`
+    - ZAP spider budget: `2` minutes per selected route
+    - Nuclei timeout: `450` seconds
+    - Nmap profile: `top-ports`
+    - Nuclei allowlist: `http/exposures`
+  - `deep`
+    - ZAP route limit: `20`
+    - Nuclei route limit: `32`
+    - ZAP spider budget: `3` minutes per selected route
+    - Nuclei timeout: `900` seconds
+    - Nmap profile: `top-ports`
+    - Nuclei allowlist:
+      - `http/exposures`
+      - `http/misconfiguration`
+      - `http/technologies`
+- Report and CLI enrichment that includes:
+  - selected intensity
+  - bounded scope summary for that intensity
+  - operator-visible explanation that higher intensity means more traffic and
+    longer runtime
+- Operator guidance that clearly explains:
+  - when to use `safe`
+  - when to use `balanced`
+  - when to use `deep`
+  - that `deep` is broader but still not a destructive exploit mode
+  - that intensity affects runtime, traffic volume, and timeout risk
+
+Files/directories to create
+
+- `src/toolkit/audit/intensity.py`
+- `tests/unit/audit/test_intensity.py`
+- `tests/integration/test_audit_command.py` updates for intensity selection
+- `docs/how-to/run-url-audit.md` updates for intensity guidance
+- `docs/explanation/url-audit-model.md` updates for mode rationale
+- `docs/reference/cli.md` updates for the new audit option
+- `docs/tutorials/quickstart-url-first.md` updates for default vs opt-in
+  audit depth
+
+Acceptance criteria
+
+- `toolkit audit <url>` with no `--intensity` behaves exactly like the
+  current hardened default audit
+- `toolkit audit <url> --intensity safe` matches the omitted-intensity
+  behavior
+- `toolkit audit <url> --intensity balanced` increases route and scanner
+  budgets relative to `safe` without changing the read-only safety posture
+- `toolkit audit <url> --intensity deep` increases route and scanner budgets
+  relative to `balanced` and uses the locked expanded Nuclei allowlist
+- Intensity selection remains deterministic and explicit; the toolkit never
+  silently upgrades an audit to a broader mode
+- Reports and CLI output identify the selected intensity
+- Higher intensity produces broader bounded route coverage, not unbounded
+  crawler fan-out
+- The default audit remains safe, bounded, and unchanged for users who do not
+  opt in
+- Code-audit and edge-chaos behavior remain unchanged
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.unit.audit tests.unit.adapters.test_zap tests.unit.adapters.test_nuclei tests.unit.adapters.test_nmap tests.integration.test_audit_command
+uv run toolkit audit http://127.0.0.1:8000 --intensity safe
+uv run toolkit audit http://127.0.0.1:8000 --intensity balanced
+uv run toolkit audit http://127.0.0.1:8000 --intensity deep
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 2
+- Milestone 4
+- Milestone 5
+- Milestone 9
+- Milestone 11
+- Milestone 13
+- Milestone 14
+- Milestone 16
+- Milestone 17
