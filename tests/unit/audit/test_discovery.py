@@ -67,6 +67,7 @@ class KatanaDiscoveryTests(unittest.TestCase):
                 "https://target.internal/report-problem",
                 "https://target.internal/feed/",
                 "https://target.internal/api/openapi.json",
+                "https://target.internal/wp-includes/js/'+o+'",
             ),
         )
 
@@ -84,6 +85,43 @@ class KatanaDiscoveryTests(unittest.TestCase):
                 "https://target.internal/",
                 "https://target.internal/login",
                 "https://target.internal/report-problem",
+            ),
+        )
+
+    def test_plan_discovered_audit_scope_filters_malformed_js_derived_routes(self) -> None:
+        scope = plan_discovered_audit_scope(
+            seed_url="https://target.internal/",
+            discovered_routes=(
+                "https://target.internal/",
+                "https://target.internal/wp-admin/",
+                "https://target.internal/wp-admin/'+n+'",
+                "https://target.internal/wp-includes/js/'+o+'",
+                "https://target.internal/about",
+            ),
+        )
+
+        self.assertEqual(
+            scope.discovered_routes,
+            (
+                "https://target.internal/",
+                "https://target.internal/about",
+                "https://target.internal/wp-admin/",
+            ),
+        )
+        self.assertEqual(
+            scope.zap_routes,
+            (
+                "https://target.internal/",
+                "https://target.internal/wp-admin/",
+                "https://target.internal/about",
+            ),
+        )
+        self.assertEqual(
+            scope.nuclei_routes,
+            (
+                "https://target.internal/",
+                "https://target.internal/wp-admin",
+                "https://target.internal/about",
             ),
         )
 
@@ -236,4 +274,42 @@ class KatanaDiscoveryTests(unittest.TestCase):
         self.assertEqual(
             result.routes,
             ("https://target.internal/", "https://target.internal/admin"),
+        )
+
+    def test_run_katana_discovery_filters_malformed_js_route_artifacts(self) -> None:
+        runtime = _RuntimeStub()
+
+        with TemporaryDirectory() as tmp_dir_name:
+            raw_dir = Path(tmp_dir_name) / "raw"
+            output_dir = raw_dir / "katana"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / "results.jsonl"
+            output_path.write_text(
+                "\n".join(
+                    (
+                        '{"request":{"endpoint":"https://target.internal/"}}',
+                        '{"request":{"endpoint":"https://target.internal/wp-admin/"}}',
+                        '{"request":{"endpoint":"https://target.internal/wp-admin/\'+n+\'"}}',
+                        '{"request":{"endpoint":"https://target.internal/wp-includes/js/\'+o+\'"}}',
+                    )
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            runtime.execute = lambda request: RuntimeResult(  # type: ignore[assignment]
+                command=request.command,
+                returncode=0,
+                stdout="",
+                stderr="",
+            )
+
+            result = run_katana_discovery(
+                seed_url="https://target.internal/",
+                raw_dir=raw_dir,
+                runtime=runtime,
+            )
+
+        self.assertEqual(
+            result.routes,
+            ("https://target.internal/", "https://target.internal/wp-admin/"),
         )

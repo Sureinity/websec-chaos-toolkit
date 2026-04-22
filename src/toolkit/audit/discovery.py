@@ -85,6 +85,7 @@ _LOW_VALUE_NUCLEI_FILENAMES = frozenset(
         "load-styles.php",
     }
 )
+_INVALID_ROUTE_CHARACTERS = frozenset({"'", '"', "`"})
 
 
 @dataclass(slots=True, frozen=True)
@@ -208,7 +209,11 @@ def _load_same_origin_routes(output_path: Path, *, seed_url: str) -> list[str]:
         if candidate is None:
             continue
         parsed = urlsplit(candidate)
-        if parsed.scheme == seed.scheme and parsed.netloc == seed.netloc:
+        if (
+            parsed.scheme == seed.scheme
+            and parsed.netloc == seed.netloc
+            and _is_valid_discovered_route(candidate)
+        ):
             same_origin.add(candidate)
 
     return [seed_url, *sorted(route for route in same_origin if route != seed_url)]
@@ -295,6 +300,8 @@ def _extract_discovered_url_from_line(line: str) -> str | None:
 def _deduplicate_routes(routes: tuple[str, ...], *, seed_url: str) -> tuple[str, ...]:
     canonical_to_route: dict[str, str] = {_canonical_route(seed_url): seed_url}
     for route in routes:
+        if not _is_valid_discovered_route(route):
+            continue
         canonical_to_route.setdefault(_canonical_route(route), route)
 
     ordered_routes = [seed_url]
@@ -320,6 +327,14 @@ def _canonical_nuclei_route(route: str) -> str:
     if path != "/":
         path = path.rstrip("/")
     return parsed._replace(path=path, query="", fragment="").geturl()
+
+
+def _is_valid_discovered_route(route: str) -> bool:
+    if any(character in route for character in _INVALID_ROUTE_CHARACTERS):
+        return False
+    if any(character.isspace() for character in route):
+        return False
+    return True
 
 
 def _is_zap_candidate(route: str) -> bool:
