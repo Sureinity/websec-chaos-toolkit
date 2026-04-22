@@ -830,10 +830,6 @@ Dependencies on earlier milestones
 - Milestone 13
 - Milestone 14
 
-Detailed checkpoint plan reference
-
-- `milestones/testing/15.md`
-
 ## Milestone 16: Authenticated And Discovery-Driven URL Audit
 
 Goal
@@ -962,10 +958,6 @@ Dependencies on earlier milestones
 - Milestone 13
 - Milestone 14
 
-Detailed checkpoint plan reference
-
-- `milestones/testing/16.md`
-
 ## Milestone 17: URL-First Audit Hardening And Trustworthiness
 
 Goal
@@ -1082,7 +1074,3 @@ Dependencies on earlier milestones
 - Milestone 13
 - Milestone 14
 - Milestone 16
-
-Detailed checkpoint plan reference
-
-- `milestones/testing/17.md`

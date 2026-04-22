@@ -44,28 +44,28 @@ Validation:
 
 ```bash
 cd /path/to/config-bundle
-UV_CACHE_DIR=/tmp/uv-cache uv run toolkit validate --app sample-internal-app --env local
+uv run toolkit validate --app sample-internal-app --env local
 ```
 
 Live pentest:
 
 ```bash
 cd /path/to/config-bundle
-UV_CACHE_DIR=/tmp/uv-cache uv run toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline
+uv run toolkit pentest run --app sample-internal-app --env local --profile safe-web-baseline
 ```
 
 Live chaos:
 
 ```bash
 cd /path/to/config-bundle
-UV_CACHE_DIR=/tmp/uv-cache uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
+uv run toolkit chaos run --app sample-internal-app --env local --profile dependency-latency-baseline
 ```
 
 Report rebuild:
 
 ```bash
 cd /path/to/config-bundle
-UV_CACHE_DIR=/tmp/uv-cache uv run toolkit report build --run-id <existing-run-id>
+uv run toolkit report build --run-id <existing-run-id>
 ```
 
 ## Current Limits

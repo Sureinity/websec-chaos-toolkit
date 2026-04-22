@@ -119,7 +119,3 @@ Status language used across the docs:
 
 The implementation milestone plan lives in
 `docs/explanation/implementation-roadmap.md`.
-
-Detailed Milestone 15 checkpoint plan reference:
-
-- `milestones/testing/15.md`
