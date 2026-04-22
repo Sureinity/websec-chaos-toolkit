@@ -1,6 +1,7 @@
 """Safe ZAP baseline adapter with fixture-driven normalization."""
 
 import json
+import shlex
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -196,12 +197,12 @@ def _build_replacer_options(auth_session: AuthSession | None) -> tuple[str, ...]
         prefix = f"replacer.full_list({index})"
         options.extend(
             [
-                f"-config {prefix}.description=toolkit-auth-{index}",
-                f"-config {prefix}.enabled=true",
-                f"-config {prefix}.matchtype=REQ_HEADER",
-                f"-config {prefix}.matchstr={header}",
-                f"-config {prefix}.regex=false",
-                f"-config {prefix}.replacement={value}",
+                f"-config {shlex.quote(f'{prefix}.description=toolkit-auth-{index}')}",
+                f"-config {shlex.quote(f'{prefix}.enabled=true')}",
+                f"-config {shlex.quote(f'{prefix}.matchtype=REQ_HEADER')}",
+                f"-config {shlex.quote(f'{prefix}.matchstr={header}')}",
+                f"-config {shlex.quote(f'{prefix}.regex=false')}",
+                f"-config {shlex.quote(f'{prefix}.replacement={value}')}",
             ]
         )
     return tuple(options)

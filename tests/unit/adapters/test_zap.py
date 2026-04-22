@@ -116,6 +116,32 @@ class ZapAdapterTests(unittest.TestCase):
             execution.command[-1],
         )
 
+    def test_build_execution_quotes_replacer_values_with_spaces(self) -> None:
+        adapter = ZapAdapter(
+            app=build_app(),
+            settings=build_settings(),
+            output_path=Path("/tmp/run/raw/zap/results.json"),
+            auth_session=AuthSession(
+                method="form",
+                headers={"Authorization": "Bearer token"},
+                cookie_header="wordpress_cookie=admin; wordpress_cookie=root",
+            ),
+        )
+
+        execution = adapter.build_execution()
+
+        self.assertIn(
+            "'replacer.full_list(0).replacement=Bearer token'",
+            execution.command[-1],
+        )
+        self.assertIn(
+            (
+                "'replacer.full_list(1).replacement="
+                "wordpress_cookie=admin; wordpress_cookie=root'"
+            ),
+            execution.command[-1],
+        )
+
     def test_build_execution_blocks_when_safe_mode_is_disabled(self) -> None:
         adapter = ZapAdapter(
             app=build_app(),
