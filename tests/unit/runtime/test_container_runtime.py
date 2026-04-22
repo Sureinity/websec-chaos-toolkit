@@ -268,3 +268,57 @@ class ContainerExecutionTests(unittest.TestCase):
                 result = runtime.execute(request)
 
         self.assertEqual(result.returncode, 0)
+
+    def test_execute_preserves_zap_wrapper_side_file_environment(self) -> None:
+        runtime = ContainerRuntime()
+        with TemporaryDirectory() as tmp_dir_name:
+            output_path = Path(tmp_dir_name) / "outputs" / "zap" / "results.json"
+            request = RuntimeRequest(
+                tool="zap",
+                command=(
+                    "zap-baseline.py",
+                    "-t",
+                    "http://127.0.0.1:8000",
+                    "-J",
+                    str(output_path),
+                    "-m",
+                    "1",
+                    "-z",
+                    (
+                        "-config 'replacer.full_list(0).matchstr=Cookie' "
+                        "-config 'replacer.full_list(0).replacement=sessionid=session-cookie'"
+                    ),
+                ),
+                output_path=output_path,
+            )
+
+            def _run(*args, **kwargs):  # type: ignore[no-untyped-def]
+                command = kwargs["command"]
+                mount_args = [command[i + 1] for i in range(len(command)) if command[i] == "-v"]
+                env_args = [command[i + 1] for i in range(len(command)) if command[i] == "-e"]
+                image_index = command.index("ghcr.io/zaproxy/zaproxy:stable")
+                tool_args = command[image_index + 1 :]
+
+                self.assertIn(f"{output_path.parent}:/zap/wrk:z", mount_args)
+                self.assertIn("HOME=/zap/wrk", env_args)
+                self.assertIn("results.json", tool_args)
+                self.assertNotIn(str(output_path), tool_args)
+                self.assertIn(
+                    "replacer.full_list(0).replacement=sessionid=session-cookie",
+                    tool_args[-1],
+                )
+
+                return ProcessResult(
+                    command=command,
+                    returncode=0,
+                    stdout="",
+                    stderr="",
+                )
+
+            with patch(
+                "toolkit.runtime.container.run_process_command",
+                side_effect=_run,
+            ):
+                result = runtime.execute(request)
+
+        self.assertEqual(result.returncode, 0)
