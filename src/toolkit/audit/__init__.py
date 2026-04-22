@@ -22,7 +22,13 @@ from toolkit.audit.fingerprint import (
     load_httpx_fingerprint,
     write_httpx_fingerprint,
 )
-from toolkit.audit.intensity import AuditIntensityMode, resolve_audit_intensity
+from toolkit.audit.intensity import (
+    AuditIntensityMode,
+    AuditIntensityPlan,
+    apply_audit_intensity,
+    build_audit_intensity_plan,
+    resolve_audit_intensity,
+)
 from toolkit.audit.metadata import load_audit_auth_context, write_audit_auth_context
 
 __all__ = [
@@ -34,8 +40,11 @@ __all__ = [
     "AuditAuthMode",
     "AuditAuthValidationError",
     "AuditIntensityMode",
+    "AuditIntensityPlan",
     "HttpxFingerprint",
     "KatanaDiscoveryResult",
+    "apply_audit_intensity",
+    "build_audit_intensity_plan",
     "build_url_audit_auth_config",
     "capture_httpx_fingerprint",
     "load_audit_auth_context",
