@@ -159,6 +159,10 @@ All runtime auth resolution is fail-closed.
   usernames, and passwords
 - debug metadata may describe the source env var name, but not its resolved
   value
+- the persisted URL-first audit auth context must store only secret-safe
+  provenance keys, not raw headers, cookies, or resolved auth material
+- verbose runtime logs must redact auth-bearing command arguments before they
+  are printed
 
 ## Unsupported Flows
 

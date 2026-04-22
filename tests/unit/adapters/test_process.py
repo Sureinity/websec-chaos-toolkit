@@ -141,3 +141,65 @@ class ProcessRunnerTests(unittest.TestCase):
         self.assertIn("status=completed_with_findings", stdout_target.getvalue())
         self.assertIn("event=tool.finish", stdout_target.getvalue())
         self.assertNotIn("status=failed", stdout_target.getvalue())
+
+    def test_run_tool_execution_redacts_auth_headers_from_command_logs(self) -> None:
+        execution = ToolExecution(
+            tool="python",
+            command=(
+                "python3",
+                "-c",
+                "print('ok')",
+                "-H",
+                "Authorization: Bearer secret-token",
+                "-H",
+                "Cookie: sessionid=session-cookie",
+            ),
+        )
+        stdout_target = StringIO()
+
+        with runtime_logging_scope(verbosity=3, color=False):
+            result = run_tool_execution(
+                execution,
+                stream_output=True,
+                stdout_target=stdout_target,
+                stderr_target=StringIO(),
+            )
+
+        rendered = stdout_target.getvalue()
+        self.assertTrue(result.succeeded)
+        self.assertIn('command="python3 -c', rendered)
+        self.assertIn("Authorization: <redacted>", rendered)
+        self.assertIn("Cookie: <redacted>", rendered)
+        self.assertNotIn("secret-token", rendered)
+        self.assertNotIn("session-cookie", rendered)
+
+    def test_run_tool_execution_redacts_zap_replacement_values_from_command_logs(self) -> None:
+        execution = ToolExecution(
+            tool="python",
+            command=(
+                "python3",
+                "-c",
+                "print('ok')",
+                "-z",
+                (
+                    "-config 'replacer.full_list(0).matchstr=Cookie' "
+                    "-config 'replacer.full_list(0).replacement=sessionid=session-cookie; "
+                    "wordpress_logged_in=secret-cookie'"
+                ),
+            ),
+        )
+        stdout_target = StringIO()
+
+        with runtime_logging_scope(verbosity=3, color=False):
+            result = run_tool_execution(
+                execution,
+                stream_output=True,
+                stdout_target=stdout_target,
+                stderr_target=StringIO(),
+            )
+
+        rendered = stdout_target.getvalue()
+        self.assertTrue(result.succeeded)
+        self.assertIn("replacement=<redacted>", rendered)
+        self.assertNotIn("session-cookie", rendered)
+        self.assertNotIn("secret-cookie", rendered)

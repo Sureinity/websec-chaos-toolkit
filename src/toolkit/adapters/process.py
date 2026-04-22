@@ -1,6 +1,7 @@
 """Shared process execution helpers for scanner adapters."""
 
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -18,6 +19,8 @@ from toolkit.core.logging import (
     current_runtime_log_settings,
     emit_runtime_log,
 )
+
+_ZAP_REPLACER_RE = re.compile(r"(\.replacement=)([^']*)(?=')")
 
 
 @dataclass(slots=True, frozen=True)
@@ -188,7 +191,7 @@ def _run_streaming_command(
         tool=log_context.tool,
         output=log_context.output_path,
         cwd=log_context.cwd or cwd,
-        command=shlex.join(command),
+        command=_redacted_command_for_log(command),
         timeout_seconds=timeout_seconds,
         settings=log_settings,
     )
@@ -319,3 +322,32 @@ def _is_accepted_nonzero_exit(
     if log_context.output_path is None:
         return False
     return log_context.output_path.is_file()
+
+
+def _redacted_command_for_log(command: tuple[str, ...]) -> str:
+    redacted: list[str] = []
+    index = 0
+    while index < len(command):
+        token = command[index]
+        if token == "-H" and index + 1 < len(command):
+            redacted.extend((token, _redact_header_value(command[index + 1])))
+            index += 2
+            continue
+        if token == "-z" and index + 1 < len(command):
+            redacted.extend((token, _redact_zap_options(command[index + 1])))
+            index += 2
+            continue
+        redacted.append(token)
+        index += 1
+    return shlex.join(redacted)
+
+
+def _redact_header_value(value: str) -> str:
+    name, separator, _rest = value.partition(":")
+    if not separator:
+        return "<redacted>"
+    return f"{name}: <redacted>"
+
+
+def _redact_zap_options(value: str) -> str:
+    return _ZAP_REPLACER_RE.sub(r"\1<redacted>", value)

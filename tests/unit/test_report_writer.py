@@ -270,3 +270,49 @@ class ReportBuilderTests(unittest.TestCase):
         self.assertIn("Routes in scope: 2", summary)
         self.assertIn("## Auth Context", summary)
         self.assertIn("Auth mode: api_login", summary)
+
+    def test_report_builder_does_not_render_unsafe_auth_provenance_fields(self) -> None:
+        request = RunRequest(
+            app_id="sample-app",
+            environment="local",
+            profile="safe-baseline",
+            modules=("pentest",),
+        )
+
+        with TemporaryDirectory() as temp_dir_name:
+            project_root = Path(temp_dir_name)
+            context = prepare_run_context(
+                project_root,
+                request,
+                run_id="20260328-020304-deadbeef",
+            )
+            (context.raw_dir / "audit").mkdir(parents=True, exist_ok=True)
+            (context.raw_dir / "audit" / "auth-context.json").write_text(
+                json.dumps(
+                    {
+                        "auth_mode": "form",
+                        "is_authenticated": True,
+                        "provenance": {
+                            "source": "form_login",
+                            "login_url": "https://target.internal/login",
+                            "cookie_transport": "header",
+                            "cookie_header": "sessionid=session-cookie",
+                            "authorization": "Bearer secret-token",
+                        },
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            write_normalized_results(context, [])
+
+            summary = build_markdown_summary_from_run_dir(context.run_dir)
+
+        self.assertIn("Auth source: form_login", summary)
+        self.assertIn("login_url: https://target.internal/login", summary)
+        self.assertNotIn("cookie_header", summary)
+        self.assertNotIn("authorization", summary)
+        self.assertNotIn("session-cookie", summary)
+        self.assertNotIn("secret-token", summary)
