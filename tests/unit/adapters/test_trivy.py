@@ -1,7 +1,7 @@
+import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 from unittest.mock import patch
 
 from toolkit.adapters.base import AdapterAvailability

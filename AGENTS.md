@@ -114,7 +114,7 @@ These instructions apply to this repository directory. If a deeper
 ## Current CLI Behavior
 
 - The intended public interface is already wired:
-  - `toolkit audit <url> [--runtime host|container] [-v|-vv|-vvv]`
+  - `toolkit audit <url> [--runtime host|container] [--intensity safe|balanced|deep] [-v|-vv|-vvv]`
   - `toolkit edge-chaos <url> [--fault <name>]`
   - `toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container] [-v|-vv|-vvv]`
   - `toolkit validate --app <id> --env <env>`
@@ -129,7 +129,9 @@ These instructions apply to this repository directory. If a deeper
     records for tool start, output, and finish events, and exits with `0`,
     `1`, or `2`; auto-selects `container` then `host` runtime when possible;
     curates a smaller discovered-route subset for ZAP and a larger but filtered
-    same-origin route set for Nuclei;
+    same-origin route set for Nuclei; omitted intensity behaves like `safe`
+    and explicit `balanced` and `deep` modes increase bounded route and
+    scanner budgets without changing the read-only safety posture;
     `-v` shows stderr tool output, `-vv` adds stdout tool output, and `-vvv`
     adds command-level context such as command and working directory
   - `toolkit edge-chaos` derives an ad hoc chaos target from a single URL,

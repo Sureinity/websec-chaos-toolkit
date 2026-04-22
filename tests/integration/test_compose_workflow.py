@@ -26,18 +26,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 COMPOSE_FILE = REPO_ROOT / "docker-compose.yml"
 COMPOSE_ENV_EXAMPLE = REPO_ROOT / "compose" / "toolkit-runner.env.example"
 COMPOSE_EXAMPLE_OVERLAY = (
-    REPO_ROOT
-    / "compose"
-    / "examples"
-    / "sample-webapp-compose"
-    / "docker-compose.override.yml"
+    REPO_ROOT / "compose" / "examples" / "sample-webapp-compose" / "docker-compose.override.yml"
 )
-COMPOSE_CONFIG_PACK = (
-    REPO_ROOT / "examples" / "configs" / "sample-webapp-compose"
-)
-FIXTURE_FILE = (
-    REPO_ROOT / "tests" / "fixtures" / "compose" / "expected-services.yaml"
-)
+COMPOSE_CONFIG_PACK = REPO_ROOT / "examples" / "configs" / "sample-webapp-compose"
+FIXTURE_FILE = REPO_ROOT / "tests" / "fixtures" / "compose" / "expected-services.yaml"
 
 
 def _load_compose() -> dict:
@@ -141,8 +133,6 @@ class ComposeFixtureTests(unittest.TestCase):
         compose = _load_compose()
         compose_services = set(compose.get("services", {}).keys())
         fixture_services = {
-            entry["name"]
-            for entry in fixture["services"]
-            if entry.get("required", False)
+            entry["name"] for entry in fixture["services"] if entry.get("required", False)
         }
         self.assertTrue(fixture_services.issubset(compose_services))

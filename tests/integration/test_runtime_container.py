@@ -9,7 +9,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from toolkit.runtime.container import ContainerRuntime
-from toolkit.runtime.contracts import CONTAINER_TOOL_IMAGES, RuntimeMode
 from toolkit.runtime.host import HostRuntime
 from toolkit.runtime.models import RuntimeRequest
 
@@ -55,9 +54,7 @@ class ContainerRuntimeIntegrationTests(unittest.TestCase):
             env_overrides={"NUCLEI_DISABLE_UPDATE_CHECK": "true"},
         )
 
-        cmd = runtime._build_docker_command(
-            request, image="projectdiscovery/nuclei:latest"
-        )
+        cmd = runtime._build_docker_command(request, image="projectdiscovery/nuclei:latest")
 
         # Tool args (without binary) are appended after the image.
         image_idx = list(cmd).index("projectdiscovery/nuclei:latest")
@@ -80,8 +77,6 @@ class ContainerRuntimeIntegrationTests(unittest.TestCase):
             self.assertIsNotNone(image, f"no image for core tool: {tool}")
 
     def test_image_override_replaces_default(self) -> None:
-        runtime = ContainerRuntime(
-            image_overrides={"nmap": "custom/nmap:v2"}
-        )
+        runtime = ContainerRuntime(image_overrides={"nmap": "custom/nmap:v2"})
         image = runtime._resolve_image("nmap")
         self.assertEqual(image, "custom/nmap:v2")

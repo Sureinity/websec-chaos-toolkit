@@ -161,5 +161,8 @@ def _build_evidence(*, service_name: str, port_id: str) -> list[str]:
 
 def _build_remediation_summary(*, service_name: str, port_id: str) -> str:
     if service_name:
-        return f"Review why {service_name} is exposed on port {port_id} and restrict access if not required."
+        return (
+            f"Review why {service_name} is exposed on port {port_id} "
+            "and restrict access if not required."
+        )
     return f"Review why port {port_id} is exposed and restrict access if not required."

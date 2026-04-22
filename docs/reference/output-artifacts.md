@@ -14,6 +14,11 @@ outputs/
   <run-id>/
     manifest.json
     raw/
+      audit/
+        auth-context.json
+        intensity-context.json
+      pentest/
+        execution-summary.json
       <tool>/
         ... (tool-specific logits)
     normalized/
@@ -27,6 +32,10 @@ shared artifacts we care about for downstream automation.
 
 Current examples:
 
+- URL-first audit writes secret-safe audit metadata under `raw/audit/`,
+  including `auth-context.json` and `intensity-context.json`
+- pentest-backed runs write `raw/pentest/execution-summary.json` with the final
+  per-tool execution summary
 - pentest runs write scanner artifacts under `raw/zap/`, `raw/nuclei/`, and
   `raw/nmap/`
 - chaos runs write experiment artifacts under `raw/chaos/`, including
@@ -97,7 +106,8 @@ Current behavior notes:
 
 - report rebuild is implemented now
 - it reads stored normalized findings only
-- it does not depend on raw vendor artifacts at rebuild time
+- it can also enrich the report with secret-safe audit and execution metadata
+  when those raw context artifacts exist
 
 See also:
 

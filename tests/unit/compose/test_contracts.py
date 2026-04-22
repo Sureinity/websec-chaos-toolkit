@@ -42,9 +42,7 @@ class ComposeContractTests(unittest.TestCase):
         self.assertIn(TOXIPROXY_SERVICE, services)
 
     def test_pentest_plus_chaos_is_superset_of_pentest_only(self) -> None:
-        self.assertTrue(
-            PENTEST_ONLY_SERVICES.issubset(PENTEST_PLUS_CHAOS_SERVICES)
-        )
+        self.assertTrue(PENTEST_ONLY_SERVICES.issubset(PENTEST_PLUS_CHAOS_SERVICES))
 
     def test_mount_paths_are_absolute(self) -> None:
         self.assertTrue(COMPOSE_CONFIG_MOUNT_PATH.startswith("/"))
@@ -52,12 +50,8 @@ class ComposeContractTests(unittest.TestCase):
         self.assertTrue(COMPOSE_WORKDIR.startswith("/"))
 
     def test_config_and_outputs_mount_under_workdir(self) -> None:
-        self.assertTrue(
-            COMPOSE_CONFIG_MOUNT_PATH.startswith(COMPOSE_WORKDIR)
-        )
-        self.assertTrue(
-            COMPOSE_OUTPUTS_MOUNT_PATH.startswith(COMPOSE_WORKDIR)
-        )
+        self.assertTrue(COMPOSE_CONFIG_MOUNT_PATH.startswith(COMPOSE_WORKDIR))
+        self.assertTrue(COMPOSE_OUTPUTS_MOUNT_PATH.startswith(COMPOSE_WORKDIR))
 
     def test_required_config_files_match_yaml_bundle(self) -> None:
         self.assertEqual(
