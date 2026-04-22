@@ -37,6 +37,9 @@ Route discovery is same-origin only.
 - `katana` adds same-origin routes
 - discovered routes are deduplicated deterministically
 - external links are excluded from the audit scope
+- malformed or obviously invalid discovered routes are filtered before
+  downstream execution
+- downstream route scope stays bounded and curated by default
 
 ## Scanner Roles
 
@@ -45,11 +48,29 @@ Route discovery is same-origin only.
 - `katana`
   - discovery only
 - `ZAP`
-  - passive and safe web checks across the in-scope routes
+  - passive and safe web checks across a curated route subset
 - `Nuclei`
-  - curated HTTP exposure checks across the in-scope routes
+  - curated HTTP exposure checks across a bounded filtered route subset
 - `Nmap`
   - conservative host and service context only
+
+## Outcome Model
+
+URL-first audit has three high-level outcomes:
+
+- `success`
+  - no actionable findings and no core runtime failure
+- `findings`
+  - one or more actionable findings and no core runtime failure
+- `failed`
+  - a core runtime, auth, discovery, or scanner stage failed
+
+A failed audit can still preserve useful results:
+
+- findings from completed tools remain normalized
+- the report can still be rebuilt from preserved normalized findings
+- the failed status means the run is incomplete, not that every preserved
+  artifact is invalid
 
 ## Artifact Model
 

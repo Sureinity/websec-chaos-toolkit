@@ -56,6 +56,15 @@ Current examples:
 
 Future checkpoints can extend the manifest (e.g., tools metadata, triggered_by).
 
+Failure semantics:
+
+- a run can end with `status: failed` while still preserving normalized
+  findings and a rebuilt Markdown report
+- this happens when at least one core tool fails after other tools already
+  completed and contributed findings
+- treat `manifest.json` as the final outcome signal and the normalized/report
+  artifacts as preserved partial results when present
+
 ## Normalized Results Schema
 
 `normalized/findings.json` is a JSON array of result objects with:
@@ -98,6 +107,12 @@ Current behavior notes:
 - report rebuild is implemented now
 - it reads stored normalized findings only
 - it does not depend on raw vendor artifacts at rebuild time
+
+Useful partial-result rule:
+
+- if `normalized/findings.json` exists, the run already preserved findings
+  that can still be reviewed even when the overall manifest status is
+  `failed`
 
 See also:
 

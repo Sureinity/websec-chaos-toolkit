@@ -108,6 +108,14 @@ the run summary, and reports the failed tool details on stderr before exiting
 with `2`. Structured runtime logs that were already emitted stay visible in
 the terminal.
 
+This failed state can still be partially useful:
+
+- findings from tools that completed successfully are still preserved
+- the normalized bundle path is still printed when findings were written
+- the Markdown report path is still printed when report generation completed
+- the failed status means at least one core audit stage did not complete
+  successfully, not that every artifact is unusable
+
 The runtime logs are now organized as timestamped records, for example:
 
 ```text
@@ -135,6 +143,18 @@ The command exits with `2` when:
 - no audit runtime is ready
 - the selected runtime is explicitly requested but unavailable
 - the live pentest execution fails at runtime
+
+In practice, a true audit failure means one of these happened:
+
+- a required runtime or core scanner could not run
+- a core scanner timed out or exited without a usable artifact
+- a required auth or discovery stage failed before scanner execution
+
+That is different from a useful partial run, where:
+
+- one core scanner failed
+- one or more other scanners still completed
+- preserved findings remain available in the normalized bundle and report
 
 Common remediation steps:
 

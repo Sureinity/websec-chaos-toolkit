@@ -485,7 +485,7 @@ class AuditCommandTests(unittest.TestCase):
                 with chdir(project_root):
                     result = RUNNER.invoke(
                         app,
-                        ["audit", "https://infosoft.poolreno.com/"],
+                        ["audit", "https://example.internal/"],
                         catch_exceptions=False,
                     )
 
@@ -493,6 +493,67 @@ class AuditCommandTests(unittest.TestCase):
         self.assertNotIn("Audit completed.", result.stdout)
         self.assertIn("Status: failed", result.stdout)
         self.assertIn("Audit failed.", result.stderr)
+        self.assertIn("Tool failure: zap: zap exited with code 3", result.stderr)
+        self.assertIn("Findings: 3", result.stdout)
+        self.assertIn("Actionable findings: 2", result.stdout)
+        self.assertIn("Normalized bundle:", result.stdout)
+        self.assertIn("Report:", result.stdout)
+
+    def test_audit_failed_status_can_still_preserve_useful_outputs(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            failed_summary = PentestRunSummary(
+                run_id="20260420-074911-3af8685e",
+                status=PentestRunStatus.FAILED,
+                exit_code=ExitCode.CONFIG_OR_RUNTIME_ERROR,
+                findings_count=4,
+                actionable_findings_count=1,
+                adapter_results=(
+                    build_failed_result(
+                        "zap",
+                        error_detail="zap exited with code 3",
+                    ),
+                ),
+                normalized_bundle_path=(
+                    project_root / "outputs" / "run" / "normalized" / "findings.json"
+                ),
+                report_path=(project_root / "outputs" / "run" / "reports" / "executive-summary.md"),
+            )
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=failed_summary,
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "https://example.internal/"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.CONFIG_OR_RUNTIME_ERROR)
+        self.assertIn("Status: failed", result.stdout)
+        self.assertIn("Findings: 4", result.stdout)
+        self.assertIn("Actionable findings: 1", result.stdout)
+        self.assertIn("Normalized bundle:", result.stdout)
+        self.assertIn("Report:", result.stdout)
         self.assertIn("Tool failure: zap: zap exited with code 3", result.stderr)
 
     def test_audit_rejects_invalid_url(self) -> None:
