@@ -1074,3 +1074,49 @@ Dependencies on earlier milestones
 - Milestone 13
 - Milestone 14
 - Milestone 16
+
+## Milestone 18: Opt-In URL Audit Intensity Modes
+
+Goal
+
+- Add explicit operator-selectable intensity modes to `toolkit audit <url>` so
+  broader coverage and longer scanner budgets are available on demand while
+  keeping the omitted/default audit safe, bounded, and read-only.
+
+Deliverables
+
+- `--intensity safe|balanced|deep` for `toolkit audit <url>`
+- Locked intensity semantics where omitted intensity is equivalent to `safe`
+- A centralized intensity planning surface for route limits, scanner budgets,
+  Nmap profile selection, and Nuclei allowlists
+- Operator-visible reporting and documentation that explain the difference
+  between `safe`, `balanced`, and `deep`
+
+Acceptance criteria
+
+- omitted `--intensity` behaves exactly like `safe`
+- `safe` preserves the current bounded default URL audit behavior
+- `balanced` increases route and scanner budgets relative to `safe`
+- `deep` increases route and scanner budgets relative to `balanced`
+- all intensity modes remain read-only and non-destructive
+- the default Nuclei allowlist remains unchanged when intensity is omitted
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.unit.audit tests.unit.adapters.test_zap tests.unit.adapters.test_nuclei tests.unit.adapters.test_nmap tests.unit.pentest.test_runner tests.unit.test_report_writer tests.integration.test_audit_command
+uv run toolkit doctor
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 2
+- Milestone 3
+- Milestone 4
+- Milestone 5
+- Milestone 9
+- Milestone 11
+- Milestone 13
+- Milestone 14
