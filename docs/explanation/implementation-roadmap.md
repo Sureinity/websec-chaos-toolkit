@@ -832,7 +832,7 @@ Dependencies on earlier milestones
 
 Detailed checkpoint plan reference
 
-- `/home/ghlen/Coding/Infosoft/milestones/testing/15.md`
+- `milestones/testing/15.md`
 
 ## Milestone 16: Authenticated And Discovery-Driven URL Audit
 
@@ -964,4 +964,125 @@ Dependencies on earlier milestones
 
 Detailed checkpoint plan reference
 
-- `/home/ghlen/Coding/Infosoft/milestones/testing/16.md`
+- `milestones/testing/16.md`
+
+## Milestone 17: URL-First Audit Hardening And Trustworthiness
+
+Goal
+
+- Harden the default URL-first audit path so operators can trust the outcome
+  on common real targets, especially authenticated and containerized runs,
+  without widening the default scan intensity or changing the safe-by-default
+  posture introduced in Milestone 16.
+
+Deliverables
+
+- A hardened URL-first audit runtime contract for common real-world targets:
+  - authenticated form-login runs
+  - authenticated API-login runs
+  - containerized ZAP execution
+  - discovery-driven route scope with malformed-route filtering
+- ZAP container-runtime hardening that keeps wrapper-generated side files,
+  summaries, and reports inside the mounted output directory and avoids false
+  runtime failures caused by wrapper argument parsing or container-path
+  assumptions
+- Robust auth-session transport handling for reused login state, including:
+  - duplicate cookie names across paths or scopes
+  - explicit `Cookie` header transport when cookie jars cannot be represented
+    as a simple mapping
+  - secret-safe propagation of auth material into ZAP, Nuclei, and Katana
+- Discovery-scope sanitization and quality controls that:
+  - remove malformed crawler artifacts
+  - drop obviously low-value helper and static routes from downstream scope
+  - diversify selected route families so one URL family does not dominate the
+    safe audit budget
+  - preserve deterministic route selection for the default audit mode
+- Clearer audit outcome semantics for core scanner execution, including:
+  - accepted artifact-backed completions
+  - hard runtime failures
+  - parse failures
+  - timeouts
+  - preserved findings from tools that completed successfully even when a
+    different core tool failed
+- Operator-facing reporting and documentation updates that explain:
+  - which tool actually failed
+  - when a run is partially useful versus fully failed
+  - what findings were still preserved
+  - which URL-first hardening rules exist to keep scans bounded and reliable
+- Regression coverage for common target patterns such as:
+  - WordPress-style form login
+  - duplicate-cookie sessions
+  - auth headers with spaces or multi-cookie values
+  - malformed discovery output from JavaScript-heavy pages
+
+Files/directories to create
+
+- `tests/unit/audit/` fixture and regression additions for malformed and
+  low-value discovered-route cases
+- `tests/unit/adapters/test_zap.py` hardening coverage for auth-backed ZAP
+  execution and wrapper argument handling
+- `tests/unit/runtime/test_container_runtime.py` updates for containerized ZAP
+  output-directory and environment assumptions
+- `tests/unit/auth/` additions for duplicate-cookie and explicit-cookie-header
+  transport behavior
+- `tests/integration/test_audit_command.py` updates for hardened URL-first
+  failure and partial-success behavior
+- `docs/how-to/run-url-audit.md` updates for operator troubleshooting and
+  trustworthy-result expectations
+- `docs/reference/output-artifacts.md` updates for partial-result and
+  preserved-artifact semantics
+- `docs/explanation/url-audit-model.md` updates for the hardened default audit
+  contract
+
+Acceptance criteria
+
+- Auth-backed containerized ZAP runs do not fail because of wrapper-generated
+  side-file paths, quoted header values, or multi-cookie auth material
+- Duplicate-cookie login sessions no longer crash auth bootstrap and can be
+  reused safely during audit execution
+- URL-first audit filters malformed or obviously invalid discovered routes
+  before they are handed to downstream scanners
+- Default `zap_routes` and `nuclei_routes` remain deterministic, bounded, and
+  diversified across route families instead of clustering on one crawler-heavy
+  section of the target
+- `toolkit audit <url>` preserves findings from tools that completed
+  successfully even when another core tool fails, while still exiting with `2`
+  for a true core-tool runtime failure
+- Accepted artifact-backed non-zero tool exits do not become false hard
+  failures in logs, reports, or final run status
+- Audit logs and reports identify the actual failed tool and failure reason
+  without exposing secrets
+- The current default audit behavior remains safe and bounded:
+  - no new default tools
+  - no broader default rule/template allowlists
+  - no deeper default route budgets beyond the hardened bounded scope
+- Hardening covers both unauthenticated and authenticated URL-first audit
+  paths
+
+Verification commands
+
+```bash
+uv run python -m unittest tests.unit.auth tests.unit.audit tests.unit.adapters.test_zap tests.unit.runtime.test_container_runtime tests.integration.test_audit_command
+uv run toolkit doctor
+uv run toolkit audit http://127.0.0.1:8000
+uv run toolkit audit http://127.0.0.1:8000 --auth-mode form --login-url http://127.0.0.1:8000/login --username-env-var TOOLKIT_AUDIT_USERNAME --password-env-var TOOLKIT_AUDIT_PASSWORD --login-username-field username --login-password-field password
+uv run toolkit audit http://127.0.0.1:8000 --auth-mode api_login --login-url http://127.0.0.1:8000/api/login --username-env-var TOOLKIT_AUDIT_USERNAME --password-env-var TOOLKIT_AUDIT_PASSWORD --login-content-type json --login-username-field username --login-password-field password --auth-result bearer_json --auth-result-path token
+uv run pre-commit run --all-files
+```
+
+Dependencies on earlier milestones
+
+- Milestone 1
+- Milestone 2
+- Milestone 3
+- Milestone 4
+- Milestone 5
+- Milestone 9
+- Milestone 11
+- Milestone 13
+- Milestone 14
+- Milestone 16
+
+Detailed checkpoint plan reference
+
+- `milestones/testing/17.md`

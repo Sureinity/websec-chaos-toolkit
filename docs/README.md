@@ -122,4 +122,4 @@ The implementation milestone plan lives in
 
 Detailed Milestone 15 checkpoint plan reference:
 
-- `/home/ghlen/Coding/Infosoft/milestones/testing/15.md`
+- `milestones/testing/15.md`
