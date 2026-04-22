@@ -25,7 +25,6 @@ from toolkit.chaos.toxiproxy import (
     ToxiproxyClient,
     ToxiproxyFaultHandle,
     ToxiproxyProxy,
-    ToxiproxyRequestError,
 )
 
 
@@ -55,17 +54,21 @@ class ChaosExecutionService:
         ToxiproxyProxyNotFoundError or ToxiproxyProxyStateError if the
         proxy is missing or disabled.
         """
-        self.operations.append({
-            "action": "preflight",
-            "proxy_name": proxy_name,
-        })
+        self.operations.append(
+            {
+                "action": "preflight",
+                "proxy_name": proxy_name,
+            }
+        )
         proxy = self._client.require_proxy(proxy_name, expect_enabled=True)
-        self.operations.append({
-            "action": "preflight_ok",
-            "proxy_name": proxy_name,
-            "listen": proxy.listen,
-            "upstream": proxy.upstream,
-        })
+        self.operations.append(
+            {
+                "action": "preflight_ok",
+                "proxy_name": proxy_name,
+                "listen": proxy.listen,
+                "upstream": proxy.upstream,
+            }
+        )
         return proxy
 
     def inject_fault(
@@ -83,24 +86,28 @@ class ChaosExecutionService:
         resolved_attributes = (
             dict(attributes) if attributes else default_fault_attributes(fault_type)
         )
-        self.operations.append({
-            "action": "inject_fault",
-            "proxy_name": proxy_name,
-            "fault_type": fault_type,
-            "attributes": resolved_attributes,
-        })
+        self.operations.append(
+            {
+                "action": "inject_fault",
+                "proxy_name": proxy_name,
+                "fault_type": fault_type,
+                "attributes": resolved_attributes,
+            }
+        )
         handle = self._client.inject_fault(
             proxy_name=proxy_name,
             fault_type=fault_type,
             attributes=resolved_attributes,
         )
-        self.operations.append({
-            "action": "inject_fault_ok",
-            "proxy_name": proxy_name,
-            "fault_type": fault_type,
-            "rollback_action": handle.rollback_action,
-            "toxic_name": handle.toxic_name,
-        })
+        self.operations.append(
+            {
+                "action": "inject_fault_ok",
+                "proxy_name": proxy_name,
+                "fault_type": fault_type,
+                "rollback_action": handle.rollback_action,
+                "toxic_name": handle.toxic_name,
+            }
+        )
         return handle
 
     def rollback_fault(self, handle: ToxiproxyFaultHandle) -> None:
@@ -109,15 +116,19 @@ class ChaosExecutionService:
         Records the operation for the action log. Raises on confirmation
         failure so the runner can escalate to exit code 2.
         """
-        self.operations.append({
-            "action": "rollback_fault",
-            "proxy_name": handle.proxy_name,
-            "fault_type": handle.fault_type,
-            "rollback_action": handle.rollback_action,
-            "toxic_name": handle.toxic_name,
-        })
+        self.operations.append(
+            {
+                "action": "rollback_fault",
+                "proxy_name": handle.proxy_name,
+                "fault_type": handle.fault_type,
+                "rollback_action": handle.rollback_action,
+                "toxic_name": handle.toxic_name,
+            }
+        )
         self._client.rollback_fault(handle)
-        self.operations.append({
-            "action": "rollback_fault_ok",
-            "proxy_name": handle.proxy_name,
-        })
+        self.operations.append(
+            {
+                "action": "rollback_fault_ok",
+                "proxy_name": handle.proxy_name,
+            }
+        )

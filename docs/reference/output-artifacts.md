@@ -14,6 +14,8 @@ outputs/
   <run-id>/
     manifest.json
     raw/
+      pentest/
+        execution-summary.json
       <tool>/
         ... (tool-specific logits)
     normalized/
@@ -27,6 +29,9 @@ shared artifacts we care about for downstream automation.
 
 Current examples:
 
+- URL-first audit and pentest-backed runs now write
+  `raw/pentest/execution-summary.json` with the final per-tool execution
+  outcome summary
 - pentest runs write scanner artifacts under `raw/zap/`, `raw/nuclei/`, and
   `raw/nmap/`
 - chaos runs write experiment artifacts under `raw/chaos/`, including
@@ -64,6 +69,8 @@ Failure semantics:
   completed and contributed findings
 - treat `manifest.json` as the final outcome signal and the normalized/report
   artifacts as preserved partial results when present
+- use `raw/pentest/execution-summary.json` when you need the explicit failed
+  tool list and the preserved-findings signal for that run
 
 ## Normalized Results Schema
 
@@ -106,7 +113,8 @@ Current behavior notes:
 
 - report rebuild is implemented now
 - it reads stored normalized findings only
-- it does not depend on raw vendor artifacts at rebuild time
+- it can enrich the rebuilt summary with secret-safe execution metadata such as
+  `raw/pentest/execution-summary.json`
 
 Useful partial-result rule:
 

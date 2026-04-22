@@ -20,7 +20,6 @@ from toolkit.chaos.contracts import (
 )
 from toolkit.chaos.toxiproxy import (
     ToxiproxyProxyNotFoundError,
-    ToxiproxyProxyStateError,
     ToxiproxyRequestError,
 )
 from toolkit.cli import app

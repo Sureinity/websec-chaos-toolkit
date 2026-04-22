@@ -1,7 +1,5 @@
-import re
 import unittest
 from contextlib import chdir
-from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -124,9 +122,7 @@ class ChaosCommandTests(unittest.TestCase):
 
             with patch(
                 "toolkit.commands.chaos.run_chaos_live_flow",
-                return_value=_resilience_failure_summary(
-                    run_id, project_root=project_root
-                ),
+                return_value=_resilience_failure_summary(run_id, project_root=project_root),
             ):
                 with chdir(project_root):
                     result = RUNNER.invoke(

@@ -3,8 +3,8 @@
 import unittest
 
 from toolkit.runtime.contracts import (
-    CONTAINER_TOOL_ALIASES,
     CONTAINER_CORE_TOOLS,
+    CONTAINER_TOOL_ALIASES,
     CONTAINER_TOOL_IMAGES,
     RuntimeMode,
 )

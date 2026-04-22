@@ -69,6 +69,7 @@ A failed audit can still preserve useful results:
 
 - findings from completed tools remain normalized
 - the report can still be rebuilt from preserved normalized findings
+- a secret-safe execution summary records which tool actually failed
 - the failed status means the run is incomplete, not that every preserved
   artifact is invalid
 
@@ -81,6 +82,7 @@ preflight/discovery metadata under `raw/`:
 - `raw/katana/results.jsonl`
 - `raw/katana/discovered-routes.txt`
 - `raw/audit/auth-context.json`
+- `raw/pentest/execution-summary.json`
 
 Those artifacts enrich reporting but do not become normalized findings by
 themselves.

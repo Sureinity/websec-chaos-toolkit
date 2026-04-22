@@ -27,9 +27,7 @@ class RuntimeRequest:
     env_overrides: dict[str, str] = field(default_factory=dict)
 
     @staticmethod
-    def from_tool_execution(
-        execution: ToolExecution, *, output_path: Path
-    ) -> "RuntimeRequest":
+    def from_tool_execution(execution: ToolExecution, *, output_path: Path) -> "RuntimeRequest":
         return RuntimeRequest(
             tool=execution.tool,
             command=execution.command,

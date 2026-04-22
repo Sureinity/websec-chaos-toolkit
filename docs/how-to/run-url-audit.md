@@ -86,6 +86,8 @@ uv run toolkit audit -vvv https://target.internal
 - runs ZAP, Nuclei, and Nmap through the selected runtime backend
 - emits structured runtime logs while scanners are running
 - writes outputs under `outputs/<run-id>/`
+- writes a secret-safe execution summary under
+  `outputs/<run-id>/raw/pentest/execution-summary.json`
 
 ## Successful Output
 

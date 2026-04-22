@@ -57,15 +57,19 @@ APP_SERVICE_DEFAULT: str = "sample-app"
 TOXIPROXY_SERVICE: str = "toxiproxy"
 
 # Required services per operator mode.
-PENTEST_ONLY_SERVICES: frozenset[str] = frozenset({
-    TOOLKIT_RUNNER_SERVICE,
-    APP_SERVICE_DEFAULT,
-})
-PENTEST_PLUS_CHAOS_SERVICES: frozenset[str] = frozenset({
-    TOOLKIT_RUNNER_SERVICE,
-    APP_SERVICE_DEFAULT,
-    TOXIPROXY_SERVICE,
-})
+PENTEST_ONLY_SERVICES: frozenset[str] = frozenset(
+    {
+        TOOLKIT_RUNNER_SERVICE,
+        APP_SERVICE_DEFAULT,
+    }
+)
+PENTEST_PLUS_CHAOS_SERVICES: frozenset[str] = frozenset(
+    {
+        TOOLKIT_RUNNER_SERVICE,
+        APP_SERVICE_DEFAULT,
+        TOXIPROXY_SERVICE,
+    }
+)
 
 # Mount paths inside the toolkit runner container.
 COMPOSE_CONFIG_MOUNT_PATH: str = "/workspace/config"

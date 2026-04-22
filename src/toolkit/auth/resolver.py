@@ -32,7 +32,9 @@ def resolve_supported_env_auth(
 
     raise UnsupportedAuthFlowError(
         method=auth_config.method,
-        detail="Only bearer_token, cookie, and session are supported by env-backed auth resolution.",
+        detail=(
+            "Only bearer_token, cookie, and session are supported by " "env-backed auth resolution."
+        ),
     )
 
 

@@ -2,7 +2,7 @@
 
 import json
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -53,9 +53,7 @@ class TrivyAdapter:
         if self.settings.profile == "image-audit":
             image_ref = os.environ.get("TOOLKIT_TRIVY_IMAGE_REF", "").strip()
             if not image_ref:
-                raise ValueError(
-                    "trivy image-audit requires TOOLKIT_TRIVY_IMAGE_REF to be set."
-                )
+                raise ValueError("trivy image-audit requires TOOLKIT_TRIVY_IMAGE_REF to be set.")
             return ToolExecution(
                 tool=self.name,
                 command=(
@@ -277,7 +275,8 @@ def _resolve_target_path(target_path: Path | None) -> Path:
 
     if candidate is None:
         raise ValueError(
-            "trivy filesystem analysis requires TOOLKIT_TRIVY_TARGET_PATH or an explicit target_path."
+            "trivy filesystem analysis requires TOOLKIT_TRIVY_TARGET_PATH "
+            "or an explicit target_path."
         )
 
     resolved = candidate.resolve()

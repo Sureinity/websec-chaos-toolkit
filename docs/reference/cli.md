@@ -23,8 +23,10 @@ Current command behavior:
   but filtered same-origin route set into Nuclei, executes a safe remote-web audit,
   emits structured runtime log records for tool start, output, and finish
   events, writes run artifacts under
-  `outputs/<run-id>/`, reports failed tool details when a scanner runtime
-  fails, and exits with `0`, `1`, or `2`; `-v` shows stderr tool output,
+  `outputs/<run-id>/`, preserves completed-tool findings when another core
+  scanner fails, writes a secret-safe execution summary artifact, reports
+  failed tool details when a scanner runtime fails, and exits with `0`, `1`,
+  or `2`; `-v` shows stderr tool output,
   `-vv` adds stdout tool output, and `-vvv` adds command-level context
 - `toolkit edge-chaos` derives an ad hoc chaos target from the supplied URL,
   starts a managed local Toxiproxy container, creates a local proxy, probes

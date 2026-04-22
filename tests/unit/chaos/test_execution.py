@@ -117,9 +117,7 @@ class InjectFaultTests(unittest.TestCase):
         self.assertEqual(handle.proxy_name, "payments-api")
         self.assertEqual(handle.fault_type, "latency")
         self.assertEqual(handle.rollback_action, "remove_toxic")
-        inject_ops = [
-            op for op in service.operations if op["action"] == "inject_fault"
-        ]
+        inject_ops = [op for op in service.operations if op["action"] == "inject_fault"]
         self.assertEqual(len(inject_ops), 1)
 
     def test_inject_fault_uses_defaults_when_no_attributes(self) -> None:
@@ -147,9 +145,7 @@ class InjectFaultTests(unittest.TestCase):
         )
 
         self.assertIsNotNone(handle.toxic_name)
-        inject_op = next(
-            op for op in service.operations if op["action"] == "inject_fault"
-        )
+        inject_op = next(op for op in service.operations if op["action"] == "inject_fault")
         self.assertIn("latency_ms", inject_op["attributes"])
 
     def test_inject_connection_refused_disables_proxy(self) -> None:
@@ -182,9 +178,7 @@ class RollbackFaultTests(unittest.TestCase):
     def test_rollback_removes_toxic_and_confirms(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             if request.method == "DELETE":
-                return httpx.Response(
-                    status_code=204, request=request
-                )
+                return httpx.Response(status_code=204, request=request)
             if request.method == "GET":
                 return httpx.Response(
                     status_code=200,
@@ -203,10 +197,7 @@ class RollbackFaultTests(unittest.TestCase):
 
         service.rollback_fault(handle)
 
-        rollback_ops = [
-            op for op in service.operations
-            if op["action"] == "rollback_fault_ok"
-        ]
+        rollback_ops = [op for op in service.operations if op["action"] == "rollback_fault_ok"]
         self.assertEqual(len(rollback_ops), 1)
 
     def test_rollback_re_enables_proxy_and_confirms(self) -> None:
@@ -270,9 +261,7 @@ class OperationLogTests(unittest.TestCase):
                     request=request,
                 )
             if request.method == "DELETE":
-                return httpx.Response(
-                    status_code=204, request=request
-                )
+                return httpx.Response(status_code=204, request=request)
             return httpx.Response(status_code=500, request=request)
 
         service = _build_service(self, handler)
