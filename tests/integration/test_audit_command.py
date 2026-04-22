@@ -498,6 +498,10 @@ class AuditCommandTests(unittest.TestCase):
         self.assertIn("Actionable findings: 2", result.stdout)
         self.assertIn("Normalized bundle:", result.stdout)
         self.assertIn("Report:", result.stdout)
+        self.assertIn(
+            "Preserved findings remain available in the normalized bundle and report.",
+            result.stderr,
+        )
 
     def test_audit_failed_status_can_still_preserve_useful_outputs(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -555,6 +559,10 @@ class AuditCommandTests(unittest.TestCase):
         self.assertIn("Normalized bundle:", result.stdout)
         self.assertIn("Report:", result.stdout)
         self.assertIn("Tool failure: zap: zap exited with code 3", result.stderr)
+        self.assertIn(
+            "Preserved findings remain available in the normalized bundle and report.",
+            result.stderr,
+        )
 
     def test_audit_rejects_invalid_url(self) -> None:
         with TemporaryDirectory() as tmp:

@@ -286,6 +286,11 @@ def register(root_app: typer.Typer) -> None:
             typer.echo("Audit failed.", err=True)
             for detail in _failed_tool_details(summary):
                 typer.echo(f"Tool failure: {detail}", err=True)
+            if summary.findings_count > 0:
+                typer.echo(
+                    "Preserved findings remain available in the normalized bundle and report.",
+                    err=True,
+                )
         else:
             typer.echo("Audit completed.")
         typer.echo(f"Target: {app_config.base_url}")
