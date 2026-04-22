@@ -204,6 +204,7 @@ class AuditCommandTests(unittest.TestCase):
 
         self.assertEqual(result.exit_code, ExitCode.FINDINGS_OR_FAILURE)
         self.assertIn("Audit completed.", result.stdout)
+        self.assertIn("Intensity: safe", result.stdout)
         self.assertIn("Target: http://127.0.0.1:8000/", result.stdout)
         self.assertIn("Runtime: container", result.stdout)
         self.assertIn("Status: findings", result.stdout)
@@ -217,7 +218,7 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["profile"].name, "adhoc-safe-web-baseline")
         self.assertEqual(kwargs["profile"].assessment_mode, "remote_web")
         self.assertIn("context", kwargs)
-        self.assertEqual(len(kwargs["extra_raw_artifact_paths"]), 4)
+        self.assertEqual(len(kwargs["extra_raw_artifact_paths"]), 5)
         self.assertEqual(kwargs["extra_raw_artifact_paths"][0].name, "fingerprint.json")
         self.assertEqual(kwargs["target_urls"]["zap"][1], "http://127.0.0.1:8000/admin")
         self.assertEqual(kwargs["target_urls"]["nuclei"][1], "http://127.0.0.1:8000/admin")
@@ -255,6 +256,7 @@ class AuditCommandTests(unittest.TestCase):
                     )
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        self.assertIn("Intensity: safe", result.stdout)
 
     def test_audit_accepts_explicit_balanced_intensity(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -289,6 +291,7 @@ class AuditCommandTests(unittest.TestCase):
                     )
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        self.assertIn("Intensity: balanced", result.stdout)
 
     def test_audit_accepts_explicit_deep_intensity(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -323,6 +326,7 @@ class AuditCommandTests(unittest.TestCase):
                     )
 
         self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        self.assertIn("Intensity: deep", result.stdout)
 
     def test_audit_omitted_intensity_matches_safe_scope(self) -> None:
         with TemporaryDirectory() as tmp:

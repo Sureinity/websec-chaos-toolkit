@@ -29,7 +29,12 @@ from toolkit.audit.intensity import (
     build_audit_intensity_plan,
     resolve_audit_intensity,
 )
-from toolkit.audit.metadata import load_audit_auth_context, write_audit_auth_context
+from toolkit.audit.metadata import (
+    load_audit_auth_context,
+    load_audit_intensity_context,
+    write_audit_auth_context,
+    write_audit_intensity_context,
+)
 
 __all__ = [
     "AuditDiscoveryError",
@@ -48,11 +53,13 @@ __all__ = [
     "build_url_audit_auth_config",
     "capture_httpx_fingerprint",
     "load_audit_auth_context",
+    "load_audit_intensity_context",
     "load_discovered_routes",
     "load_httpx_fingerprint",
     "plan_discovered_audit_scope",
     "resolve_audit_intensity",
     "run_katana_discovery",
     "write_audit_auth_context",
+    "write_audit_intensity_context",
     "write_httpx_fingerprint",
 ]

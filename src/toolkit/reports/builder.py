@@ -3,7 +3,13 @@
 from collections import defaultdict
 from pathlib import Path
 
-from toolkit.audit import load_audit_auth_context, load_discovered_routes, load_httpx_fingerprint
+from toolkit.audit import (
+    load_audit_auth_context,
+    load_audit_intensity_context,
+    load_discovered_routes,
+    load_httpx_fingerprint,
+)
+from toolkit.pentest.metadata import load_execution_summary
 from toolkit.results.io import read_normalized_results_from_path
 from toolkit.results.models import NormalizedResult
 
@@ -102,6 +108,66 @@ def build_markdown_summary_from_run_dir(run_dir: Path) -> str:
     summary = build_markdown_summary(run_id=run_dir.name, results=results)
     lines = summary.splitlines()
     insertion_blocks: list[list[str]] = []
+
+    execution_summary = load_execution_summary(run_dir)
+    if execution_summary is not None:
+        failed_tools = execution_summary.get("failed_tools", [])
+        failed_tool_summary = "none"
+        if isinstance(failed_tools, list) and failed_tools:
+            failed_tool_summary = "; ".join(
+                f"{item.get('tool', 'unknown')}: {item.get('reason', 'n/a')}"
+                for item in failed_tools
+                if isinstance(item, dict)
+            )
+        insertion_blocks.append(
+            [
+                "## Run Outcome",
+                "",
+                f"- Status: {execution_summary.get('status', 'unknown')}",
+                f"- Exit code: {execution_summary.get('exit_code', 'n/a')}",
+                (
+                    "- Preserved findings: "
+                    + ("yes" if execution_summary.get("preserved_findings") else "no")
+                ),
+                (
+                    "- Actionable findings preserved: "
+                    + str(execution_summary.get("actionable_findings_count", 0))
+                ),
+                f"- Failed tools: {failed_tool_summary}",
+                "",
+            ]
+        )
+
+    intensity_context = load_audit_intensity_context(run_dir)
+    if intensity_context is not None:
+        insertion_blocks.append(
+            [
+                "## Audit Intensity",
+                "",
+                f"- Intensity: {intensity_context.get('intensity', 'safe')}",
+                ("- Bounded scope: " + ("yes" if intensity_context.get("bounded_scope") else "no")),
+                (
+                    "- ZAP scoped routes: "
+                    f"{intensity_context.get('selected_zap_routes', 0)}"
+                    f"/{intensity_context.get('zap_route_limit', 'n/a')}"
+                ),
+                (
+                    "- Nuclei scoped routes: "
+                    f"{intensity_context.get('selected_nuclei_routes', 0)}"
+                    f"/{intensity_context.get('nuclei_route_limit', 'n/a')}"
+                ),
+                (
+                    "- ZAP spider budget: "
+                    f"{intensity_context.get('zap_spider_minutes', 'n/a')} minute(s) per route"
+                ),
+                (
+                    "- Nuclei timeout: "
+                    f"{intensity_context.get('nuclei_timeout_seconds', 'n/a')} seconds"
+                ),
+                f"- Nmap profile: {intensity_context.get('nmap_profile', 'n/a')}",
+                "",
+            ]
+        )
 
     fingerprint = load_httpx_fingerprint(run_dir)
     if fingerprint is not None:
