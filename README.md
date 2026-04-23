@@ -212,9 +212,10 @@ toolkit report build --run-id <id>
 `toolkit audit <url> [-v|-vv|-vvv]` runs a zero-config remote web audit from a URL, optionally
 authenticates, fingerprints the target, discovers same-origin routes,
 curates a smaller discovered-route subset for ZAP and a larger but filtered
-same-origin route set for Nuclei, emits structured runtime logs, writes
-run artifacts, and preserves completed-tool findings and reports when a later
-core tool fails.
+same-origin route set for Nuclei, supports explicit `safe`, `balanced`, and
+`deep` intensity modes, emits structured runtime logs, writes run artifacts,
+and preserves completed-tool findings and reports when a later core tool
+fails.
 `toolkit edge-chaos` runs one managed local edge-chaos experiment from a URL
 and writes run artifacts with probe, fault, rollback, and recovery summary
 fields.

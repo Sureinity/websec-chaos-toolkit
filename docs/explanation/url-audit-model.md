@@ -8,6 +8,21 @@ It now has three layers:
 2. same-origin route discovery via `katana`
 3. safe remote-web scanning via ZAP, Nuclei, and Nmap
 
+## Intensity Model
+
+URL-first audit supports three explicit intensity modes:
+
+- `safe`
+  - the omitted default
+  - preserves the current bounded audit behavior
+- `balanced`
+  - increases route and scanner budgets relative to `safe`
+- `deep`
+  - increases route and scanner budgets relative to `balanced`
+
+All intensity modes remain read-only and non-destructive.
+Higher intensity increases traffic volume, total runtime, and timeout risk.
+
 ## Auth Model
 
 Auth is optional overall.

@@ -64,7 +64,7 @@ class NucleiAdapter:
             tool=self.name,
             command=tuple(command),
             cwd=self.output_path.parent,
-            timeout_seconds=300.0,
+            timeout_seconds=_timeout_seconds(self.settings.profile),
             env_overrides={"NUCLEI_DISABLE_UPDATE_CHECK": "true"},
         )
 
@@ -158,6 +158,14 @@ def _category_from_template(template_id: str) -> str:
     if len(parts) == 2 and parts[0]:
         return parts[0]
     return "general"
+
+
+def _timeout_seconds(profile: str) -> float:
+    if profile == "balanced":
+        return 450.0
+    if profile == "deep":
+        return 900.0
+    return 300.0
 
 
 def _auth_headers(auth_session: AuthSession | None) -> tuple[str, ...]:

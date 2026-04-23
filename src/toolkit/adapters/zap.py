@@ -69,7 +69,7 @@ class ZapAdapter:
             "-J",
             str(self.output_path),
             "-m",
-            "1",
+            str(_spider_minutes(self.settings.profile)),
         ]
         zap_options = _build_replacer_options(self.auth_session)
         if zap_options:
@@ -179,6 +179,14 @@ def _build_evidence(alert: dict[str, object]) -> list[str]:
 def _build_remediation_summary(alert: dict[str, object]) -> str:
     name = alert.get("name", "the identified issue")
     return f"Review and remediate {name}."
+
+
+def _spider_minutes(profile: str) -> int:
+    if profile == "balanced":
+        return 2
+    if profile == "deep":
+        return 3
+    return 1
 
 
 def _build_replacer_options(auth_session: AuthSession | None) -> tuple[str, ...]:

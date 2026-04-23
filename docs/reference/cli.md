@@ -3,7 +3,7 @@
 The bootstrap scaffold exposes the implemented public command tree:
 
 ```text
-toolkit audit <url> [--runtime host|container] [-v|-vv|-vvv] [--auth-mode <mode>] [mode-specific auth flags]
+toolkit audit <url> [--runtime host|container] [--intensity safe|balanced|deep] [-v|-vv|-vvv] [--auth-mode <mode>] [mode-specific auth flags]
 toolkit edge-chaos <url> [--fault <name>]
 toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container] [-v|-vv|-vvv]
 toolkit validate --app <id> --env <env>
@@ -18,6 +18,8 @@ Current command behavior:
 - `toolkit audit` derives an ad hoc target from the supplied URL, selects an
   available audit runtime (`container` preferred, `host` fallback), accepts
   optional auth-mode flags, validates one auth mode per run fail-closed,
+  defaults omitted `--intensity` to `safe`, accepts explicit `safe`,
+  `balanced`, and `deep` intensity modes,
   captures an `httpx` preflight fingerprint, discovers same-origin routes with
   `katana`, feeds a curated discovered-route subset into ZAP, feeds a larger
   but filtered same-origin route set into Nuclei, executes a safe remote-web audit,
@@ -25,8 +27,9 @@ Current command behavior:
   events, writes run artifacts under
   `outputs/<run-id>/`, preserves completed-tool findings when another core
   scanner fails, writes a secret-safe execution summary artifact, reports
-  failed tool details when a scanner runtime fails, and exits with `0`, `1`,
-  or `2`; `-v` shows stderr tool output,
+  failed tool details when a scanner runtime fails, reports the selected
+  intensity and bounded scope summary, and exits with `0`, `1`, or `2`;
+  `-v` shows stderr tool output,
   `-vv` adds stdout tool output, and `-vvv` adds command-level context
 - `toolkit edge-chaos` derives an ad hoc chaos target from the supplied URL,
   starts a managed local Toxiproxy container, creates a local proxy, probes

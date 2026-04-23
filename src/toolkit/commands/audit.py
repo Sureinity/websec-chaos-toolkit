@@ -13,11 +13,16 @@ from toolkit.audit import (
     AuditAuthValidationError,
     AuditDiscoveryError,
     AuditFingerprintError,
+    AuditIntensityMode,
+    apply_audit_intensity,
+    build_audit_intensity_plan,
     build_url_audit_auth_config,
     capture_httpx_fingerprint,
     plan_discovered_audit_scope,
+    resolve_audit_intensity,
     run_katana_discovery,
     write_audit_auth_context,
+    write_audit_intensity_context,
     write_httpx_fingerprint,
 )
 from toolkit.auth.bootstrap import resolve_auth_session
@@ -67,6 +72,17 @@ def register(root_app: typer.Typer) -> None:
                 rich_help_panel=_GENERAL_AUDIT_PANEL,
             ),
         ] = 0,
+        intensity: Annotated[
+            AuditIntensityMode | None,
+            typer.Option(
+                "--intensity",
+                help=(
+                    "Audit breadth and budget mode: safe, balanced, or deep. "
+                    "Omitted behaves like safe."
+                ),
+                rich_help_panel=_GENERAL_AUDIT_PANEL,
+            ),
+        ] = None,
         auth_mode: Annotated[
             AuditAuthMode | None,
             typer.Option(
@@ -204,6 +220,8 @@ def register(root_app: typer.Typer) -> None:
 
         with runtime_logging_scope(verbosity=verbose):
             try:
+                selected_intensity = resolve_audit_intensity(intensity)
+                intensity_plan = build_audit_intensity_plan(selected_intensity)
                 auth_config = build_url_audit_auth_config(
                     auth_mode=auth_mode,
                     token_env_var=token_env_var,
@@ -221,7 +239,10 @@ def register(root_app: typer.Typer) -> None:
                     auth_result_path=auth_result_path,
                 )
                 app_config = build_url_audit_app_with_auth(url, auth=auth_config)
-                audit_profile = build_url_audit_profile()
+                audit_profile = apply_audit_intensity(
+                    build_url_audit_profile(),
+                    mode=selected_intensity,
+                )
                 resolved_when = utc_now()
                 context = prepare_run_context(
                     project_root,
@@ -247,6 +268,15 @@ def register(root_app: typer.Typer) -> None:
                 target_scope = plan_discovered_audit_scope(
                     seed_url=str(app_config.base_url),
                     discovered_routes=discovery.routes,
+                    zap_route_limit=intensity_plan.zap_route_limit,
+                    nuclei_route_limit=intensity_plan.nuclei_route_limit,
+                )
+                intensity_context_path = write_audit_intensity_context(
+                    context.raw_dir,
+                    intensity=selected_intensity.value,
+                    plan=intensity_plan,
+                    selected_zap_routes=len(target_scope.zap_routes),
+                    selected_nuclei_routes=len(target_scope.nuclei_routes),
                 )
                 summary = run_pentest_live_flow(
                     project_root=project_root,
@@ -258,6 +288,7 @@ def register(root_app: typer.Typer) -> None:
                     extra_raw_artifact_paths=(
                         fingerprint_path,
                         auth_context_path,
+                        intensity_context_path,
                         discovery.raw_output_path,
                         discovery.route_manifest_path,
                     ),
@@ -297,12 +328,21 @@ def register(root_app: typer.Typer) -> None:
         typer.echo(f"Run: {summary.run_id}")
         typer.echo(f"Status: {summary.status}")
         typer.echo(f"Runtime: {selection.mode}")
+        typer.echo(f"Intensity: {selected_intensity.value}")
         typer.echo(f"Auth mode: {auth_session.method}")
         typer.echo(f"Auth source: {auth_session.provenance.get('source', 'n/a')}")
         typer.echo(f"Fingerprint final URL: {fingerprint.final_url}")
         typer.echo(f"Fingerprint title: {fingerprint.title or 'n/a'}")
         typer.echo(f"Fingerprint server: {fingerprint.server or 'n/a'}")
         typer.echo(f"Discovery routes: {len(discovery.routes)}")
+        typer.echo(
+            "ZAP scoped routes: " f"{len(target_scope.zap_routes)}/{intensity_plan.zap_route_limit}"
+        )
+        typer.echo(
+            "Nuclei scoped routes: "
+            f"{len(target_scope.nuclei_routes)}/{intensity_plan.nuclei_route_limit}"
+        )
+        typer.echo("Bounded scope: yes")
         typer.echo(f"Findings: {summary.findings_count}")
         typer.echo(f"Actionable findings: {summary.actionable_findings_count}")
         typer.echo(f"Normalized bundle: {summary.normalized_bundle_path}")

@@ -1075,7 +1075,7 @@ Dependencies on earlier milestones
 - Milestone 14
 - Milestone 16
 
-## Milestone 18: URL-First Audit Intensity Modes
+## Milestone 18: Opt-In URL Audit Intensity Modes
 
 Goal
 
@@ -1182,10 +1182,8 @@ Acceptance criteria
 Verification commands
 
 ```bash
-uv run python -m unittest tests.unit.audit tests.unit.adapters.test_zap tests.unit.adapters.test_nuclei tests.unit.adapters.test_nmap tests.integration.test_audit_command
-uv run toolkit audit http://127.0.0.1:8000 --intensity safe
-uv run toolkit audit http://127.0.0.1:8000 --intensity balanced
-uv run toolkit audit http://127.0.0.1:8000 --intensity deep
+uv run python -m unittest tests.unit.audit tests.unit.adapters.test_zap tests.unit.adapters.test_nuclei tests.unit.adapters.test_nmap tests.unit.pentest.test_runner tests.unit.test_report_writer tests.integration.test_audit_command
+uv run toolkit doctor
 uv run pre-commit run --all-files
 ```
 
@@ -1193,6 +1191,7 @@ Dependencies on earlier milestones
 
 - Milestone 1
 - Milestone 2
+- Milestone 3
 - Milestone 4
 - Milestone 5
 - Milestone 9

@@ -89,6 +89,50 @@ def _discovery_with_assets(tmp_dir: Path) -> KatanaDiscoveryResult:
     )
 
 
+def _discovery_with_many_routes(tmp_dir: Path) -> KatanaDiscoveryResult:
+    raw_output_path = tmp_dir / "outputs" / "run" / "raw" / "katana" / "results.jsonl"
+    route_manifest_path = tmp_dir / "outputs" / "run" / "raw" / "katana" / "discovered-routes.txt"
+    return KatanaDiscoveryResult(
+        raw_output_path=raw_output_path,
+        route_manifest_path=route_manifest_path,
+        routes=(
+            "http://127.0.0.1:8000/",
+            "http://127.0.0.1:8000/login",
+            "http://127.0.0.1:8000/register",
+            "http://127.0.0.1:8000/contact",
+            "http://127.0.0.1:8000/report-problem",
+            "http://127.0.0.1:8000/forgot-password",
+            "http://127.0.0.1:8000/account",
+            "http://127.0.0.1:8000/profile",
+            "http://127.0.0.1:8000/dashboard",
+            "http://127.0.0.1:8000/projects",
+            "http://127.0.0.1:8000/projects/one",
+            "http://127.0.0.1:8000/projects/two",
+            "http://127.0.0.1:8000/about",
+            "http://127.0.0.1:8000/blog",
+            "http://127.0.0.1:8000/blog/post-1",
+            "http://127.0.0.1:8000/admin",
+            "http://127.0.0.1:8000/api",
+            "http://127.0.0.1:8000/checkout",
+            "http://127.0.0.1:8000/payment",
+            "http://127.0.0.1:8000/apply",
+            "http://127.0.0.1:8000/cart",
+            "http://127.0.0.1:8000/help",
+            "http://127.0.0.1:8000/docs",
+            "http://127.0.0.1:8000/faq",
+            "http://127.0.0.1:8000/pricing",
+            "http://127.0.0.1:8000/team",
+            "http://127.0.0.1:8000/company",
+            "http://127.0.0.1:8000/legal",
+            "http://127.0.0.1:8000/support",
+            "http://127.0.0.1:8000/status",
+            "http://127.0.0.1:8000/roadmap",
+            "http://127.0.0.1:8000/settings",
+            "http://127.0.0.1:8000/preferences",
+        ),
+    )
+
+
 def _auth_session(method: str = "none") -> AuthSession:
     if method == "api_login":
         return AuthSession(
@@ -119,6 +163,7 @@ class AuditCommandTests(unittest.TestCase):
         self.assertIn("Auth Mode: session", result.stdout)
         self.assertIn("Auth Modes: form and api_login", result.stdout)
         self.assertIn("Auth Mode: api_login", result.stdout)
+        self.assertIn("--intensity", result.stdout)
         self.assertIn("--token-env-var", result.stdout)
         self.assertIn("--cookie-name", result.stdout)
         self.assertIn("--session-header", result.stdout)
@@ -159,6 +204,7 @@ class AuditCommandTests(unittest.TestCase):
 
         self.assertEqual(result.exit_code, ExitCode.FINDINGS_OR_FAILURE)
         self.assertIn("Audit completed.", result.stdout)
+        self.assertIn("Intensity: safe", result.stdout)
         self.assertIn("Target: http://127.0.0.1:8000/", result.stdout)
         self.assertIn("Runtime: container", result.stdout)
         self.assertIn("Status: findings", result.stdout)
@@ -172,10 +218,264 @@ class AuditCommandTests(unittest.TestCase):
         self.assertEqual(kwargs["profile"].name, "adhoc-safe-web-baseline")
         self.assertEqual(kwargs["profile"].assessment_mode, "remote_web")
         self.assertIn("context", kwargs)
-        self.assertEqual(len(kwargs["extra_raw_artifact_paths"]), 4)
+        self.assertEqual(len(kwargs["extra_raw_artifact_paths"]), 5)
         self.assertEqual(kwargs["extra_raw_artifact_paths"][0].name, "fingerprint.json")
         self.assertEqual(kwargs["target_urls"]["zap"][1], "http://127.0.0.1:8000/admin")
         self.assertEqual(kwargs["target_urls"]["nuclei"][1], "http://127.0.0.1:8000/admin")
+
+    def test_audit_accepts_explicit_safe_intensity(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000", "--intensity", "safe"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        self.assertIn("Intensity: safe", result.stdout)
+
+    def test_audit_accepts_explicit_balanced_intensity(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000", "--intensity", "balanced"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        self.assertIn("Intensity: balanced", result.stdout)
+
+    def test_audit_accepts_explicit_deep_intensity(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ),
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000", "--intensity", "deep"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        self.assertIn("Intensity: deep", result.stdout)
+
+    def test_audit_omitted_intensity_matches_safe_scope(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery_with_many_routes(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ) as run_flow,
+            ):
+                with chdir(project_root):
+                    RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000"],
+                        catch_exceptions=False,
+                    )
+                    omitted_kwargs = run_flow.call_args.kwargs
+                    RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000", "--intensity", "safe"],
+                        catch_exceptions=False,
+                    )
+                    safe_kwargs = run_flow.call_args.kwargs
+
+        self.assertEqual(
+            omitted_kwargs["target_urls"]["zap"],
+            safe_kwargs["target_urls"]["zap"],
+        )
+        self.assertEqual(
+            omitted_kwargs["target_urls"]["nuclei"],
+            safe_kwargs["target_urls"]["nuclei"],
+        )
+        self.assertEqual(
+            omitted_kwargs["profile"].tools.nuclei.allowlisted_rules,
+            safe_kwargs["profile"].tools.nuclei.allowlisted_rules,
+        )
+
+    def test_audit_balanced_intensity_expands_scope_and_budgets(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery_with_many_routes(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ) as run_flow,
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000", "--intensity", "balanced"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        kwargs = run_flow.call_args.kwargs
+        self.assertEqual(len(kwargs["target_urls"]["zap"]), 12)
+        self.assertEqual(len(kwargs["target_urls"]["nuclei"]), 16)
+        self.assertEqual(kwargs["profile"].tools.zap.profile, "balanced")
+        self.assertEqual(kwargs["profile"].tools.nuclei.profile, "balanced")
+        self.assertEqual(kwargs["profile"].tools.nuclei.allowlisted_rules, ["http/exposures"])
+        self.assertEqual(kwargs["profile"].tools.nmap.profile, "top-ports")
+
+    def test_audit_deep_intensity_expands_scope_and_allowlist(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with (
+                patch(
+                    "toolkit.commands.audit.select_audit_runtime",
+                    return_value=_selection(RuntimeMode.CONTAINER),
+                ),
+                patch(
+                    "toolkit.commands.audit.capture_httpx_fingerprint",
+                    return_value=_fingerprint(),
+                ),
+                patch(
+                    "toolkit.commands.audit.resolve_auth_session",
+                    return_value=_auth_session(),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_katana_discovery",
+                    return_value=_discovery_with_many_routes(project_root),
+                ),
+                patch(
+                    "toolkit.commands.audit.run_pentest_live_flow",
+                    return_value=_summary(project_root, exit_code=ExitCode.SUCCESS),
+                ) as run_flow,
+            ):
+                with chdir(project_root):
+                    result = RUNNER.invoke(
+                        app,
+                        ["audit", "http://127.0.0.1:8000", "--intensity", "deep"],
+                        catch_exceptions=False,
+                    )
+
+        self.assertEqual(result.exit_code, ExitCode.SUCCESS)
+        kwargs = run_flow.call_args.kwargs
+        self.assertEqual(len(kwargs["target_urls"]["zap"]), 20)
+        self.assertEqual(len(kwargs["target_urls"]["nuclei"]), 32)
+        self.assertEqual(kwargs["profile"].tools.zap.profile, "deep")
+        self.assertEqual(kwargs["profile"].tools.nuclei.profile, "deep")
+        self.assertEqual(
+            kwargs["profile"].tools.nuclei.allowlisted_rules,
+            ["http/exposures", "http/misconfiguration", "http/technologies"],
+        )
+        self.assertEqual(kwargs["profile"].tools.nmap.profile, "top-ports")
+
+    def test_audit_rejects_invalid_intensity_value(self) -> None:
+        with TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            with chdir(project_root):
+                result = RUNNER.invoke(
+                    app,
+                    ["audit", "http://127.0.0.1:8000", "--intensity", "extreme"],
+                )
+
+        self.assertEqual(result.exit_code, 2)
+        self.assertIn("Invalid value", result.output)
 
     def test_audit_curates_zap_and_nuclei_scope(self) -> None:
         with TemporaryDirectory() as tmp:

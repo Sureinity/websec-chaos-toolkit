@@ -24,11 +24,11 @@ def build_app() -> AppConfig:
     )
 
 
-def build_settings(*, safe_mode: bool = True) -> PentestToolSettings:
+def build_settings(*, safe_mode: bool = True, profile: str = "baseline") -> PentestToolSettings:
     return PentestToolSettings(
         enabled=True,
         safe_mode=safe_mode,
-        profile="baseline",
+        profile=profile,
         allowlisted_rules=["headers", "tls"],
     )
 
@@ -75,6 +75,28 @@ class ZapAdapterTests(unittest.TestCase):
             ),
         )
         self.assertEqual(execution.timeout_seconds, 600.0)
+
+    def test_build_execution_uses_balanced_spider_budget(self) -> None:
+        adapter = ZapAdapter(
+            app=build_app(),
+            settings=build_settings(profile="balanced"),
+            output_path=Path("/tmp/run/raw/zap/results.json"),
+        )
+
+        execution = adapter.build_execution()
+
+        self.assertEqual(execution.command[-1], "2")
+
+    def test_build_execution_uses_deep_spider_budget(self) -> None:
+        adapter = ZapAdapter(
+            app=build_app(),
+            settings=build_settings(profile="deep"),
+            output_path=Path("/tmp/run/raw/zap/results.json"),
+        )
+
+        execution = adapter.build_execution()
+
+        self.assertEqual(execution.command[-1], "3")
 
     def test_build_execution_supports_explicit_target_and_auth_headers(self) -> None:
         adapter = ZapAdapter(

@@ -25,11 +25,11 @@ def build_app() -> AppConfig:
     )
 
 
-def build_settings(*, safe_mode: bool = True) -> PentestToolSettings:
+def build_settings(*, safe_mode: bool = True, profile: str = "safe") -> PentestToolSettings:
     return PentestToolSettings(
         enabled=True,
         safe_mode=safe_mode,
-        profile="safe",
+        profile=profile,
         allowlisted_rules=["http/exposures", "network/exposure"],
     )
 
@@ -88,6 +88,32 @@ class NucleiAdapterTests(unittest.TestCase):
             execution.env_overrides,
             {"NUCLEI_DISABLE_UPDATE_CHECK": "true"},
         )
+
+    def test_build_execution_uses_balanced_timeout(self) -> None:
+        with TemporaryDirectory() as temp_dir_name:
+            output_path = Path(temp_dir_name) / "results.jsonl"
+            adapter = NucleiAdapter(
+                app=build_app(),
+                settings=build_settings(profile="balanced"),
+                output_path=output_path,
+            )
+
+            execution = adapter.build_execution()
+
+        self.assertEqual(execution.timeout_seconds, 450.0)
+
+    def test_build_execution_uses_deep_timeout(self) -> None:
+        with TemporaryDirectory() as temp_dir_name:
+            output_path = Path(temp_dir_name) / "results.jsonl"
+            adapter = NucleiAdapter(
+                app=build_app(),
+                settings=build_settings(profile="deep"),
+                output_path=output_path,
+            )
+
+            execution = adapter.build_execution()
+
+        self.assertEqual(execution.timeout_seconds, 900.0)
 
     def test_build_execution_supports_route_lists_and_auth_headers(self) -> None:
         with TemporaryDirectory() as temp_dir_name:

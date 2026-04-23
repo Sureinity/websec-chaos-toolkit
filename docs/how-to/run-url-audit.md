@@ -14,6 +14,7 @@ The simplified audit path currently supports:
 - remote web targets
 - unauthenticated access by default
 - one ad hoc URL at a time
+- explicit intensity modes with `safe` as the omitted default
 
 Milestone 16 extends this path with authenticated and discovery-driven audit.
 The locked contract for that work is:
@@ -71,6 +72,23 @@ uv run toolkit audit -v https://target.internal
 uv run toolkit audit -vv https://target.internal
 uv run toolkit audit -vvv https://target.internal
 ```
+
+Select a broader audit intensity when needed:
+
+```bash
+uv run toolkit audit https://target.internal --intensity safe
+uv run toolkit audit https://target.internal --intensity balanced
+uv run toolkit audit https://target.internal --intensity deep
+```
+
+Intensity contract:
+
+- omitted intensity is equivalent to `safe`
+- `safe` preserves the current bounded default behavior
+- `balanced` increases route and scanner budgets relative to `safe`
+- `deep` increases route and scanner budgets relative to `balanced`
+- all three modes remain read-only and non-destructive
+- higher intensity means more traffic, more runtime, and more timeout risk
 
 ## What The Command Does
 

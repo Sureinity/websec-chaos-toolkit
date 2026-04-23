@@ -14,6 +14,9 @@ outputs/
   <run-id>/
     manifest.json
     raw/
+      audit/
+        auth-context.json
+        intensity-context.json
       pentest/
         execution-summary.json
       <tool>/
@@ -29,9 +32,10 @@ shared artifacts we care about for downstream automation.
 
 Current examples:
 
-- URL-first audit and pentest-backed runs now write
-  `raw/pentest/execution-summary.json` with the final per-tool execution
-  outcome summary
+- URL-first audit writes secret-safe audit metadata under `raw/audit/`,
+  including `auth-context.json` and `intensity-context.json`
+- pentest-backed runs write `raw/pentest/execution-summary.json` with the final
+  per-tool execution summary
 - pentest runs write scanner artifacts under `raw/zap/`, `raw/nuclei/`, and
   `raw/nmap/`
 - chaos runs write experiment artifacts under `raw/chaos/`, including
@@ -115,6 +119,8 @@ Current behavior notes:
 - it reads stored normalized findings only
 - it can enrich the rebuilt summary with secret-safe execution metadata such as
   `raw/pentest/execution-summary.json`
+- it can also enrich the rebuilt summary with secret-safe audit metadata such as
+  `raw/audit/auth-context.json` and `raw/audit/intensity-context.json`
 
 Useful partial-result rule:
 

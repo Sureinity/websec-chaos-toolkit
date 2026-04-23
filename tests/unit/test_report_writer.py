@@ -317,6 +317,51 @@ class ReportBuilderTests(unittest.TestCase):
         self.assertNotIn("session-cookie", summary)
         self.assertNotIn("secret-token", summary)
 
+    def test_report_builder_includes_intensity_context_when_present(self) -> None:
+        request = RunRequest(
+            app_id="sample-app",
+            environment="local",
+            profile="safe-baseline",
+            modules=("pentest",),
+        )
+
+        with TemporaryDirectory() as temp_dir_name:
+            project_root = Path(temp_dir_name)
+            context = prepare_run_context(
+                project_root,
+                request,
+                run_id="20260328-020304-deadbeef",
+            )
+            (context.raw_dir / "audit").mkdir(parents=True, exist_ok=True)
+            (context.raw_dir / "audit" / "intensity-context.json").write_text(
+                json.dumps(
+                    {
+                        "intensity": "safe",
+                        "bounded_scope": True,
+                        "zap_route_limit": 8,
+                        "nuclei_route_limit": 8,
+                        "zap_spider_minutes": 1,
+                        "nuclei_timeout_seconds": 300.0,
+                        "nmap_profile": "top-ports",
+                        "selected_zap_routes": 3,
+                        "selected_nuclei_routes": 4,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            write_normalized_results(context, [])
+
+            summary = build_markdown_summary_from_run_dir(context.run_dir)
+
+        self.assertIn("## Audit Intensity", summary)
+        self.assertIn("Intensity: safe", summary)
+        self.assertIn("Bounded scope: yes", summary)
+        self.assertIn("ZAP scoped routes: 3/8", summary)
+        self.assertIn("Nuclei scoped routes: 4/8", summary)
+
     def test_report_builder_includes_execution_summary_when_present(self) -> None:
         request = RunRequest(
             app_id="sample-app",
