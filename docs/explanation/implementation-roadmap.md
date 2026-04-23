@@ -716,9 +716,9 @@ Acceptance criteria
   - `normalized/findings.json`
   - `reports/executive-summary.md`
   - `manifest.json`
-- `toolkit doctor` reports whether audit and edge-chaos execution are ready and
-  gives actionable remediation when Docker, host binaries, or the simplified
-  proxy runtime are unavailable
+- `toolkit doctor` reports whether audit, edge-chaos, and code-audit execution
+  are ready and gives actionable remediation when Docker, host binaries, the
+  simplified proxy runtime, or source-tree tooling are unavailable
 - `toolkit edge-chaos <url>` can execute one safe reversible edge fault against
   a URL-derived target, monitor `GET /`, and always attempt rollback
 - The current YAML-driven commands remain supported and do not regress

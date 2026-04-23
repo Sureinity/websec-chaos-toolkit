@@ -7,7 +7,7 @@ toolkit audit <url> [--runtime host|container] [--intensity safe|balanced|deep] 
 toolkit edge-chaos <url> [--fault <name>]
 toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container] [-v|-vv|-vvv]
 toolkit validate --app <id> --env <env>
-toolkit doctor
+toolkit doctor [--code-path <path>] [--code-tool semgrep|trivy]
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container] [-v|-vv|-vvv]
 toolkit chaos run --app <id> --env <env> --profile <name>
 toolkit report build --run-id <id>
@@ -50,8 +50,9 @@ Current command behavior:
 - `toolkit validate` loads the repository YAML files from the current working
   directory, validates the selected `--app/--env` pair, and exits with `0` on
   success
-- `toolkit doctor` reports audit runtime readiness and the current simplified
-  edge-chaos readiness status
+- `toolkit doctor` reports audit runtime readiness, edge-chaos readiness, and
+  code-audit readiness; `--code-path` validates one local source-tree path and
+  `--code-tool` narrows readiness to `semgrep` or `trivy`
 - `toolkit pentest run` executes real scanner adapters (zap, nuclei, nmap)
   against a live target, emits structured runtime log records for tool start,
   output, and finish events, writes run artifacts under `outputs/<run-id>/`,
@@ -74,26 +75,15 @@ Stable exit-code contract:
 - `1`: medium or high findings, or a resilience failure
 - `2`: configuration or runtime errors
 
-## Compose Operator Workflow
+## Compose Workflow Assets
 
-The preferred Docker-first operator path runs the toolkit as a service
-inside `docker-compose.yml` alongside an example target app and an
-optional Toxiproxy service:
+The repository includes Compose workflow assets around `docker-compose.yml`,
+`compose/toolkit-runner.env.example`, and the Compose-aware sample config pack.
+Current automated coverage for this path is static-contract only via
+`tests/integration/test_compose_workflow.py`.
 
-```bash
-docker compose up -d toolkit-runner sample-app
-docker compose exec toolkit-runner toolkit pentest run \
-  --app sample-internal-app --env local --profile safe-web-baseline \
-  --runtime container
-```
-
-For chaos workflows, add the Toxiproxy profile:
-
-```bash
-docker compose --profile chaos up -d toolkit-runner sample-app toxiproxy
-```
-
-See `docs/how-to/run-with-compose.md` for the full workflow.
+See `docs/how-to/run-with-compose.md` for the current topology, mount contract,
+and limitations.
 
 For task-oriented operator procedures, see:
 

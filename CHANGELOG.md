@@ -7,6 +7,31 @@ Versioning while it remains in the pre-1.0 phase.
 
 ## [Unreleased]
 
+### Added
+
+- URL-first commands for `toolkit audit`, `toolkit edge-chaos`, and
+  `toolkit code-audit`
+- Audit intensity modes plus URL-first auth flags, including `api_login`
+- Live pentest execution through host and Docker container runtime backends
+- Live Toxiproxy-backed chaos execution and managed URL-first edge-chaos runs
+- Expanded `toolkit doctor` readiness checks for code-audit paths and tool
+  selection
+- Checked-in Compose workflow assets and the Compose-aware sample config pack
+
+### Changed
+
+- Optional Trivy and Semgrep adapters now participate in live pentest runs
+  when explicitly enabled and skip cleanly when unavailable
+- Report rebuilding can enrich summaries with stored execution metadata and
+  secret-safe audit context when those artifacts exist
+- Documentation now distinguishes static Compose contract coverage from direct
+  host or runtime-backed execution paths
+
+### Notes
+
+- `tests/integration/test_compose_workflow.py` validates the Compose assets
+  statically; it does not start containers or verify a packaged runner image
+
 ## [0.2.0] - 2026-04-06
 
 ### Added

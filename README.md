@@ -7,7 +7,7 @@ targets.
 Current state:
 
 - `toolkit audit` runs a zero-config safe web audit from a single URL and
-  auto-selects `container` or `host` runtime readiness, supports optional
+  auto-selects `container` first and falls back to `host`, supports optional
   auth modes, fingerprints the target with `httpx`, discovers routes with
   `katana`, and emits structured runtime logs from the selected runtime
 - `toolkit edge-chaos` runs a managed local edge-chaos experiment from a
@@ -20,7 +20,7 @@ Current state:
   against a live target via host subprocess or Docker container backend; a
   fixture-backed flow is preserved for onboarding and offline testing, and
   live runs emit structured runtime logs to the operator terminal
-- `toolkit doctor` reports environment readiness for the simplified audit path
+- `toolkit doctor` reports audit, edge-chaos, and code-audit readiness
 - `toolkit chaos run` executes live Toxiproxy-backed experiments against a
   live target; a fixture-backed flow is preserved for onboarding and offline
   testing
@@ -69,6 +69,7 @@ The scaffold creates the boundaries expected by the project contract:
 - `docs/` split by Diataxis mode
 - `examples/` for sample artifacts and structure notes
 - `config/` for future local config fragments and templates
+- `docker-compose.yml` and `compose/` for the checked-in Compose topology
 
 ## Local Setup
 
@@ -129,27 +130,27 @@ Read next:
 - `docs/tutorials/quickstart-code-audit.md`
 - `docs/how-to/run-code-audit.md`
 
-## Docker-First Operator Workflow (Preferred)
+## Docker-First Compose Assets
 
-The preferred portability path runs the toolkit, target app, and optional
-Toxiproxy service together via Docker Compose:
+The repository includes `docker-compose.yml`,
+`compose/toolkit-runner.env.example`, and the Compose-aware sample config pack
+under `examples/configs/sample-webapp-compose/` for the preferred Docker-first
+topology.
+
+Current repo coverage for this path is static-contract focused:
+
+- `tests/integration/test_compose_workflow.py` verifies service definitions,
+  mounts, network wiring, and alignment with the Compose-aware sample config
+- the checked-in `toolkit-runner` service is still a `python:3.13-slim`
+  placeholder with source mounts, not a prebuilt toolkit image
 
 ```bash
 docker compose up -d toolkit-runner sample-app
-docker compose exec toolkit-runner toolkit validate \
-  --app sample-internal-app --env local
-docker compose exec toolkit-runner toolkit pentest run \
-  --app sample-internal-app --env local --profile safe-web-baseline \
-  --runtime container
-```
-
-Add the chaos profile when running live chaos experiments:
-
-```bash
 docker compose --profile chaos up -d toolkit-runner sample-app toxiproxy
 ```
 
-See `docs/how-to/run-with-compose.md` for the complete workflow.
+See `docs/how-to/run-with-compose.md` for the current topology, mount
+contract, and Compose-specific limitations.
 
 ## Advanced Config-Driven Start
 
@@ -199,11 +200,11 @@ Reference and rationale:
 The public CLI surface is implemented and uses one entrypoint:
 
 ```text
-toolkit audit <url> [--runtime host|container] [-v|-vv|-vvv] [--auth-mode <mode>] [mode-specific auth flags]
+toolkit audit <url> [--runtime host|container] [--intensity safe|balanced|deep] [-v|-vv|-vvv] [--auth-mode <mode>] [mode-specific auth flags]
 toolkit edge-chaos <url> [--fault <name>]
 toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container] [-v|-vv|-vvv]
 toolkit validate --app <id> --env <env>
-toolkit doctor
+toolkit doctor [--code-path <path>] [--code-tool semgrep|trivy]
 toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container] [-v|-vv|-vvv]
 toolkit chaos run --app <id> --env <env> --profile <name>
 toolkit report build --run-id <id>
@@ -224,7 +225,9 @@ emits structured runtime logs, and writes run artifacts; it prefers host
 execution when selected tools are installed and falls back to container
 execution when Docker is available.
 `toolkit validate` now performs real configuration loading and validation.
-`toolkit doctor` reports simplified runtime readiness for the audit path.
+`toolkit doctor` reports audit runtime readiness, edge-chaos readiness, and
+code-audit readiness; `--code-path` validates one local source-tree path and
+`--code-tool` narrows readiness to `semgrep` or `trivy`.
 `toolkit pentest run [-v|-vv|-vvv]` now executes real scanner binaries against
 a live target, emits structured runtime logs, and writes run artifacts.
 `toolkit chaos run` now executes live Toxiproxy-backed experiments and writes
@@ -248,6 +251,7 @@ The current root sample apps are:
 For example-driven onboarding, prefer:
 
 - `examples/configs/sample-webapp/`
+- `examples/configs/sample-webapp-compose/`
 - `examples/configs/sample-api/`
 
 ## Implementation Roadmap

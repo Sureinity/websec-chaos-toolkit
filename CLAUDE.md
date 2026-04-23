@@ -34,10 +34,13 @@ uv run pre-commit run --all-files
 
 **CLI (run from repo root where YAML configs live):**
 ```bash
+uv run toolkit doctor
+uv run toolkit audit <url>
+uv run toolkit code-audit <path>
 uv run toolkit validate --app <id> --env <env>
-uv run toolkit pentest run --app <id> --env <env> --profile <name>
+uv run toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container]
+uv run toolkit chaos run --app <id> --env <env> --profile <name>
 uv run toolkit report build --run-id <id>
-uv run toolkit chaos run ...   # scaffold only, exits 2
 ```
 
 ## Architecture
@@ -46,17 +49,21 @@ uv run toolkit chaos run ...   # scaffold only, exits 2
 
 | Module | Responsibility |
 |--------|---------------|
-| `cli.py` | Typer app; registers four command groups |
+| `cli.py` | Typer app; registers top-level commands plus `pentest`, `chaos`, and `report` groups |
+| `audit/` | URL-first audit auth, discovery, fingerprint, and intensity helpers |
+| `codeaudit/` | Source-tree tool selection and readiness inspection |
 | `commands/` | CLI entrypoints — thin wrappers that call domain services |
+| `runtime/` | Host/container backend selection and readiness inspection |
 | `config/` | Pydantic models + YAML loader + cross-file validator |
 | `core/` | `RunContext` (per-run workspace), exit-code contract, scaffold helpers |
-| `auth/` | Env-var secret resolution → `AuthSession`; form-login automation |
-| `adapters/` | `ToolAdapter` protocol + `ProcessRunner`; ZAP, Nuclei, Nmap wrappers |
-| `pentest/` | Planner (deterministic tool ordering) + fixture-backed runner |
+| `auth/` | Env-var secret resolution → `AuthSession`; API-login and form-login helpers |
+| `adapters/` | `ToolAdapter` protocol + `ProcessRunner`; ZAP, Nuclei, Nmap, Trivy, and Semgrep wrappers |
+| `pentest/` | Planner plus live and fixture-backed execution flows |
+| `chaos/` | Live and fixture-backed chaos planning, monitoring, locking, and Toxiproxy integration |
 | `results/` | `NormalizedResult` schema, JSON persistence |
 | `reports/` | Markdown summary builder (reads normalized JSON) |
 | `safety/` | Allowlist validation; refuses production targets |
-| `chaos/` | Placeholder only |
+| `targets/` | Ad hoc URL-first and source-tree target builders |
 
 ### Data flow for `toolkit pentest run`
 
@@ -65,7 +72,7 @@ CLI → load config (apps.yaml + pentest-profiles.yaml)
     → resolve auth (env vars → AuthSession)
     → PentestPlan (zap → nuclei → nmap, deterministic)
     → RunContext  (creates outputs/<run-id>/{raw,normalized,reports}/)
-    → per-adapter: read fixture → AdapterRunResult → NormalizedResult[]
+    → per-adapter: live subprocess or fixture → AdapterRunResult → NormalizedResult[]
     → write outputs/<run-id>/normalized/findings.json
     → write outputs/<run-id>/reports/executive-summary.md
     → exit 0 / 1 / 2
@@ -82,11 +89,15 @@ CLI → load config (apps.yaml + pentest-profiles.yaml)
 - `chaos-profiles.yaml` — fault types, abort thresholds, rollback method
 
 ### Adapter contract
-Each adapter returns `AdapterRunResult` with: `execution_ok`, `tool_available`, `artifacts`, `findings: list[NormalizedResult]`, `skip_reason`, `error_detail`. Adapters are currently fixture-backed (real subprocess execution is not wired yet).
+Each adapter returns `AdapterRunResult` with: `execution_ok`, `tool_available`,
+`artifacts`, `findings: list[NormalizedResult]`, `skip_reason`, and
+`error_detail`. The shared process runner underpins live execution, while
+fixture-backed flows remain available for onboarding and offline tests.
 
 ### Test fixtures
 - `tests/fixtures/configs/{valid,invalid}/` — YAML examples
-- `tests/fixtures/{zap,nuclei,nmap}/` — tool output samples
+- `tests/fixtures/{zap,nuclei,nmap,semgrep,trivy}/` — tool output samples
+- `tests/fixtures/chaos/` — baseline and experiment observation samples
 - `tests/fixtures/results/` — normalized result examples
 
 ### Commit convention

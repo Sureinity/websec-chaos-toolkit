@@ -1,7 +1,6 @@
 # Config Fixture Matrix
 
-These fixtures freeze the intended validation contract before the real
-validators are implemented.
+These fixtures back the current validation contract.
 
 Valid matrix:
 
@@ -12,6 +11,8 @@ Valid matrix:
     - `cookie`
     - `session`
     - `form`
+  - additional `api_login` rules are covered by inline model and
+    auth-resolution tests rather than this fixture pack
 
 Invalid cases:
 
@@ -26,5 +27,5 @@ Invalid cases:
 - `invalid/production-like-environment/`
 - `invalid/controlled-restart-fault/`
 
-Each invalid directory is self-contained so future tests can load only that
-case and assert the exact failure mode.
+Each invalid directory is self-contained so tests can load only that case and
+assert the exact failure mode.

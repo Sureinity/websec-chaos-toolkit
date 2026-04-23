@@ -1,7 +1,7 @@
 # Sample Web App Config Pack
 
-This config pack is the default sanitized example for local validation,
-fixture-backed pentest runs, fixture-backed chaos runs, and report rebuilds.
+This config pack is the default sanitized example for local validation, pentest
+runs, chaos runs, and report rebuilds.
 
 Safe usage:
 

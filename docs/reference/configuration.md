@@ -43,6 +43,7 @@ Locked application rules:
 `auth.method` is limited to these values:
 
 - `none`
+- `api_login`
 - `bearer_token`
 - `cookie`
 - `session`
@@ -52,6 +53,16 @@ Locked auth rules:
 
 - `none`
   - no auth-specific secret reference fields are allowed
+- `api_login`
+  - requires `login_url`
+  - requires `username_env_var`
+  - requires `password_env_var`
+  - requires `login_content_type` (currently `json`)
+  - requires `login_username_field`
+  - requires `login_password_field`
+  - requires `auth_result`
+  - requires `auth_result_path` for `bearer_json` and `session_json`
+  - requires `session_header` for `session_json`
 - `bearer_token`
   - requires `token_env_var`
 - `cookie`
@@ -64,6 +75,8 @@ Locked auth rules:
   - requires `login_url`
   - requires `username_env_var`
   - requires `password_env_var`
+  - requires `login_username_field`
+  - requires `login_password_field`
 
 Config stores references only. Real tokens, cookie values, usernames,
 passwords, and session material must come from the runtime environment.
@@ -100,8 +113,7 @@ Locked pentest profile rules:
   a profile
 - `tools.semgrep` only participates as enabled when the profile uses
   `assessment_mode: source_tree`
-- missing optional adapter binaries skip cleanly by default in the current
-  fixture-backed orchestration
+- missing optional adapter binaries skip cleanly when explicitly enabled
 - `tools.trivy.allowlisted_rules` map to supported Trivy scanner categories:
   - `vulnerabilities`
   - `misconfigurations`
@@ -131,15 +143,16 @@ Locked chaos rules:
 - v1 faults are limited to safe, reversible proxy-style behaviors such as
   latency, bandwidth throttling, packet loss, timeout simulation, and
   connection refusal
-- `controlled_restart` remains schema-reserved but should be rejected by
-  validation until a dedicated implementation exists
+- `controlled_restart` remains schema-reserved and is rejected by validation
+  until a dedicated implementation exists
 
 ## Contract Fixtures
 
-The frozen config contract is represented in:
+Representative validation fixtures live in:
 
 - `tests/fixtures/configs/valid/auth-method-matrix/`
 - `tests/fixtures/configs/invalid/`
 
-Those fixtures remain the source of truth for validation coverage beyond the
-repository-root sample configs.
+The valid fixture matrix currently covers `none`, `bearer_token`, `cookie`,
+`session`, and `form`. Additional `api_login` validation rules are covered by
+inline model and auth-resolution tests.

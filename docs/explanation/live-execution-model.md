@@ -149,8 +149,9 @@ These items are planned but not yet implemented:
 
 - **Scheduler integration**: No daemon, web UI, or CI-native runtime.
 - **Notification sinks**: No webhook or alerting integration.
-- **Kubernetes and SSO auth**: Not yet supported; only the five auth methods
-  declared in `apps.yaml` are implemented.
+- **Kubernetes and SSO auth**: Not yet supported; only the six auth methods
+  declared in `apps.yaml` are implemented:
+  `none`, `api_login`, `bearer_token`, `cookie`, `session`, and `form`.
 
 ## See Also
 

@@ -1,16 +1,19 @@
 # Run The Toolkit With Docker Compose
 
-This guide is the preferred Docker-first operator path for running the
-internal security toolkit. It defines a portable service topology that
-works on any Linux host with Docker Compose installed.
+This guide documents the checked-in Docker Compose topology and its current
+limits. The repository includes Compose assets for the preferred Docker-first
+operator story, but the automated coverage for this path is static-contract
+only in `tests/integration/test_compose_workflow.py`; it does not build a
+packaged runner image or execute an end-to-end Compose smoke test.
 
 ## Why Compose
 
-Docker Compose lets operators run the toolkit, an example target app, and
-an optional Toxiproxy service together as one declarative service graph.
+Docker Compose lets operators model the toolkit runner, an example target app,
+and an optional Toxiproxy service together as one declarative service graph.
 Benefits over direct CLI use:
 
-- no scanner binaries needed on the host
+- no scanner binaries need to be installed directly on the host to define the
+  topology
 - service-name DNS for predictable target reachability
 - portable across CI, staging boxes, and operator workstations
 - a single `docker compose up` brings the whole environment online
@@ -24,6 +27,9 @@ paths for environments where Docker Compose is not available.
 - Repository checked out locally
 - A live target service to scan (the example uses an `nginx:alpine`
   placeholder; replace with your real app image when wiring a project)
+- Awareness that the checked-in `toolkit-runner` service uses
+  `python:3.13-slim`, mounts the source tree, and sleeps; it defines the
+  workspace contract but is not a prebuilt toolkit image
 
 Verify Compose is available:
 
@@ -37,6 +43,8 @@ docker compose version
 docker-compose.yml                       # the Compose file
 compose/toolkit-runner.env.example       # env template for the runner
 examples/configs/sample-webapp/          # mounted as /workspace/config
+examples/configs/sample-webapp-compose/  # Compose-aware config alternative
+compose/examples/sample-webapp-compose/  # sample overlay for the Compose-aware config
 outputs/                                 # mounted as /workspace/outputs
 ```
 
@@ -47,11 +55,13 @@ outputs/                                 # mounted as /workspace/outputs
 Brings up the toolkit runner and the target app:
 
 ```bash
-cp compose/toolkit-runner.env.example compose/toolkit-runner.env
-# edit compose/toolkit-runner.env if you need real secret references
-
 docker compose up -d toolkit-runner sample-app
 ```
+
+The checked-in `docker-compose.yml` reads
+`compose/toolkit-runner.env.example` directly via `env_file`. If you prefer a
+private local copy such as `compose/toolkit-runner.env`, update the `env_file`
+entry before starting the stack.
 
 ### Pentest + chaos
 
@@ -66,8 +76,11 @@ operators do not pull the image unnecessarily.
 
 ## Running Toolkit Commands
 
-Operators exec into the running `toolkit-runner` container to invoke
-toolkit commands:
+The checked-in Compose file defines the working directory, mounts, and
+service-name networking. It does not install the toolkit automatically inside
+`toolkit-runner`. After you replace the placeholder image or bootstrap the
+container so the `toolkit` CLI is available, these are the intended operator
+commands:
 
 ```bash
 docker compose exec toolkit-runner toolkit validate \
@@ -110,11 +123,13 @@ relying on `--network=host`.
 | `examples/configs/sample-webapp` | `/workspace/config` | read-only | YAML config bundle |
 | `outputs/` | `/workspace/outputs` | read-write | run artifacts |
 | `src/` | `/workspace/src` | read-only | toolkit source |
-| `pyproject.toml` | `/workspace/pyproject.toml` | read-only | dependencies |
+| `pyproject.toml` | `/workspace/pyproject.toml` | read-only | package metadata |
+| `uv.lock` | `/workspace/uv.lock` | read-only | locked dependency set |
 
-## Live Pentest Through Compose
+## Intended Pentest Command Shape
 
-Once `toolkit-runner` and `sample-app` are up:
+Once the runner environment has been bootstrapped inside the container, the
+intended pentest command shape is:
 
 ```bash
 docker compose exec toolkit-runner toolkit pentest run \
@@ -124,21 +139,18 @@ docker compose exec toolkit-runner toolkit pentest run \
   --runtime container
 ```
 
-Notes:
+The checked-in assets guarantee the mounted workspace layout and service-name
+networking for that command shape. They do not yet prove an end-to-end runner
+image, Docker socket wiring, or in-container dependency bootstrap.
 
-- `--runtime container` makes the toolkit-runner invoke scanner containers
-  via the host Docker socket if it is mounted, or fall back to the
-  in-runner host backend if not
-- raw artifacts, normalized findings, and the executive summary are written
-  to `/workspace/outputs/<run-id>/...` and persist to `./outputs` on the host
-- the runner reads the YAML bundle from `/workspace/config`
-
-Required environment variables (set via `compose/toolkit-runner.env`):
+Environment variables referenced by the checked-in Compose assets:
 
 - `SAMPLE_API_BEARER_TOKEN` — only needed when running the sample-api pack
 - `NUCLEI_DISABLE_UPDATE_CHECK=true` — recommended for deterministic runs
+- `TOOLKIT_TOXIPROXY_URL=http://toxiproxy:8474` — used by chaos workflows on
+  the shared Compose network
 
-## Live Chaos Through Compose
+## Intended Chaos Command Shape
 
 Bring up the chaos profile (which includes Toxiproxy):
 
@@ -155,7 +167,8 @@ docker compose exec toxiproxy /toxiproxy-cli create \
   sample-app
 ```
 
-Run the chaos workflow:
+After the runner environment has been bootstrapped inside the container, the
+intended chaos command shape is:
 
 ```bash
 docker compose exec \
@@ -177,7 +190,8 @@ Startup order matters for chaos:
 
 All run artifacts under `/workspace/outputs/` persist to `./outputs/` on
 the host. After a pentest or chaos run, you can rebuild the executive
-summary from any earlier run:
+summary from any earlier run, once the runner container has the `toolkit` CLI
+available:
 
 ```bash
 docker compose exec toolkit-runner toolkit report build --run-id <run-id>
@@ -206,6 +220,15 @@ with `uv run toolkit ...`. See:
 
 - `docs/how-to/run-live-pentest.md`
 - `docs/how-to/run-live-chaos.md`
+
+## Current Limitations
+
+- the repository does not currently ship a built `toolkit-runner` image
+- the checked-in Compose coverage is static-contract only, not end-to-end
+- `docker-compose.yml` currently points `env_file` at
+  `compose/toolkit-runner.env.example`
+- chaos workflows still require explicit proxy creation before
+  `toolkit chaos run`
 
 ## See Also
 

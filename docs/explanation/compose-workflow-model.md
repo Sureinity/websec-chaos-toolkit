@@ -1,16 +1,15 @@
 # Compose Workflow Model
 
-This document explains the service topology that backs the Docker
-Compose operator workflow, why it is the preferred portability path,
-and how Compose service names map to `apps.yaml` configuration.
+This document explains the service topology defined by the checked-in Docker
+Compose assets, why that topology is the preferred portability model, and how
+Compose service names map to `apps.yaml` configuration.
 
 ## Why Compose
 
-Direct CLI use is fast for development, but it puts the burden of
-installing scanner binaries, Toxiproxy, and the target app on the
-operator. The Compose workflow makes the entire environment
-declarative and portable across CI, staging boxes, and operator
-workstations.
+Direct CLI use is fast for development, but it puts the burden of installing
+scanner binaries, Toxiproxy, and the target app on the operator. The checked-in
+Compose assets make that environment declarative and portable as a topology
+baseline across CI, staging boxes, and operator workstations.
 
 The Compose path is preferred because:
 
@@ -19,6 +18,13 @@ The Compose path is preferred because:
 - service-name DNS makes target reachability deterministic
 - no scanner binaries or Toxiproxy installs are required on the host
 - the same setup works on any Linux host with Docker Compose installed
+
+Current repository coverage for this path is static-contract only:
+
+- `tests/integration/test_compose_workflow.py` verifies file presence, service
+  definitions, mounts, network wiring, and config-pack alignment
+- the checked-in `toolkit-runner` service is still a placeholder container, not
+  a prebuilt toolkit image
 
 ## Service Topology
 
@@ -44,7 +50,7 @@ bridge network (`toolkit-net`):
 
 | Service | Role | Required for |
 |---------|------|--------------|
-| `toolkit-runner` | runs the toolkit CLI | every workflow |
+| `toolkit-runner` | placeholder runner workspace | every workflow |
 | `sample-app` | the target application | every workflow |
 | `toxiproxy` | admin API for fault injection | chaos workflows only |
 
@@ -78,7 +84,7 @@ docker compose up -d toolkit-runner sample-app
 ```
 
 Brings up the runner and target. Toxiproxy is not started. The
-toolkit container can run validate, pentest, and report commands.
+checked-in assets guarantee mounts and networking for the runner workspace.
 
 ### Pentest + chaos
 
@@ -87,12 +93,14 @@ docker compose --profile chaos up -d toolkit-runner sample-app toxiproxy
 ```
 
 Adds the Toxiproxy service. The toolkit container can additionally
-run chaos commands that target the proxy at `http://toxiproxy:8474`.
+expose the Toxiproxy admin API at `http://toxiproxy:8474` on the shared
+network.
 
 ### Host-independent
 
-The same `docker-compose.yml` works on any Linux host that has Docker
-Compose v2 installed. No scanner binaries are required on the host.
+The same `docker-compose.yml` defines the topology on any Linux host that has
+Docker Compose v2 installed. No scanner binaries are required on the host to
+bring up the checked-in services.
 
 ## Mounted Volumes
 
@@ -103,6 +111,8 @@ The runner expects a stable mount layout:
 | `examples/configs/sample-webapp` | `/workspace/config` | read-only |
 | `outputs/` | `/workspace/outputs` | read-write |
 | `src/` | `/workspace/src` | read-only |
+| `pyproject.toml` | `/workspace/pyproject.toml` | read-only |
+| `uv.lock` | `/workspace/uv.lock` | read-only |
 
 Run artifacts written to `/workspace/outputs` persist back to the
 host so operators can inspect them, attach them to tickets, or feed

@@ -26,8 +26,11 @@ These instructions apply to this repository directory. If a deeper
   fixture-backed flow is preserved for onboarding and offline testing.
 - `toolkit report build` is now implemented for stored normalized result
   bundles.
-- `toolkit doctor` is now implemented for simplified audit runtime readiness
-  diagnostics.
+- `toolkit doctor` is now implemented for audit, edge-chaos, and code-audit
+  readiness diagnostics.
+- The repository now includes checked-in Compose workflow assets and static
+  Compose contract tests under `docker-compose.yml`, `compose/`, and
+  `tests/integration/test_compose_workflow.py`.
 - Scanner adapters for ZAP, Nuclei, Nmap, Trivy, and Semgrep are implemented
   with a shared contract, process runner, and normalizers.
 - Optional external smoke tests exist behind the
@@ -71,8 +74,13 @@ These instructions apply to this repository directory. If a deeper
 - Top-level files that exist now:
   - `AGENTS.md`
   - `README.md`
+  - `CHANGELOG.md`
+  - `CLAUDE.md`
+  - `Makefile`
   - `security-testing-resources.md`
+  - `docker-compose.yml`
   - `pyproject.toml`
+  - `uv.lock`
   - `.pre-commit-config.yaml`
   - `ruff.toml`
   - `mypy.ini`
@@ -87,6 +95,8 @@ These instructions apply to this repository directory. If a deeper
   - `docs/`
   - `examples/`
   - `config/`
+  - `compose/`
+  - `outputs/`
 - The Python package root is `src/toolkit/`.
 - The CLI command tree is implemented under `src/toolkit/commands/`.
 - Test layout is split into `tests/unit/` and `tests/integration/`.
@@ -114,12 +124,12 @@ These instructions apply to this repository directory. If a deeper
 ## Current CLI Behavior
 
 - The intended public interface is already wired:
-  - `toolkit audit <url> [--runtime host|container] [--intensity safe|balanced|deep] [-v|-vv|-vvv]`
+  - `toolkit audit <url> [--runtime host|container] [--intensity safe|balanced|deep] [-v|-vv|-vvv] [--auth-mode <mode>] [mode-specific auth flags]`
   - `toolkit edge-chaos <url> [--fault <name>]`
   - `toolkit code-audit <path> [--tool semgrep|trivy] [--runtime host|container] [-v|-vv|-vvv]`
   - `toolkit validate --app <id> --env <env>`
-  - `toolkit doctor`
-  - `toolkit pentest run --app <id> --env <env> --profile <name> [-v|-vv|-vvv]`
+  - `toolkit doctor [--code-path <path>] [--code-tool semgrep|trivy]`
+  - `toolkit pentest run --app <id> --env <env> --profile <name> [--runtime host|container] [-v|-vv|-vvv]`
   - `toolkit chaos run --app <id> --env <env> --profile <name>`
   - `toolkit report build --run-id <id>`
 - Current behavior:
@@ -143,7 +153,8 @@ These instructions apply to this repository directory. If a deeper
     `0`, `1`, or `2`
   - `toolkit code-audit` derives an ad hoc source-tree target from one local
     path, runs Semgrep and/or Trivy using the built-in `source_tree` profile,
-    selects host or container runtime for the selected tools, writes raw
+    auto-selects host then container for the selected tools when runtime is
+    omitted, writes raw
     artifacts, normalized findings, and a Markdown summary under
     `outputs/<run-id>/`, emits structured runtime log records for tool start,
     output, and finish events, and exits with `0`, `1`, or `2`; `-v` shows
@@ -152,8 +163,10 @@ These instructions apply to this repository directory. If a deeper
   - `toolkit validate` loads and validates repository YAML config from the
     current working directory and exits with `0` on success or `2` on
     validation/runtime failure
-  - `toolkit doctor` reports simplified audit runtime readiness and the
-    current edge-chaos readiness status
+  - `toolkit doctor` reports simplified audit runtime readiness, current
+    edge-chaos readiness status, and code-audit readiness; `--code-path`
+    validates one local source-tree path and `--code-tool` narrows readiness
+    to `semgrep` or `trivy`
   - `toolkit pentest run` executes real scanner binaries against a live target,
     writes raw artifacts, normalized findings, and a Markdown summary under
     `outputs/<run-id>/`, emits structured runtime log records for tool start,
@@ -222,6 +235,8 @@ Currently Applicable
 - The repository includes `.pre-commit-config.yaml`. Install hooks with
   `uv run pre-commit install`.
 - Run all hooks with `uv run pre-commit run --all-files`.
+- `Makefile` exists for branch-management helpers, but `uv` commands remain the
+  canonical package-development interface.
 - External binaries such as ZAP, Nuclei, Nmap, and Toxiproxy are not required
   for the current scaffold tests.
 - Trivy and Semgrep are also not required for the default local test suite.

@@ -129,23 +129,10 @@ Artifacts are written even on failure, so failed runs remain auditable.
 
 ## Compose-Based Operator Path
 
-For a portable, Docker-first workflow that brings up Toxiproxy, the
-target app, and the toolkit runner together, use the Compose path:
-
-```bash
-docker compose --profile chaos up -d toolkit-runner sample-app toxiproxy
-
-docker compose exec toxiproxy /toxiproxy-cli create \
-  --listen 0.0.0.0:19000 --upstream sample-app:8080 sample-app
-
-docker compose exec \
-  -e TOOLKIT_TOXIPROXY_URL=http://toxiproxy:8474 \
-  toolkit-runner toolkit chaos run \
-  --app sample-internal-app --env local \
-  --profile dependency-latency-baseline
-```
-
-See `docs/how-to/run-with-compose.md` for the full Compose workflow.
+The repository includes checked-in Compose assets for this workflow, but the
+current automated coverage for that path is static-contract only. See
+`docs/how-to/run-with-compose.md` for the shared-network topology,
+Toxiproxy wiring, and current Compose-specific limitations.
 
 ## Live Versus Fixture-Backed Runs
 
