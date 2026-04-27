@@ -118,6 +118,32 @@ Key boundaries:
 - `reports/` owns rendered outputs
 - `safety/` owns fail-closed checks shared across workflows
 
+## Underlying Tool Roles
+
+The toolkit is an orchestration layer. These are the main external tools it
+drives directly:
+
+- scanners produce findings
+- runtime helpers shape scope, auth, connectivity, or fault injection
+- Docker is the only container runtime in the current implementation
+- no separate testing utility participates in live scan execution
+
+| Tool | Used for | Role in workflow | Type |
+|---|---|---|---|
+| `httpx` | preflight HTTP requests, auth requests, health/metrics probes | fingerprints URL audit targets, helps bootstrap auth, and supports chaos monitoring | runtime helper |
+| `katana` | route discovery | expands same-origin audit scope before the main scanners run | runtime helper |
+| `ZAP` | safe web security checks | primary DAST scanner for URL audit and config-driven pentest runs | scanner |
+| `Nuclei` | template-based HTTP exposure checks | secondary web scanner across a bounded route set | scanner |
+| `Nmap` | conservative host and service inspection | adds host/service context to audit and pentest runs | scanner |
+| `Semgrep` | source-code rule matching | static analysis engine for `toolkit code-audit` and optional profile-driven code checks | scanner |
+| `Trivy` | filesystem, dependency, config, and secret checks | static analysis engine for `toolkit code-audit` and optional profile-driven artifact checks | scanner |
+| `Toxiproxy` | reversible proxy fault injection | powers `toolkit edge-chaos` and `toolkit chaos run` experiments | runtime helper |
+| `Docker` | containerized tool execution | provides the `container` backend when scanners are not run as host binaries | container runtime |
+
+`uv` is the package manager and command runner used to start the toolkit
+locally, for example `uv run toolkit ...`. It is not part of the scanning
+toolchain.
+
 ## Runtime Structures
 
 The most important runtime objects are configuration bundles, run metadata, and
